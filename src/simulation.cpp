@@ -35,11 +35,15 @@ int SimulatedRobotArm::connect() {
 
     arm_data.state = CONNECTED;
 
+	return 0;
+
 }
 
 int SimulatedRobotArm::disconnect() {
 
     arm_data.state = UNKNOWN;
+
+	return 0;
 
 }
 
@@ -64,15 +68,15 @@ bool SimulatedRobotArm::calibrate(int joint) {
 }
 
 int SimulatedRobotArm::lock(int joint) {
-    
+    return 0;
 }
 
 int SimulatedRobotArm::release(int joint) {
-
+	return 0;
 }
 
 int SimulatedRobotArm::rest() {
-
+	return 0;
 }
 
 int SimulatedRobotArm::size() {
@@ -94,6 +98,7 @@ int SimulatedRobotArm::move(int joint, float speed, float position) {
 
     joint_data[joint].position_goal = position;
 
+	return 0;
 }
 
 bool SimulatedRobotArm::getArmInfo(ArmInfo &data) {
@@ -108,6 +113,7 @@ bool SimulatedRobotArm::getArmData(ArmData &data) {
 
     data = arm_data;
 
+	return true;
 }
 
 bool SimulatedRobotArm::getJointInfo(int joint, JointInfo &data) {
@@ -116,6 +122,8 @@ bool SimulatedRobotArm::getJointInfo(int joint, JointInfo &data) {
         return false;
 
     data = joint_info[joint];
+
+	return true;
 }
 
 bool SimulatedRobotArm::getJointData(int joint, JointData &data) {
@@ -124,6 +132,8 @@ bool SimulatedRobotArm::getJointData(int joint, JointData &data) {
         return false;
 
     data = joint_data[joint];
+
+	return true;
 }
 
 

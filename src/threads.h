@@ -2,7 +2,7 @@
 #ifndef SIMPLE_THREADS
 #define SIMPLE_THREADS
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #include <process.h>
 #include <BaseTsd.h>

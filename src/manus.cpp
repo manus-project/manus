@@ -1,4 +1,6 @@
 
+#define _USE_MATH_DEFINES
+
 #include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +45,7 @@
     #define DIRSEP '\\'
     #define snprintf _snprintf
     #define vsnprintf _vsnprintf
-    #define sleep(x) Sleep((x) * 1000)
+    #define sleep(x) Sleep((x))
     #define abs_path(rel, abs, abs_size) _fullpath((abs), (rel), (abs_size))
     #define SIGCHLD 0
     typedef struct _stat file_stat_t;
@@ -56,6 +58,7 @@
     #define DIRSEP '/'
     #define __cdecl
     #define abs_path(rel, abs, abs_size) realpath((rel), (abs))
+	#define sleep(x) usleep((x) * 1000)
 #endif // _WIN32
 
 static int exit_flag;
@@ -285,9 +288,10 @@ THREAD_CALLBACK(arm_driver_function, handler) {
 
     while (exit_flag == 0) {
         arm_handler->poll();
-        usleep(100 * 1000);
+        sleep(100);
     }
 
+	return NULL;
 }
 
 
