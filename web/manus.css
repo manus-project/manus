@@ -1,0 +1,42 @@
+
+.joint {
+    display: block;
+    font-size: 120%;
+    margin: 5px;
+    vertical-align: top;
+}
+
+.joint span,
+.joint div,
+.joint button {
+    vertical-align: top;
+}
+
+.joint .information {
+    display: inline-block;
+    width: 200px;
+}
+
+.joint .information .title {
+    display: inline-block;
+    width: 200px;
+}
+
+.joint .information .type {
+    display: inline-block;
+    width: 200px;
+    color: gray;
+    font-size: 80%
+}
+
+.joint .status {
+    display: inline-block;
+    width: 80px;
+
+    text-align: center;
+}
+
+canvas.visualization {
+    width: 640px;
+    height: 640px;
+}
