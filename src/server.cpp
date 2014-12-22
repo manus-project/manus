@@ -185,37 +185,6 @@ void Handler::close(const Request& request) {
 
 }
 
-
-/*
-static void set_absolute_path(char *options[], const char *option_name) {
-  char path[PATH_MAX], abs[PATH_MAX], *option_value;
-  const char *p;
-
-  // Check whether option is already set
-  option_value = get_option(options, option_name);
-
-  // If option is already set and it is an absolute path,
-  // leave it as it is -- it's already absolute.
-  if (option_value != NULL && !is_path_absolute(option_value)) {
-    // Not absolute. Use the directory where mongoose executable lives
-    // be the relative directory for everything.
-    // Extract mongoose executable directory into path.
-    if ((p = strrchr(s_config_file, DIRSEP)) == NULL) {
-      getcwd(path, sizeof(path));
-    } else {
-      snprintf(path, sizeof(path), "%.*s", (int) (p - s_config_file),
-               s_config_file);
-    }
-
-    strncat(path, "/", sizeof(path) - 1);
-    strncat(path, option_value, sizeof(path) - 1);
-
-    // Absolutize the path, and set the option
-    abs_path(path, abs, sizeof(abs));
-    set_option(options, option_name, abs);
-  }
-}
-*/
 int Server::master_event_handler(struct mg_connection *conn, enum mg_event ev) {
 
     if (!conn->server_param)
@@ -298,6 +267,9 @@ int Server::event_handler(struct mg_connection *conn, enum mg_event ev) {
         request->handler->close(*request);
         conn->connection_param = NULL;
         delete request;
+        break;
+    }
+    default: {
         break;
     }
     }

@@ -4,6 +4,7 @@
 string armStateToString(ArmState status) {
 
     switch (status) {
+        case UNKNOWN: return "unknown";
         case CONNECTED: return "connected";
         case PASSIVE: return "passive";
         case ACTIVE: return "active";
