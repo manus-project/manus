@@ -14,7 +14,7 @@
 
 .joint .information {
     display: inline-block;
-    width: 200px;
+    width: 160px;
 }
 
 .joint .information .title {
@@ -31,12 +31,28 @@
 
 .joint .status {
     display: inline-block;
-    width: 80px;
-
+    position: relative;
+    width: 250px;
+    height: 30px;
+    border: 1px gray solid;
     text-align: center;
 }
 
+.joint .status .current,
+.joint .status .goal {
+    display: inline-block;
+    position: absolute;
+    top: -5px;
+    width: 5px;
+    height: 40px;
+    border: 1px black solid;
+}
+
+.joint button {
+    margin: 0px 3px;
+}
+
+
 canvas.visualization {
-    width: 640px;
-    height: 640px;
+    border: 1px gray solid;
 }

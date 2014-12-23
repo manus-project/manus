@@ -2,7 +2,7 @@ $(function() {
 
     function robotArmVisualizer(parent, parameters) {
 
-        var canvas = $('<canvas class="visualization" width="600" height="600">');
+        var canvas = $('<canvas class="visualization" width="600" height="500">');
         $(parent).append(canvas);
 
         canvas = canvas[0];
@@ -11,6 +11,7 @@ $(function() {
         var scene = new Phoria.Scene();
         scene.camera.position = {x:0.0, y:0.0, z:1.0};
         scene.camera.up = {x:0.0, y:0.0, z:1.0};
+        scene.camera.lookat = {x:0.0, y:0.0, z:10.0};
         scene.perspective.aspect = canvas.width / canvas.height;
         scene.viewport.width = canvas.width;
         scene.viewport.height = canvas.height;
@@ -123,47 +124,73 @@ $(function() {
             var alpha = parameters["joints"][v].alpha;
             var theta = parameters["joints"][v].theta;
 
-            var segmentMesh = Phoria.Util.generateCuboid({"scalex" : Math.max(1, a / 2), "scaley" : 1, "scalez" : 1, "offsetx" : - Math.max(1, a / 2), "offsety" : 0, "offsetz": 0});
-
-            var segment = Phoria.Entity.create({
-                points: segmentMesh.points,
-                edges: segmentMesh.edges,
-                polygons: segmentMesh.polygons,
-                style: {
-                    drawmode: "wireframe",
-                    shademode: "plain",
-                    linewidth: 1,
-                }
-            });
-
-
-
             var joint = Phoria.Entity.create({
-                id : "Joint" + v,
+                id : "Joint" + (v+1),
                 points: jointMesh.points,
                 edges: jointMesh.edges,
                 polygons: jointMesh.polygons,
                 style: {
-                    color: [100,100,255],
+                    color: [53,126,189],
                     drawmode: "wireframe",
                     shademode: "plain",
                     linewidth: 2,
                 }
             });
 
+            switch (parameters["joints"][v].type) {
+                case "translation":
+                case "rotation": {
+                    var segmentMesh = Phoria.Util.generateCuboid({"scalex" : Math.max(1, a / 2),
+                             "scaley" : 1, "scalez" : 1, "offsetx" : - Math.max(1, a / 2),
+                             "offsety" : 0, "offsetz": 0});
+
+                    var segment = Phoria.Entity.create({
+                        points: segmentMesh.points,
+                        edges: segmentMesh.edges,
+                        polygons: segmentMesh.polygons,
+                        style: {
+                            drawmode: "wireframe",
+                            shademode: "plain",
+                            linewidth: 1,
+                        }
+                    });
+
+                    break;
+                }
+                case "gripper": {
+
+                    var segmentMesh = Phoria.Util.generateCuboid({"scalex" : Math.max(1, a / 2),
+                             "scaley" : Math.max(1, a / 2), "scalez" : 1, "offsetx" : - Math.max(1, a / 2),
+                             "offsety" : 0, "offsetz": 0});
+
+                    var segment = Phoria.Entity.create({
+                        points: segmentMesh.points,
+                        edges: segmentMesh.edges,
+                        polygons: segmentMesh.polygons,
+                        style: {
+                            color: [100,255,100],
+                            drawmode: "wireframe",
+                            shademode: "plain",
+                            linewidth: 1,
+                        }
+                    });
+
+            /*
+                    Phoria.Entity.debug(segment, {
+                        showId: true,
+                        showAxis: true,
+                        showPosition: true
+                    });*/
+
+                    break;
+                }
+            }
+
             joints[v] = {"segment" : segment, "joint" : joint, "data" : parameters["joints"][v]};
-            if (parameters["joints"][v].type != "rotation") break;
-
-
             joint.identity().rotateZ(theta).translateZ(d);
-
             segment.identity().rotateX(alpha).translateX(a);
 
-            /*Phoria.Entity.debug(joint, {
-                showId: true,
-                showAxis: true,
-                showPosition: true
-            });*/
+
 
             if (parentJoint === undefined) {
                 scene.graph.push(joint);
@@ -185,27 +212,14 @@ $(function() {
                 var d = joints[v].data.d / 10;
                 var theta = joints[v].data.theta;
                 var update = true;
-
                 switch (joints[v].data.type) {
-                case "rotation": {
-                    theta = status["joints"][v];
-                    break;
+                case "rotation": {theta = status["joints"][v]; break; }
+                case "translation": {d = status["joints"][v] / 10; break;}
+                case "gripper": { break; }
+                default: { update = false; break; }
                 }
-                case "translation": {
-                    d = status["joints"][v] / 10;
-                    break;
-                }
-                default: {
-                    update = false;
-                    break;
-                }
-
-                }
-
                 if (!update) break;
-
                 joints[v].joint.identity().rotateZ(theta).translateZ(d);
-
             }
 
             dirty = true;
@@ -219,7 +233,7 @@ $(function() {
         var value = 0;
 
         var status;
-        var information = $('<div class="information">').append($('<span class="title">').text("Joint " + id)).append($('<span class="type">').text("Type: " + parameters.type));
+        var information = $('<div class="information">').append($('<span class="title">').text("Joint " + (id+1))).append($('<span class="type">').text("Type: " + parameters.type));
 
         var container = $('<div class="joint">').append(information);
 
@@ -227,11 +241,32 @@ $(function() {
         case "translation":
         case "rotation": {
 
-            status = $('<span class="status">').text("0");
+            status = $('<div class="status">').append();
+
+            var current =  $('<div class="current">').appendTo(status);
+            var goal =  $('<div class="goal">').appendTo(status);
+
+            status.click(function(e) {
+                var relative = Math.min(1, Math.max(0, (e.pageX - status.offset().left) / status.width()));
+
+                var absolute = (parameters.max - parameters.min) * relative + parameters.min;
+
+                $.ajax('/api/arm?command=move&joint=' + id + '&speed=0.1&position=' + absolute);
+
+            });
+
+            container.append(status);
+
+/*
+            container.append($('<button type="button" class="btn btn-primary">&lt; &lt;</button>').click(function() {
+
+                $.ajax('/api/arm?command=move&joint=' + id + '&position=' + (value - 0.5));
+                
+            }));
 
             container.append($('<button type="button" class="btn btn-primary">&lt;</button>').click(function() {
 
-                $.ajax('/api/arm?command=move&joint=' + id + '&position=' + (value - 0.5));
+                $.ajax('/api/arm?command=move&joint=' + id + '&position=' + (value - 0.1));
                 
             }));
 
@@ -239,12 +274,18 @@ $(function() {
 
             container.append($('<button type="button" class="btn btn-primary">&gt;</button>').click(function() {
                 
-                $.ajax('/api/arm?command=move&joint=' + id + '&position=' + (value + 0.5));
+                $.ajax('/api/arm?command=move&joint=' + id + '&position=' + (value + 0.1));
 
             }));
+
+            container.append($('<button type="button" class="btn btn-primary">&gt; &gt;</button>').click(function() {
+                
+                $.ajax('/api/arm?command=move&joint=' + id + '&position=' + (value + 0.5));
+
+            }));*/
             break;
         }
-        case "gripper_dual": {
+        case "gripper": {
 
             status = $('<button type="button" class="btn">&gt;</button>').click(function() {
                 if (value > 0.5) value = 0;
@@ -263,20 +304,28 @@ $(function() {
 
         $(parent).append(container);
 
-        return function(v) {
+        return function(v, g) {
             
-            value = parseFloat(v);
+            var value = parseFloat(v);
+            var value_goal = parseFloat(g);
+
+            var relative_position = (value - parameters.min) / (parameters.max - parameters.min);
+            var relative_goal = (value_goal - parameters.min) / (parameters.max - parameters.min);
 
             switch (parameters.type) {
             case "translation": {
-                status.html(value.toFixed(2) + "mm");
+                status.attr('title', value.toFixed(2) + "mm");
+                current.css('left', relative_position * status.width());
+                goal.css('left', relative_goal * status.width());
                 break;
             }
             case "rotation": {
-                status.html(((value * 180) / Math.PI ).toFixed(2) + "&deg;");
+                status.attr('title', ((value * 180) / Math.PI ).toFixed(2) + "&deg;");
+                current.css('left', relative_position * status.width());
+                goal.css('left', relative_goal * status.width());
                 break;
             }
-            case "gripper_dual": {
+            case "gripper": {
 
                 if (value < 1) {
                     status.removeClass("btn-success").addClass("btn-danger");
@@ -303,7 +352,7 @@ $(function() {
         $.ajax('/api/arm?command=status', {timeout : 100}).done(function(data) {
 
             for (var v in data["joints"]) {
-                joints[v](data["joints"][v]);
+                joints[v](data["joints"][v], data["goals"][v]);
             }
 
             visualizer(data);
@@ -329,7 +378,7 @@ $(function() {
         sidebar.append($('<div class="information">').text("Version: " + data.version.toFixed(2)));
 
         for (var v in data["joints"]) {
-            joints[v] = createJointController(sidebar, v, data["joints"][v]);
+            joints[v] = createJointController(sidebar, parseInt(v), data["joints"][v]);
         }
 
         var visualize = $('<div class="col-lg-7">').appendTo(container);
@@ -341,7 +390,13 @@ $(function() {
     });
 
 
+    $.ajax('/api/app?command=information').done(function(data) {
 
+        $('#appname').text(data.name);
+        $('#appversion').text(data.version);
+        $('#appbuild').text(data.build);
+
+    });
 
 /*
     createJointController(container, 0);
