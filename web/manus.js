@@ -315,14 +315,14 @@ $(function() {
             switch (parameters.type) {
             case "translation": {
                 status.attr('title', value.toFixed(2) + "mm");
-                current.css('left', relative_position * status.width());
-                goal.css('left', relative_goal * status.width());
+                current.css('left', relative_position * status.width() - current.width() / 2);
+                goal.css('left', relative_goal * status.width() - goal.width() / 2);
                 break;
             }
             case "rotation": {
-                status.attr('title', ((value * 180) / Math.PI ).toFixed(2) + "&deg;");
-                current.css('left', relative_position * status.width());
-                goal.css('left', relative_goal * status.width());
+                status.attr('title', ((value * 180) / Math.PI ).toFixed(2) + "\u00B0");
+                current.css('left', relative_position * status.width() - current.width() / 2);
+                goal.css('left', relative_goal * status.width() - goal.width() / 2);
                 break;
             }
             case "gripper": {

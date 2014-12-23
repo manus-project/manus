@@ -33,19 +33,33 @@
     display: inline-block;
     position: relative;
     width: 250px;
-    height: 30px;
+    height: 20px;
     border: 1px gray solid;
     text-align: center;
+    border-radius: 5px;
+    background-color: rgb(200, 200, 200);
+    box-shadow: 1px 1px 4px #888888 inset;
 }
 
 .joint .status .current,
 .joint .status .goal {
     display: inline-block;
     position: absolute;
-    top: -5px;
-    width: 5px;
+    top: -10px;
+    width: 8px;
     height: 40px;
-    border: 1px black solid;
+    border-radius: 5px;
+}
+
+.joint .status .current {
+    background-color: rgb(53, 126, 189);
+    border: 1px rgb(80, 80, 140) solid;
+    z-index: 10;
+}
+
+.joint .status .goal {
+    background-color: rgba(154, 154, 154, 0.5);
+    z-index: 1;
 }
 
 .joint button {
