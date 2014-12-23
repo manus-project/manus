@@ -141,9 +141,57 @@ public:
 
 #endif
 
+class AppApiHandler : public Handler {
+public:
+    AppApiHandler() {
+
+    };
+
+    ~AppApiHandler() {
+
+    };
+
+    virtual void handle(Request& request) {
+        
+        if (!request.has_variable("command")) {
+            request.set_status(404); 
+            request.finish();
+            return;
+        }
+
+        string command = request.get_variable("command");
+
+        request.set_status(200); 
+        request.set_header("Content-Type", "application/json");
+        request.set_header("Cache-Control", "max-age=0, post-check=0, pre-check=0, no-store, no-cache, must-revalidate");
+
+        Json::Value response;
+
+        if (command == "information") {
+
+            response["name"] = Json::Value(APPLICATION_NAME);
+            response["version"] = Json::Value(APPLICATION_VERSION);
+            response["build"] = Json::Value(__DATE__);
+
+        } else {
+            response["success"] = Json::Value(false);
+        }
+
+        Json::FastWriter writer;
+        request.send_data(writer.write(response));
+
+        request.finish();
+    }
+
+
+
+};
+
+#define CONVERT_OUTGOING_VALUE(T, V) ((T == ROTATION) ? ((V / 180) * M_PI) : V)
+#define CONVERT_INCOMING_VALUE(T, V) ((T == ROTATION) ? ((V * 180) / M_PI) : V)
+
 #define DEGREE_TO_RADIAN(X) ((X / 180) * M_PI)
 #define RADIAN_TO_DEGREE(X) ((X * 180) / M_PI)
-
 
 class ArmApiHandler : public Handler {
 public:
@@ -193,14 +241,9 @@ public:
                 joint["a"] = Json::Value(jointInfo.dh_r);
                 joint["theta"] = Json::Value(DEGREE_TO_RADIAN(jointInfo.dh_theta));
                 joint["d"] = Json::Value(jointInfo.dh_d);
+                joint["min"] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointInfo.position_min));
+                joint["max"] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointInfo.position_max));
 
-                if (jointInfo.type == ROTATION) {
-                    joint["min"] = Json::Value(DEGREE_TO_RADIAN(jointInfo.position_min));
-                    joint["max"] = Json::Value(DEGREE_TO_RADIAN(jointInfo.position_max));
-                } else {
-                    joint["min"] = Json::Value(jointInfo.position_min);
-                    joint["max"] = Json::Value(jointInfo.position_max);
-                }
 
                 joints[i] = joint;
             }
@@ -217,21 +260,21 @@ public:
             arm->getArmData(data);
 
             response["state"] = Json::Value(armStateToString(data.state));
-            Json::Value joints;
+            Json::Value positions;
+            Json::Value goals;
 
             for (int i = 0; i < arm->size(); i++) {
                 JointData jointData;
                 arm->getJointData(i, jointData);
                 JointInfo jointInfo;
                 arm->getJointInfo(i, jointInfo);
-                float value = jointData.position;
-                if (jointInfo.type == ROTATION) value = DEGREE_TO_RADIAN(value);
-                joints[i] = Json::Value(value);
-
+                positions[i] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointData.position));
+                goals[i] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointData.position_goal));
             }
             MUTEX_UNLOCK(mutex);
 
-            response["joints"] = joints;
+            response["joints"] = positions;
+            response["goals"] = goals;
 
         } else if (command == "move") {
             
@@ -241,13 +284,13 @@ public:
 
                 float value = stof(request.get_variable("position"));
 
+                float speed = 0.1; // MAX(0.1, stof(request.get_variable("speed")));
+
                 JointInfo jointInfo;
                 arm->getJointInfo(joint, jointInfo);
 
-                if (jointInfo.type == ROTATION) value = RADIAN_TO_DEGREE(value);
-
                 MUTEX_LOCK(mutex);
-                arm->move(joint, 0.1, value);
+                arm->move(joint, speed, CONVERT_INCOMING_VALUE(jointInfo.type, value));
                 MUTEX_UNLOCK(mutex);
 
                 response["success"] = Json::Value(true);
@@ -314,11 +357,13 @@ int main(int argc, char *argv[]) {
     SimulatedRobotArm arm;
     FilesHandler files_handler;
     ArmApiHandler arm_handler(&arm);
+    AppApiHandler app_handler;
 
     Server server;
     server.set_default_handler(&files_handler);
 
     server.append_handler("/api/arm", &arm_handler);
+    server.append_handler("/api/app", &app_handler);
 
     // Setup signal handler: quit on Ctrl-C
     signal(SIGTERM, signal_handler);
