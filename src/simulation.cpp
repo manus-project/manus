@@ -18,7 +18,7 @@ SimulatedRobotArm::SimulatedRobotArm() {
     joint_data.push_back(createJointData(2, -90));
 
     joint_info.push_back(createJointInfo(3, ROTATION, 0, 0, 0, 70, -70, 70));
-    joint_data.push_back(createJointData(3, -90));
+    joint_data.push_back(createJointData(3, -70));
 
     joint_info.push_back(createJointInfo(4, GRIPPER, 0, -90, 0, 60, 0, 1));
     joint_data.push_back(createJointData(4, 0));
@@ -54,15 +54,15 @@ int SimulatedRobotArm::disconnect() {
 int SimulatedRobotArm::poll() {
 
     for (int i = 0; i < joint_data.size(); i++) {
-        int resolution = joint_info[i].type == ROTATION ? 
+        float resolution = joint_info[i].type == ROTATION ? 
             MOVE_RESOLUTION_ROTATION : (joint_info[i].type == TRANSLATION ? MOVE_RESOLUTION_TRANSLATION : MOVE_RESOLUTION_GRIP);
 
         if (joint_data[i].position - joint_data[i].position_goal >= resolution / 2)
             joint_data[i].position -= resolution;
-
-        if (joint_data[i].position - joint_data[i].position_goal <= -resolution / 2)
+        else if (joint_data[i].position - joint_data[i].position_goal < -resolution / 2)
             joint_data[i].position += resolution;
-
+        else
+            joint_data[i].position = joint_data[i].position_goal;    
     }
 
     return 0;
