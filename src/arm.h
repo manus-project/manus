@@ -27,7 +27,7 @@ typedef struct ArmData {
 	int error_id;
 } ArmData;
 
-enum JointType {ROTATION = 0, TRANSLATION, GRIPPER_DUAL};
+enum JointType {ROTATION = 0, TRANSLATION, GRIPPER};
 	
 typedef struct JointInfo {
 	unsigned int id;

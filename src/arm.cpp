@@ -19,7 +19,7 @@ string jointTypeToString(JointType type) {
     switch (type) {
         case ROTATION: return "rotation";
         case TRANSLATION: return "translation";
-        case GRIPPER_DUAL: return "gripper_dual";
+        case GRIPPER: return "gripper";
     }
 
     return "unkwnown";
