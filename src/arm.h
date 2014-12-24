@@ -36,7 +36,9 @@ typedef struct JointInfo {
     float dh_theta;
     float dh_alpha;
     float dh_d;
-    float dh_r;
+    float dh_a;
+    float dh_min;
+    float dh_max;
 	float position_min;		// [°]
 	float position_max;		// [°]
 	float limit_voltage;	// [V]
@@ -47,6 +49,8 @@ typedef struct JointInfo {
 typedef struct JointData {
 	unsigned int id;
 	int joint_id;
+    float dh_position;
+    float dh_goal;
 	float position;			// [°]
 	float position_goal;	// [°]
 	int state_id;
@@ -61,20 +65,25 @@ public:
     virtual int connect() = 0;
     virtual int disconnect() = 0;
 	virtual int poll() = 0;
+	
+	virtual bool isConnected() = 0;
 
-	virtual bool calibrate(int joint = -1) = 0;
+	virtual int calibrate(int joint = -1) = 0;
+	virtual int startControl() = 0;
+	virtual int stopControl() = 0;
 	virtual int lock(int joint = -1) = 0;
 	virtual int release(int joint = -1) = 0;
 	virtual int rest() = 0;
 	
-    virtual int size() = 0;
-	virtual int move(int joint, float speed, float position = 0) = 0;
-	
-	virtual bool getArmInfo(ArmInfo &data) = 0;
-	virtual bool getArmData(ArmData &data) = 0;
-	virtual bool getJointInfo(int joint, JointInfo &data) = 0;
-	virtual bool getJointData(int joint, JointData &data) = 0;
+    virtual int size() = 0; 
+	virtual int move(int joint, float speed) = 0;
+	virtual int moveTo(int joint, float speed, float position) = 0;
 
+	virtual int getArmInfo(ArmInfo &data) = 0;
+	virtual int getArmData(ArmData &data) = 0;
+	virtual int getJointInfo(int joint, JointInfo &data) = 0;
+	virtual int getJointData(int joint, JointData &data) = 0;
+	
 };
 
 string armStateToString(ArmState status);

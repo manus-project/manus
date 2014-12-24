@@ -8,23 +8,28 @@ class SimulatedRobotArm : public RobotArm {
 public:
     SimulatedRobotArm();
     ~SimulatedRobotArm();
+
+	virtual bool isConnected();
 	
     virtual int connect();
     virtual int disconnect();
 	virtual int poll();
 
-	virtual bool calibrate(int joint = -1);
+	virtual int calibrate(int joint = -1);
+	virtual int startControl();
+	virtual int stopControl();
 	virtual int lock(int joint = -1);
 	virtual int release(int joint = -1);
 	virtual int rest();
 	
     virtual int size();
-	virtual int move(int joint, float speed, float position = 0);
-	
-	virtual bool getArmInfo(ArmInfo &data);
-	virtual bool getArmData(ArmData &data);
-	virtual bool getJointInfo(int joint, JointInfo &data);
-	virtual bool getJointData(int joint, JointData &data);
+	virtual int move(int joint, float speed);
+	virtual int moveTo(int joint, float speed, float position);	
+
+	virtual int getArmInfo(ArmInfo &data);
+	virtual int getArmData(ArmData &data);
+	virtual int getJointInfo(int joint, JointInfo &data);
+	virtual int getJointData(int joint, JointData &data);
 
 private:
 

@@ -31,6 +31,12 @@ SimulatedRobotArm::~SimulatedRobotArm() {
 
 }
 
+bool SimulatedRobotArm::isConnected() {
+
+    return arm_data.state == CONNECTED;
+
+}
+
 int SimulatedRobotArm::connect() {
 
     arm_data.state = CONNECTED;
@@ -68,8 +74,16 @@ int SimulatedRobotArm::poll() {
     return 0;
 }
 
-bool SimulatedRobotArm::calibrate(int joint) {
-    return true;
+int SimulatedRobotArm::calibrate(int joint) {
+    return 0;
+}
+
+int SimulatedRobotArm::startControl() {
+    return 0;
+}
+
+int SimulatedRobotArm::stopControl() {
+	return 0;
 }
 
 int SimulatedRobotArm::lock(int joint) {
@@ -90,7 +104,7 @@ int SimulatedRobotArm::size() {
 
 }
 
-int SimulatedRobotArm::move(int joint, float speed, float position) {
+int SimulatedRobotArm::moveTo(int joint, float speed, float position) {
 
     if (joint < 0 || joint >= joint_data.size())
         return false;
@@ -106,35 +120,53 @@ int SimulatedRobotArm::move(int joint, float speed, float position) {
 	return 0;
 }
 
-bool SimulatedRobotArm::getArmInfo(ArmInfo &data) {
-
-    data = arm_info;
-
-    return true;
-
-}
-
-bool SimulatedRobotArm::getArmData(ArmData &data) {
-
-    data = arm_data;
-
-	return true;
-}
-
-bool SimulatedRobotArm::getJointInfo(int joint, JointInfo &data) {
-
-    if (joint < 0 || joint >= joint_info.size())
-        return false;
-
-    data = joint_info[joint];
-
-	return true;
-}
-
-bool SimulatedRobotArm::getJointData(int joint, JointData &data) {
+int SimulatedRobotArm::move(int joint, float speed) {
 
     if (joint < 0 || joint >= joint_data.size())
         return false;
+
+    float position = joint_data[joint].position_goal;
+
+    if (speed < 0)
+        position = joint_info[joint].position_min;
+
+    if (speed > 0)
+        position = joint_info[joint].position_max;
+
+    joint_data[joint].position_goal = position;
+
+	return 0;
+}
+
+int SimulatedRobotArm::getArmInfo(ArmInfo &data) {
+
+    data = arm_info;
+
+    return 0;
+
+}
+
+int SimulatedRobotArm::getArmData(ArmData &data) {
+
+    data = arm_data;
+
+	return 0;
+}
+
+int SimulatedRobotArm::getJointInfo(int joint, JointInfo &data) {
+
+    if (joint < 0 || joint >= joint_info.size())
+        return -1;
+
+    data = joint_info[joint];
+
+	return 0;
+}
+
+int SimulatedRobotArm::getJointData(int joint, JointData &data) {
+
+    if (joint < 0 || joint >= joint_data.size())
+        return -1;
 
     data = joint_data[joint];
 

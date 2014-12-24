@@ -32,7 +32,9 @@ JointInfo createJointInfo(int id, JointType type, float dh_theta, float dh_alpha
     joint.dh_theta = dh_theta;
     joint.dh_alpha = dh_alpha;
     joint.dh_d = dh_d;
-    joint.dh_r = dh_a;
+    joint.dh_a = dh_a;
+	joint.dh_min = min;
+	joint.dh_max = max;
 	joint.position_min = min;
 	joint.position_max = max;
     return joint;
@@ -43,5 +45,7 @@ JointData createJointData(int id, float position) {
 	joint.joint_id = id;
     joint.position = position;
     joint.position_goal = position;
+    joint.dh_position = position;
+    joint.dh_goal = position;
     return joint;
 }

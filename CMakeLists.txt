@@ -38,11 +38,13 @@ SET(SERVER_SOURCES
     src/mongoose.c 
     src/threads.c
     src/json.cpp
+    src/debug.cpp
     src/server.cpp
     src/manus.cpp
     src/filesystem.cpp
     src/arm.cpp
     src/simulation.cpp
+    src/serial.cpp
 )
 
 IF(CMAKE_BUILD_TYPE MATCHES DEBUG)

@@ -22,8 +22,10 @@
 #include "server.h"
 #include "filesystem.h"
 #include "json.h"
+#include "debug.h"
 #include "threads.h"
 #include "simulation.h"
+#include "serial.h"
 
 #define APPLICATION_NAME "Manus"
 #define APPLICATION_VERSION "0.1"
@@ -233,16 +235,16 @@ public:
 
             for (int i = 0; i < info.joints; i++) {
                 JointInfo jointInfo;
-                arm->getJointInfo(i, jointInfo);
+                if (arm->getJointInfo(i, jointInfo) < 0) break;
 
                 Json::Value joint;
                 joint["type"] = Json::Value(jointTypeToString(jointInfo.type));
                 joint["alpha"] = Json::Value(DEGREE_TO_RADIAN(jointInfo.dh_alpha));
-                joint["a"] = Json::Value(jointInfo.dh_r);
+                joint["a"] = Json::Value(jointInfo.dh_a);
                 joint["theta"] = Json::Value(DEGREE_TO_RADIAN(jointInfo.dh_theta));
                 joint["d"] = Json::Value(jointInfo.dh_d);
-                joint["min"] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointInfo.position_min));
-                joint["max"] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointInfo.position_max));
+                joint["min"] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointInfo.dh_min));
+                joint["max"] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointInfo.dh_max));
 
 
                 joints[i] = joint;
@@ -267,9 +269,9 @@ public:
                 JointData jointData;
                 arm->getJointData(i, jointData);
                 JointInfo jointInfo;
-                arm->getJointInfo(i, jointInfo);
-                positions[i] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointData.position));
-                goals[i] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointData.position_goal));
+                if (arm->getJointInfo(i, jointInfo) < 0) break;
+                positions[i] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointData.dh_position));
+                goals[i] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointData.dh_goal));
             }
             MUTEX_UNLOCK(mutex);
 
@@ -284,16 +286,21 @@ public:
 
                 float value = stof(request.get_variable("position"));
 
-                float speed = 0.1; // MAX(0.1, stof(request.get_variable("speed")));
+                float speed = stof(request.get_variable("speed"));
+                if (speed == 0) speed = 0.1;
 
                 JointInfo jointInfo;
                 arm->getJointInfo(joint, jointInfo);
 
                 MUTEX_LOCK(mutex);
-                arm->move(joint, speed, CONVERT_INCOMING_VALUE(jointInfo.type, value));
+                int result = arm->moveTo(joint, speed, CONVERT_INCOMING_VALUE(jointInfo.type, value));
                 MUTEX_UNLOCK(mutex);
 
-                response["success"] = Json::Value(true);
+                if (result >= 0)
+                    response["success"] = Json::Value(true);
+                else {
+                    response["success"] = Json::Value(false);
+                }
 
             } catch (invalid_argument) {
                 response["success"] = Json::Value(false);
@@ -353,15 +360,33 @@ static void show_usage_and_exit(void) {
 int main(int argc, char *argv[]) {
 
     THREAD arm_thread;
+__debug_enable();
+    RobotArm* arm = NULL;
 
-    SimulatedRobotArm arm;
+    if (argc > 1) {
+        DEBUGMSG("Starting USB driver\n");
+        arm = new SerialPortRobotArm(string(argv[1]));
+    } else {
+        DEBUGMSG("Starting simulation driver\n");
+        arm = new SimulatedRobotArm();
+    }
+
+    if (arm->connect() < 0) {
+        printf("Unable to connect to robot arm \n");
+        return -1;
+    }
+
+    if (arm->startControl() < 0) {
+        printf("Unable to connect to robot arm \n");
+        return -2;
+    }
+
     FilesHandler files_handler;
-    ArmApiHandler arm_handler(&arm);
+    ArmApiHandler arm_handler(arm);
     AppApiHandler app_handler;
 
     Server server;
     server.set_default_handler(&files_handler);
-
     server.append_handler("/api/arm", &arm_handler);
     server.append_handler("/api/app", &app_handler);
 
@@ -381,14 +406,18 @@ int main(int argc, char *argv[]) {
         server.wait(1000);
     }
 
-    
-
     printf("Exiting on signal %d ...", exit_flag);
     fflush(stdout);
     printf("%s\n", " done.");
 
+    if (arm) {
+        arm->stopControl();
+        arm->disconnect();
+        delete arm;
+    }
+
     RELEASE_THREAD(arm_thread);
 
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
