@@ -144,28 +144,12 @@ private:
 	int data_length;
 	
 	unsigned int faktor_pwm; // pošiljamo 16 bitne podatke.... -> vrednosti: 0 do 2^16-1
+	
+#if defined(_WIN32) || defined(_WIN64)
+	HANDLE hSerial;
+#else
     int fd;
-};
-
-
-/*!  \class  TimeOut
-     \brief  This class can manage a timer which is used as a timeout.
-*/
-// Class TimeOut
-class TimeOut{
-public:
-
-    // Constructor
-    TimeOut();
-
-    // Init the timer
-    void                InitTimer();
-
-    // Return the elapsed time since initialization
-    unsigned long int   ElapsedTime_ms();
-
-private:    
-    struct timeval      PreviousTime;
+#endif
 };
 
 
