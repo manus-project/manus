@@ -251,7 +251,7 @@ $(function() {
 
                 var absolute = (parameters.max - parameters.min) * relative + parameters.min;
 
-                $.ajax('/api/arm?command=move&joint=' + id + '&speed=0.5&position=' + absolute);
+                $.ajax('/api/arm?command=move&joint=' + id + '&speed=1&position=' + absolute);
 
             });
 
