@@ -53,7 +53,7 @@ int SimulatedRobotArm::disconnect() {
 
 }
 
-#define MOVE_RESOLUTION_GRIP 0.1
+#define MOVE_RESOLUTION_GRIP 0.001
 #define MOVE_RESOLUTION_TRANSLATION 1
 #define MOVE_RESOLUTION_ROTATION 5
 
@@ -68,7 +68,8 @@ int SimulatedRobotArm::poll() {
         else if (joint_data[i].position - joint_data[i].position_goal < -resolution / 2)
             joint_data[i].position += resolution;
         else
-            joint_data[i].position = joint_data[i].position_goal;    
+            joint_data[i].position = joint_data[i].position_goal; 
+ 
     }
 
     return 0;
@@ -107,7 +108,7 @@ int SimulatedRobotArm::size() {
 int SimulatedRobotArm::moveTo(int joint, float speed, float position) {
 
     if (joint < 0 || joint >= joint_data.size())
-        return false;
+        return -1;
 
     if (joint_info[joint].position_min > position)
         position = joint_info[joint].position_min;
@@ -123,7 +124,7 @@ int SimulatedRobotArm::moveTo(int joint, float speed, float position) {
 int SimulatedRobotArm::move(int joint, float speed) {
 
     if (joint < 0 || joint >= joint_data.size())
-        return false;
+        return -1;
 
     float position = joint_data[joint].position_goal;
 
@@ -169,6 +170,9 @@ int SimulatedRobotArm::getJointData(int joint, JointData &data) {
         return -1;
 
     data = joint_data[joint];
+
+    data.dh_position = (((data.position - joint_info[joint].position_min) / (joint_info[joint].position_max - joint_info[joint].position_min)) * (joint_info[joint].dh_max - joint_info[joint].dh_min)) + joint_info[joint].dh_min;
+    data.dh_goal = (((data.position_goal - joint_info[joint].position_min) / (joint_info[joint].position_max - joint_info[joint].position_min)) * (joint_info[joint].dh_max - joint_info[joint].dh_min)) + joint_info[joint].dh_min;
 
 	return true;
 }
