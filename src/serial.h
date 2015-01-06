@@ -71,6 +71,7 @@ private:
     // ::: Special operation :::
     void flushReceiver();	// Empty the received buffer
     int peek();				// Return the number of bytes in the received buffer
+	int closeConnection();
     
     // ::: Branje in dekodiranje prijetih podatkov :::
 	int dataArrived();  // prevri ali so prispeli novi podatki
@@ -147,6 +148,24 @@ private:
 	
 #if defined(_WIN32) || defined(_WIN64)
 	HANDLE hSerial;
+	COMSTAT com_stat;
+	DWORD dw_errors;
+	//COMMTIMEOUTS    timeouts;
+	class TimeOut {
+	public:
+
+		// Constructor
+		TimeOut();
+
+		// Init the timer
+		void                InitTimer();
+
+		// Return the elapsed time since initialization
+		unsigned long int   ElapsedTime_ms();
+
+	private:    
+		struct timeval      PreviousTime;
+	};
 #else
     int fd;
 #endif

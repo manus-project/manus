@@ -149,7 +149,7 @@ int SerialPortRobotArm::connect(){
 #if defined (_WIN32) || defined( _WIN64)
 
 		// Open serial port
-		hSerial = CreateFileA(  Device,GENERIC_READ | GENERIC_WRITE,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+		hSerial = CreateFileA(con_param.device.c_str() ,GENERIC_READ | GENERIC_WRITE,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
 		if(hSerial==INVALID_HANDLE_VALUE) {
 			if(GetLastError()==ERROR_FILE_NOT_FOUND)
 				return -1;                                                  // Device not found
@@ -162,22 +162,22 @@ int SerialPortRobotArm::connect(){
 		if (!GetCommState(hSerial, &dcbSerialParams))                       // Get the port parameters
 			return -3;                                                      // Error while getting port parameters
 		switch (con_param.baud){                                            // Set the speed (Bauds)
-		case 110  :     dcbSerialParams.BaudRate=CBR_110; break;
-		case 300  :     dcbSerialParams.BaudRate=CBR_300; break;
-		case 600  :     dcbSerialParams.BaudRate=CBR_600; break;
-		case 1200 :     dcbSerialParams.BaudRate=CBR_1200; break;
-		case 2400 :     dcbSerialParams.BaudRate=CBR_2400; break;
-		case 4800 :     dcbSerialParams.BaudRate=CBR_4800; break;
-		case 9600 :     dcbSerialParams.BaudRate=CBR_9600; break;
-		case 14400 :    dcbSerialParams.BaudRate=CBR_14400; break;
-		case 19200 :    dcbSerialParams.BaudRate=CBR_19200; break;
-		case 38400 :    dcbSerialParams.BaudRate=CBR_38400; break;
-		case 56000 :    dcbSerialParams.BaudRate=CBR_56000; break;
-		case 57600 :    dcbSerialParams.BaudRate=CBR_57600; break;
-		case 115200 :   dcbSerialParams.BaudRate=CBR_115200; break;
-		case 128000 :   dcbSerialParams.BaudRate=CBR_128000; break;
-		case 256000 :   dcbSerialParams.BaudRate=CBR_256000; break;
-		default : return -4;
+			case 110  :     dcbSerialParams.BaudRate=CBR_110; break;
+			case 300  :     dcbSerialParams.BaudRate=CBR_300; break;
+			case 600  :     dcbSerialParams.BaudRate=CBR_600; break;
+			case 1200 :     dcbSerialParams.BaudRate=CBR_1200; break;
+			case 2400 :     dcbSerialParams.BaudRate=CBR_2400; break;
+			case 4800 :     dcbSerialParams.BaudRate=CBR_4800; break;
+			case 9600 :     dcbSerialParams.BaudRate=CBR_9600; break;
+			case 14400 :    dcbSerialParams.BaudRate=CBR_14400; break;
+			case 19200 :    dcbSerialParams.BaudRate=CBR_19200; break;
+			case 38400 :    dcbSerialParams.BaudRate=CBR_38400; break;
+			case 56000 :    dcbSerialParams.BaudRate=CBR_56000; break;
+			case 57600 :    dcbSerialParams.BaudRate=CBR_57600; break;
+			case 115200 :   dcbSerialParams.BaudRate=CBR_115200; break;
+			case 128000 :   dcbSerialParams.BaudRate=CBR_128000; break;
+			case 256000 :   dcbSerialParams.BaudRate=CBR_256000; break;
+			default : return -4;
 		}    
 		dcbSerialParams.ByteSize=8;                                         // 8 bit data
 		dcbSerialParams.StopBits=ONESTOPBIT;                                // One stop bit
@@ -185,9 +185,9 @@ int SerialPortRobotArm::connect(){
 		if(!SetCommState(hSerial, &dcbSerialParams))                        // Write the parameters
 			return -5;                                                      // Error while writing
 		
-		if(!SetCommTimeouts(hSerial, &timeouts))                            // Write the parameters
-			return -6;                                                      // Error while writting the parameters
-		return 1;                                                           // Opening successfull
+//		if(!SetCommTimeouts(hSerial, &timeouts))                            // Write the parameters
+//			return -6;                                                      // Error while writting the parameters
+//		return 1;                                                           // Opening successfull
 
 //#endif
 #else
@@ -223,15 +223,24 @@ int SerialPortRobotArm::connect(){
 	    options.c_cc[VTIME]=0;							// Timer unused
 	    options.c_cc[VMIN]=0;							// At least on character before satisfy reading
 	    tcsetattr(fd, TCSANOW, &options);				// Activate the settings
-	    
+#endif
+
 	    // send arm info command to arm and weit for response:
+#if defined(_WIN32) || defined(_WIN64)
+		Sleep(1000);
+#else
 	    sleep(1);
+#endif
 	    for(int q=0; q<5; q++){
 			requestArmInfo(); // replace with dumy write to device
-			sleep(1);
+#if defined(_WIN32) || defined(_WIN64)
+			Sleep(1000);
+#else
+		    sleep(1);
+#endif
 	    	if(requestArmInfo() == 1) break;
 	    	if(q==4){
-	    		close(fd);
+	    		closeConnection();
 				in_state.connection_started = 0;
 	    		return -7; //
 	    	}
@@ -241,17 +250,19 @@ int SerialPortRobotArm::connect(){
 	    	dataArrived();
 	    	if(in_state.connection_started == 1) break;
 	    	if(q==4){
-	    		close(fd);
+	    		closeConnection();
 				in_state.connection_started = 0;
 	    		return -8; // no response
 	    	}
-	    	sleep(1);
+#if defined(_WIN32) || defined(_WIN64)
+			Sleep(1000);
+#else
+			sleep(1);
+#endif
 	    }
-	    // nastavi ostale parametre:
 		setArmParametersDynamic();
 	    return 1;	// Success
-    }
-#endif
+	}
     return 0; // no change
 }
 
@@ -263,13 +274,18 @@ int SerialPortRobotArm::connect(){
 int SerialPortRobotArm::disconnect(){
 	if(con_param.connected == 0) return 0; // no change
 	stopControl();
-#if defined(_WIN32) || defined(_WIN64)
+	closeConnection();
+	con_param.connected = 0;
+	return 1; // success
+}
+
+int SerialPortRobotArm::closeConnection(){
+	#if defined(_WIN32) || defined(_WIN64)
 	CloseHandle(hSerial);
 #else
     close(fd);
 #endif
-	con_param.connected = 0;
-	return 1; // success
+	return 0;
 }
 
 
@@ -308,11 +324,10 @@ char SerialPortRobotArm::writeData(const void *Buffer, const unsigned int NbByte
   */
 char SerialPortRobotArm::readChar(char *pByte){
 #if defined (_WIN32) || defined(_WIN64)
-
     DWORD dwBytesRead = 0;                                                    // Error while writting the parameters
     if(!ReadFile(hSerial,pByte, 1, &dwBytesRead, NULL))                 // Read the byte
         return -2;                                                      // Error while reading the byte
-    if (dwBytesRead==0) return -1;                                       // Return 1 if the timeout is reached
+    if (dwBytesRead==0) return -1;                                       
     return 0;                                                           // Success
 #else
 	switch (read(fd,pByte,1)){	// Try to read a byte on the device
@@ -336,12 +351,12 @@ char SerialPortRobotArm::readChar(char *pByte){
 int SerialPortRobotArm::readData (void *Buffer,unsigned int MaxNbBytes){
 #if defined (_WIN32) || defined(_WIN64)
     DWORD dwBytesRead = 0;
-    timeouts.ReadTotalTimeoutConstant=(DWORD)TimeOut_ms;                // Set the TimeOut
+//    timeouts.ReadTotalTimeoutConstant=(DWORD)TimeOut_ms;                // Set the TimeOut
     //if(!SetCommTimeouts(hSerial, &timeouts))                            // Write the parameters
     //    return -1;                                                      // Error while writting the parameters
     if(!ReadFile(hSerial,Buffer,(DWORD)MaxNbBytes,&dwBytesRead, NULL))  // Read the bytes from the serial device
         return -2;                                                      // Error while reading the byte
-    if (dwBytesRead!=(DWORD)MaxNbBytes) return -1;                       // Return 0 if the timeout is reached
+    if (dwBytesRead!=(DWORD)MaxNbBytes) return -1;                       
     return 0;                                                           // Success
 #else
     unsigned int     NbByteRead=0;
@@ -368,16 +383,27 @@ int SerialPortRobotArm::readData (void *Buffer,unsigned int MaxNbBytes){
 //********************************
 // Empty receiver buffer (UNIX only)
 void SerialPortRobotArm::flushReceiver(){
+#if defined (_WIN32) || defined(_WIN64)
+
+#else
     tcflush(fd,TCIFLUSH);
+#endif
 }
 
 //********************************
 //		Peek
 // Return the number of bytes in the received buffer (UNIX only)
 int SerialPortRobotArm::peek(){
+#if defined (_WIN32) || defined(_WIN64)
+	ClearCommError(hSerial, &dw_errors, &com_stat);
+	// report any error?
+	if( com_stat.cbInQue ) return com_stat.cbInQue;
+	return 0;
+#else
     int Nbytes=0;
     ioctl(fd, FIONREAD, &Nbytes);
     return Nbytes;
+#endif
 }
 
 
@@ -625,11 +651,10 @@ int SerialPortRobotArm::dataArrived(){
 					
 					case 35:	// motor info
                         if (in_state.control_started == 0) break;
-
 						tmp_int = (unsigned int)read_buffer[0]-1;
                         //printf("Motor: %d %d %d \n", tmp_int, in_state.control_started, motor_info.size());
 						motor_info[ tmp_int ].id++;
-						motor_info[ tmp_int ].joint_id = (unsigned int)read_buffer[0]; // hmmm...
+						motor_info[ tmp_int ].joint_id = (unsigned int)read_buffer[0]-1; // hmmm...
 						motor_info[ tmp_int ].position_min = 0.01f * (float)(((unsigned int)read_buffer[1]<<8) + (unsigned int)read_buffer[2]);
 						motor_info[ tmp_int ].position_max = 0.01f * (float)(((unsigned int)read_buffer[3]<<8) + (unsigned int)read_buffer[4]);
 						motor_info[ tmp_int ].limit_voltage = 0.001f * (float)(((unsigned int)read_buffer[5]<<8) + (unsigned int)read_buffer[6]);
@@ -644,7 +669,7 @@ int SerialPortRobotArm::dataArrived(){
 
 						tmp_int = (unsigned int)read_buffer[0]-1;
 						motor_data[ tmp_int ].id++;
-						motor_data[ tmp_int ].joint_id = (unsigned int)read_buffer[0];
+						motor_data[ tmp_int ].joint_id = (unsigned int)read_buffer[0]-1;
 						motor_data[ tmp_int ].position = 0.01f * (float)(((unsigned int)read_buffer[1]<<8) + (unsigned int)read_buffer[2]);
 						//DEBUGMSG( "motor info: %d + %d = %d = %f\n", ((unsigned int)read_buffer[1] << 8), (unsigned int)read_buffer[2], (((unsigned int)read_buffer[1] << 8) + (unsigned int)read_buffer[2]), (float)((((unsigned int)read_buffer[1]) << 8) + (unsigned int)read_buffer[2]) );
 						motor_data[ tmp_int ].position_goal = 0.01f * (float)(((unsigned int)read_buffer[3]<<8) + (unsigned int)read_buffer[4]);
@@ -1027,3 +1052,4 @@ std::string returnErrorDescription(int error){
 	
 	return des;
 }
+
