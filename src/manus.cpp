@@ -35,6 +35,7 @@
     #include <direct.h>  // For chdir()
     #include <winsvc.h>
     #include <shlobj.h>
+    #include <cmath>
 
     #ifndef PATH_MAX
     #define PATH_MAX MAX_PATH
@@ -62,6 +63,10 @@
     #define abs_path(rel, abs, abs_size) realpath((rel), (abs))
 	#define sleep(x) usleep((x) * 1000)
 #endif // _WIN32
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 static int exit_flag;
 
@@ -270,6 +275,7 @@ public:
                 arm->getJointData(i, jointData);
                 JointInfo jointInfo;
                 if (arm->getJointInfo(i, jointInfo) < 0) break;
+
                 positions[i] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointData.dh_position));
                 goals[i] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointData.dh_goal));
             }
