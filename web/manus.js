@@ -7,7 +7,6 @@ $(function() {
 
         canvas = canvas[0];
 
-         // create the scene and setup camera, perspective and viewport
         var scene = new Phoria.Scene();
         scene.camera.position = {x:0.0, y:0.0, z:1.0};
         scene.camera.up = {x:0.0, y:0.0, z:1.0};
@@ -15,10 +14,8 @@ $(function() {
         scene.perspective.aspect = canvas.width / canvas.height;
         scene.viewport.width = canvas.width;
         scene.viewport.height = canvas.height;
-        // create a canvas renderer
         var renderer = new Phoria.CanvasRenderer(canvas);
 
-        // add a grid to help visualise camera position etc.
         var plane = Phoria.Util.generateTesselatedPlane(8,8,0,20);
         
         scene.graph.push(Phoria.Entity.create({
@@ -257,32 +254,6 @@ $(function() {
 
             container.append(status);
 
-/*
-            container.append($('<button type="button" class="btn btn-primary">&lt; &lt;</button>').click(function() {
-
-                $.ajax('/api/arm?command=move&joint=' + id + '&position=' + (value - 0.5));
-                
-            }));
-
-            container.append($('<button type="button" class="btn btn-primary">&lt;</button>').click(function() {
-
-                $.ajax('/api/arm?command=move&joint=' + id + '&position=' + (value - 0.1));
-                
-            }));
-
-            container.append(status);
-
-            container.append($('<button type="button" class="btn btn-primary">&gt;</button>').click(function() {
-                
-                $.ajax('/api/arm?command=move&joint=' + id + '&position=' + (value + 0.1));
-
-            }));
-
-            container.append($('<button type="button" class="btn btn-primary">&gt; &gt;</button>').click(function() {
-                
-                $.ajax('/api/arm?command=move&joint=' + id + '&position=' + (value + 0.5));
-
-            }));*/
             break;
         }
         case "gripper": {
@@ -300,7 +271,6 @@ $(function() {
         }
 
         }
-
 
         $(parent).append(container);
 
@@ -397,11 +367,5 @@ $(function() {
         $('#appbuild').text(data.build);
 
     });
-
-/*
-    createJointController(container, 0);
-    createJointController(container, 1);
-    createJointController(container, 2);
-*/
 
 });
