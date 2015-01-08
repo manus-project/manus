@@ -1,5 +1,14 @@
 
+.header {
+    margin: 20px 0 50px 0;
+}
+
+.header .emergency {
+    float: right;
+}
+
 .joint {
+    clear: both;
     display: block;
     font-size: 120%;
     margin: 5px;
@@ -14,17 +23,17 @@
 
 .joint .information {
     display: inline-block;
-    width: 160px;
+    width: 40%;
 }
 
 .joint .information .title {
     display: inline-block;
-    width: 200px;
+    width: 100%;
 }
 
 .joint .information .type {
     display: inline-block;
-    width: 200px;
+    width: 100%;
     color: gray;
     font-size: 80%
 }
@@ -32,7 +41,7 @@
 .joint .status {
     display: inline-block;
     position: relative;
-    width: 250px;
+    width: 59%;
     height: 20px;
     border: 1px gray solid;
     text-align: center;

@@ -258,11 +258,10 @@ $(function() {
         }
         case "gripper": {
 
-            status = $('<button type="button" class="btn">&gt;</button>').click(function() {
-                if (value > 0.5) value = 0;
-                else value = 1;                
-
-                $.ajax('/api/arm?command=move&joint=' + id + '&position=' + value);
+            status = $('<button type="button" class="btn">Grip</button>').click(function() {
+                var goal = 1;     
+                if ($(this).text() == "Release") goal = 0;
+                $.ajax('/api/arm?command=move&joint=' + id + '&speed=1&position=' + goal);
 
             });
 
@@ -296,7 +295,7 @@ $(function() {
                 break;
             }
             case "gripper": {
-
+console.log(value);
                 if (value < 1) {
                     status.removeClass("btn-success").addClass("btn-danger");
                     status.text("Grip");
@@ -315,6 +314,7 @@ $(function() {
 
     
     var joints = [];
+    var emergency;
     var visualizer;
 
     function queryStatus() {
@@ -326,6 +326,14 @@ $(function() {
             }
 
             visualizer(data);
+
+            if (data["state"] == "active") {
+                emergency.removeClass("btn-success").addClass("btn-danger");
+                emergency.text("Stop");
+            } else {
+                emergency.removeClass("btn-danger").addClass("btn-success");
+                emergency.text("Start");
+            }
 
             setTimeout(queryStatus, 500);
 
@@ -345,7 +353,19 @@ $(function() {
 
         var sidebar = $('<div class="col-lg-5">').appendTo(container);
 
-        sidebar.append($('<div class="information">').text("Version: " + data.version.toFixed(2)));
+        var header = $('<div class="header">').appendTo(sidebar);
+
+        emergency = $('<button type="button" class="btn emergency">Start</button>').click(function() {
+            var command = "stop";
+            if ($(this).text() == "Start") command = "start";
+            $.ajax('/api/arm?command=' + command);
+
+        });
+
+        header.append(emergency);
+
+        header.append($('<div class="information">').text("Version: " + data.version.toFixed(2)));
+
 
         for (var v in data["joints"]) {
             joints[v] = createJointController(sidebar, parseInt(v), data["joints"][v]);

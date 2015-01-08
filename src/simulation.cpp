@@ -53,7 +53,7 @@ int SimulatedRobotArm::disconnect() {
 
 }
 
-#define MOVE_RESOLUTION_GRIP 0.001
+#define MOVE_RESOLUTION_GRIP 0.1
 #define MOVE_RESOLUTION_TRANSLATION 1
 #define MOVE_RESOLUTION_ROTATION 5
 
@@ -80,10 +80,18 @@ int SimulatedRobotArm::calibrate(int joint) {
 }
 
 int SimulatedRobotArm::startControl() {
+    arm_data.state = ACTIVE;
+
     return 0;
 }
 
 int SimulatedRobotArm::stopControl() {
+    arm_data.state = PASSIVE;
+
+    for (int i = 0; i < joint_data.size(); i++) {
+        joint_data[i].position_goal = joint_data[i].position; 
+    }
+
 	return 0;
 }
 
@@ -110,6 +118,9 @@ int SimulatedRobotArm::moveTo(int joint, float speed, float position) {
     if (joint < 0 || joint >= joint_data.size())
         return -1;
 
+    if (arm_data.state != ACTIVE)
+        return -2;
+
     if (joint_info[joint].position_min > position)
         position = joint_info[joint].position_min;
 
@@ -125,6 +136,9 @@ int SimulatedRobotArm::move(int joint, float speed) {
 
     if (joint < 0 || joint >= joint_data.size())
         return -1;
+
+    if (arm_data.state != ACTIVE)
+        return -2;
 
     float position = joint_data[joint].position_goal;
 

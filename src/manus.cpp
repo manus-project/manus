@@ -30,6 +30,8 @@
 #define APPLICATION_NAME "Manus"
 #define APPLICATION_VERSION "0.1"
 
+// http://www.codeproject.com/Articles/74/Adding-Icons-to-the-System-Tray
+
 #ifdef _WIN32
     #include <windows.h>
     #include <direct.h>  // For chdir()
@@ -311,6 +313,21 @@ public:
             } catch (invalid_argument) {
                 response["success"] = Json::Value(false);
             }
+
+        } else if (command == "start") {
+            MUTEX_LOCK(mutex);
+            int result = arm->startControl();
+            MUTEX_UNLOCK(mutex);
+
+            response["success"] = Json::Value(result == 0);
+
+        } else if (command == "stop") {
+
+            MUTEX_LOCK(mutex);
+            int result = arm->stopControl();
+            MUTEX_UNLOCK(mutex);
+
+            response["success"] = Json::Value(result == 0);
 
         } else {
             response["success"] = Json::Value(false);
