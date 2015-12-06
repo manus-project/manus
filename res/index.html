@@ -8,7 +8,10 @@
     <script src="jquery.js"></script>  
     <script src="bootstrap.min.js"></script>  
     <script src="glmatrix.min.js"></script> 
-    <script src="phoria.min.js"></script>  
+    <script src="phoria.min.js"></script>
+    <script src="debug.js"></script>
+    <script src="widgets.js"></script>
+    <script src="world.js"></script>
     <script src="manus.js"></script>  
   </head>
   <body>
@@ -22,41 +25,36 @@
         </button>
         <span class="navbar-brand">Manus</span>  
         <ul class="nav navbar-nav nav-collapse" id="menu">
-          <li id="menu-arm" class="active"><a href="#arm" data-toggle="tab"><i class="icon-user"> </i>Arm</a></li>          
+          <li id="menu-settings"><a href="#settings" data-toggle="tab"><i class="icon-wrench"> </i>Settings</a></li>        
           <li id="menu-about"><a href="#about" data-toggle="tab"><i class="icon-wrench"> </i>About</a></li>
         </ul>
       </div>
     </div>
 
     <div id="container" class="container">
+        <div id="debug"></div>
+        <div class="tab-content" id="tabs">
 
-      <div id="settings" >
 
-        <div class="tab-content">
-          <div class="tab-pane active" id="arm">
+          <div class="tab-pane" id="settings">
+              <h1><span id="appname">Settings</span></h1>
+              <ul>
+                <li><a href="surface.pdf">Download working surface template</a></li>
+              </ul>
 
           </div>
-          <div class="tab-pane" id="about">
+          <div class="tab-pane active" id="about">
             <div class="jumbotron">
               <h1><span id="appname">Manus</span></h1>
               <p>Version: <span id="appversion"></span> built on: <span id="appbuild"></span></p>
-              <p>A simple web server that enables access to robotic arm and web camera.</p>
+              <p>Manus is an educational application that enables access to robotic arm and web camera through a local web server. It was written as a support software for a course on robotics and computer vision.</p>
               <p><a class="btn btn-primary btn-lg" href="https://github.com/lukacu/manus" role="button">Github</a></p>
-            </div>
-            
-
+          </div>
 
           </div>
 
-        </div>
-
-      </div>
-    </div> 
-
-  <script>
-
-
-  </script>
+     </div>
+   </div> 
 
   </body>
 </html>

@@ -106,8 +106,8 @@ int SerialPortRobotArm::setArmParametersDynamic() {
     motor_info[0] = createJointInfo(0, ROTATION, 0, 90, 65, 0, -135, 135);
     motor_info[1] = createJointInfo(1, ROTATION, 120, 0, 0, 90, 0, 180);
     motor_info[2] = createJointInfo(2, ROTATION, -90, 0, 0, 132, -150, 150);
-    motor_info[3] = createJointInfo(3, ROTATION, 0, 0, 0, 70, -60, 60);
-    motor_info[4] = createJointInfo(4, GRIPPER, 0, -90, 0, 60, 0, 1);
+    motor_info[3] = createJointInfo(3, ROTATION, 0, 0, 0, 60, -60, 60);
+    motor_info[4] = createJointInfo(4, GRIPPER, 0, -90, 0, 20, 0, 1);
 
 	for( int q = 0; q < motor_info.size(); q++ ){
 		last_id.motor_info_id[q] = 0;
@@ -651,10 +651,10 @@ int SerialPortRobotArm::dataArrived(){
 					
 					case 35:	// motor info
                         if (in_state.control_started == 0) break;
-						tmp_int = (unsigned int)read_buffer[0]-1;
+						tmp_int = (unsigned int)read_buffer[0];
                         //printf("Motor: %d %d %d \n", tmp_int, in_state.control_started, motor_info.size());
 						motor_info[ tmp_int ].id++;
-						motor_info[ tmp_int ].joint_id = (unsigned int)read_buffer[0]-1; // hmmm...
+						motor_info[ tmp_int ].joint_id = (unsigned int)read_buffer[0]; // hmmm...
 						motor_info[ tmp_int ].position_min = 0.01f * (float)(((unsigned int)read_buffer[1]<<8) + (unsigned int)read_buffer[2]);
 						motor_info[ tmp_int ].position_max = 0.01f * (float)(((unsigned int)read_buffer[3]<<8) + (unsigned int)read_buffer[4]);
 						motor_info[ tmp_int ].limit_voltage = 0.001f * (float)(((unsigned int)read_buffer[5]<<8) + (unsigned int)read_buffer[6]);
@@ -667,9 +667,9 @@ int SerialPortRobotArm::dataArrived(){
 					case 36:	// motor data
                         if (in_state.control_started == 0) break;
 
-						tmp_int = (unsigned int)read_buffer[0]-1;
+						tmp_int = (unsigned int)read_buffer[0];
 						motor_data[ tmp_int ].id++;
-						motor_data[ tmp_int ].joint_id = (unsigned int)read_buffer[0]-1;
+						motor_data[ tmp_int ].joint_id = (unsigned int)read_buffer[0];
 						motor_data[ tmp_int ].position = 0.01f * (float)(((unsigned int)read_buffer[1]<<8) + (unsigned int)read_buffer[2]);
 						//DEBUGMSG( "motor info: %d + %d = %d = %f\n", ((unsigned int)read_buffer[1] << 8), (unsigned int)read_buffer[2], (((unsigned int)read_buffer[1] << 8) + (unsigned int)read_buffer[2]), (float)((((unsigned int)read_buffer[1]) << 8) + (unsigned int)read_buffer[2]) );
 						motor_data[ tmp_int ].position_goal = 0.01f * (float)(((unsigned int)read_buffer[3]<<8) + (unsigned int)read_buffer[4]);
@@ -749,7 +749,7 @@ int SerialPortRobotArm::getArmData(ArmData &data){
 	if( !in_state.valid_arm_data ) return -1; 
 	
 	data.id = arm_data.id;
-	///data.state = arm_data.state;
+	data.state = arm_data.state;
 	//data.hand_sensor = arm_data.hand_sensor;
 	data.input_voltage = arm_data.input_voltage;
 	data.motors_voltage = arm_data.motors_voltage;
@@ -1021,9 +1021,8 @@ int SerialPortRobotArm::rest(){
 }
 
 
-int SerialPortRobotArm::poll() {
-    dataArrived();
-    return 0;
+bool SerialPortRobotArm::poll() {
+    return dataArrived() >= 0;
 }
 
 int SerialPortRobotArm::size() {

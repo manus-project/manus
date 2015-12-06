@@ -7,7 +7,9 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <utility>
+#include <memory>
 
 #include "mongoose.h"
 
@@ -42,14 +44,40 @@ public:
     string get_uri();
 
 protected:
-    Request(Handler* handler, struct mg_connection* connection, const string& uri);
-    Handler* handler;
+    Request(shared_ptr<Handler> handler, struct mg_connection* connection, const string& uri, map<string, string> matches);
+    shared_ptr<Handler> handler;
 private:
+
+    map<string, string> variables;
 
     struct mg_connection* connection;
     bool finished;
 
     string uri;
+};
+
+class Matcher {
+public:
+    Matcher(string tpl);
+    ~Matcher();
+
+    virtual bool matches(const string& uri, map<string, string>& variables) = 0;
+
+protected:
+    string tpl;
+
+};
+
+class PrefixMatcher : public Matcher {
+public:
+    PrefixMatcher(string tpl, string varname = "suffix");
+    ~PrefixMatcher();
+
+    virtual bool matches(const string& uri, map<string, string>& variables);
+
+private:
+
+    string varname;
 };
 
 class Handler {
@@ -75,18 +103,18 @@ public:
 
     void wait(int timeout);
 
-    void append_handler(const string& url, Handler* handler);
-    void prepend_handler(const string& url, Handler* handler);
+    void append_handler(shared_ptr<Matcher> matcher, shared_ptr<Handler> handler);
+    void prepend_handler(shared_ptr<Matcher> matcher, shared_ptr<Handler> handler);
 
-    void set_default_handler(Handler* handler);
+    void set_default_handler(shared_ptr<Handler> handler);
 
 private:
 
     static int master_event_handler(struct mg_connection *conn, enum mg_event ev);
     int event_handler(struct mg_connection *conn, enum mg_event ev);
     
-    vector<pair<string, Handler*> > handlers;
-    Handler* default_handler;
+    vector<pair<shared_ptr<Matcher>, shared_ptr<Handler> > > handlers;
+    shared_ptr<Handler> default_handler;
 
     struct mg_server *server;
 

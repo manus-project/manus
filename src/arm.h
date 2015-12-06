@@ -4,6 +4,8 @@
 
 #include <string>
 #include <vector>
+#include "threads.h"
+#include "server.h"
 
 using namespace std;
 
@@ -64,7 +66,7 @@ public:
 	
     virtual int connect() = 0;
     virtual int disconnect() = 0;
-	virtual int poll() = 0;
+	virtual bool poll() = 0;
 	
 	virtual bool isConnected() = 0;
 
@@ -93,6 +95,23 @@ string jointTypeToString(JointType type);
 JointInfo createJointInfo(int id, JointType type, float dh_theta, float dh_alpha, float dh_d, float dh_a, float min, float max);
 
 JointData createJointData(int id, float position);
+
+class ArmApiHandler : public Handler {
+public:
+    ArmApiHandler(RobotArm* arm);
+    ~ArmApiHandler();
+
+    virtual void handle(Request& request);
+
+    bool poll();
+
+private:
+
+    THREAD thread;
+    THREAD_MUTEX mutex;
+    RobotArm* arm;
+
+};
 
 #endif
 

@@ -79,12 +79,7 @@ static int path_exists(const char *path, int is_dir) {
                           ((S_ISDIR(st.st_mode) ? 1 : 0) == is_dir));
 }
 
-Request::Request(Handler* handler, struct mg_connection* connection, const string& uri) : handler(handler), connection(connection), finished(false), uri(uri) {
-    /*
-    for (unsigned i = 0; i < matches.size(); i++) {
-        uri_parts.push_back(matches[i].str());
-        cout << i << "  " << matches[i].str() << endl;
-    }*/
+Request::Request(shared_ptr<Handler> handler, struct mg_connection* connection, const string& uri, map<string, string> matches) : handler(handler), connection(connection), finished(false), uri(uri), variables(matches) {
 
 }
 
@@ -120,6 +115,11 @@ void Request::send_data(const string& str) {
 
 string Request::get_variable(const string& name) const {
 
+    map<string, string>::const_iterator it;
+    it = variables.find(name);
+    if (it != variables.end())
+        return variables.at(name);
+
     size_t buffer_length = 1024;
     char* buffer = (char*) malloc(buffer_length);
 
@@ -138,6 +138,11 @@ string Request::get_variable(const string& name) const {
 
 bool Request::has_variable(const string& name) const {
 
+    map<string, string>::const_iterator it;
+    it = variables.find(name);
+    if (it != variables.end())
+        return true;
+
     char buffer[1];
 
     int result = mg_get_var(connection, name.c_str(), buffer, 0);
@@ -145,7 +150,6 @@ bool Request::has_variable(const string& name) const {
     return result != -1;
     
 }
-
 
 void Request::finish() {
     finished = true;
@@ -157,6 +161,32 @@ bool Request::is_finished() {
 
 string Request::get_uri() {
     return uri;
+}
+
+Matcher::Matcher(string tpl) : tpl(tpl) {}
+Matcher::~Matcher() {}
+
+bool Matcher::matches(const string& uri, map<string, string>& variables) {
+
+    return uri == tpl;
+}
+
+PrefixMatcher::PrefixMatcher(string tpl, string varname) : Matcher(tpl), varname(varname) {}
+PrefixMatcher::~PrefixMatcher() {}
+
+bool PrefixMatcher::matches(const string& uri, map<string, string>& variables) {
+
+    if (tpl.size() > uri.size())
+        return false;
+
+
+    if (uri.compare(0, tpl.size(), tpl) == 0) {
+        variables[varname] = uri.substr(tpl.size());
+        return true;
+    }
+
+    return false;
+
 }
 
 Handler::Handler() {
@@ -208,16 +238,14 @@ int Server::event_handler(struct mg_connection *conn, enum mg_event ev) {
 
         string uri(conn->uri);
 
-        Handler* handler = default_handler;
+        shared_ptr<Handler> handler = default_handler;
 
-        for (std::vector<pair<string, Handler*> >::iterator it = handlers.begin() ; it != handlers.end(); ++it) {
+        map<string, string> matches;
 
-            //std::cmatch cm;
+        for (std::vector<pair<shared_ptr<Matcher>, shared_ptr<Handler> > >::iterator it = handlers.begin() ; it != handlers.end(); ++it) {
+            matches.clear();
 
-            //if (!std::regex_match (conn->uri, cm, (*it).first))
-            //    continue;
-
-            if ((*it).first != uri)
+            if (!(*it).first->matches(conn->uri, matches))
                 continue;
 
             handler = (*it).second;
@@ -227,7 +255,7 @@ int Server::event_handler(struct mg_connection *conn, enum mg_event ev) {
 
         if (handler) {
 
-            request = new Request(handler, conn, uri);
+            request = new Request(handler, conn, uri, matches);
             request->handler->open(*request);
             conn->connection_param = request;
 
@@ -319,18 +347,18 @@ int Server::get_port() {
 }
 
 
-void Server::append_handler(const string& uri, Handler* handler) {
+void Server::append_handler(shared_ptr<Matcher> matcher, shared_ptr<Handler> handler) {
 
-    handlers.push_back(std::make_pair(uri, handler));
+    handlers.push_back(std::make_pair(matcher, handler));
 }
 
-void Server::prepend_handler(const string& uri, Handler* handler) {
+void Server::prepend_handler(shared_ptr<Matcher> matcher, shared_ptr<Handler> handler) {
 
-    handlers.insert (handlers.begin(), std::make_pair(uri, handler));
+    handlers.insert (handlers.begin(), std::make_pair(matcher, handler));
 
 }
 
-void Server::set_default_handler(Handler* handler) {
+void Server::set_default_handler(shared_ptr<Handler> handler) {
 
     default_handler = handler;
 

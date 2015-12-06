@@ -17,10 +17,10 @@ SimulatedRobotArm::SimulatedRobotArm() {
     joint_info.push_back(createJointInfo(2, ROTATION, -90, 0, 0, 132, -110, 110));
     joint_data.push_back(createJointData(2, -90));
 
-    joint_info.push_back(createJointInfo(3, ROTATION, 0, 0, 0, 70, -70, 70));
+    joint_info.push_back(createJointInfo(3, ROTATION, 0, 0, 0, 60, -70, 70));
     joint_data.push_back(createJointData(3, -70));
 
-    joint_info.push_back(createJointInfo(4, GRIPPER, 0, -90, 0, 60, 0, 1));
+    joint_info.push_back(createJointInfo(4, GRIPPER, 0, -90, 0, 20, 0, 1));
     joint_data.push_back(createJointData(4, 0));
 
     arm_info.joints = joint_info.size();
@@ -33,7 +33,7 @@ SimulatedRobotArm::~SimulatedRobotArm() {
 
 bool SimulatedRobotArm::isConnected() {
 
-    return arm_data.state == CONNECTED;
+    return arm_data.state != UNKNOWN;
 
 }
 
@@ -57,7 +57,9 @@ int SimulatedRobotArm::disconnect() {
 #define MOVE_RESOLUTION_TRANSLATION 1
 #define MOVE_RESOLUTION_ROTATION 5
 
-int SimulatedRobotArm::poll() {
+bool SimulatedRobotArm::poll() {
+
+    if (!isConnected()) return false;
 
     for (int i = 0; i < joint_data.size(); i++) {
         float resolution = joint_info[i].type == ROTATION ? 
@@ -72,7 +74,7 @@ int SimulatedRobotArm::poll() {
  
     }
 
-    return 0;
+    return true;
 }
 
 int SimulatedRobotArm::calibrate(int joint) {

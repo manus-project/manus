@@ -13,7 +13,7 @@ public:
 	
     virtual int connect();
     virtual int disconnect();
-	virtual int poll();
+	virtual bool poll();
 
 	virtual int calibrate(int joint = -1);
 	virtual int startControl();

@@ -24,7 +24,8 @@
 
 #include <string>
 #include <vector>
-#include <arm.h>
+
+#include "arm.h"
 
 class SerialPortRobotArm : public RobotArm {
 public:
@@ -33,7 +34,7 @@ public:
 	
 	virtual int connect();						// connect to device
     virtual int disconnect();					// Close the current device
-	virtual int poll();
+	virtual bool poll();
 	virtual bool isConnected();
 	string getDevice();
     int getBaudRate();
