@@ -14,7 +14,7 @@ $(function() {
             }
 
             arm.update(data["joints"]);
-$("#debug").text(data["state"]);
+
             if (data["state"] == "active") {
                 emergency.removeClass("btn-success").addClass("btn-danger");
                 emergency.text("Stop");
@@ -74,7 +74,7 @@ $("#debug").text(data["state"]);
             return false;
             })));
 
-    }).error(function () {});
+    }).fail(function () {});
 
     $.ajax('/api/arm/describe').done(function(data) {
 
