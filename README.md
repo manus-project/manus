@@ -8,7 +8,7 @@ The project is still work-in-progress and is evolving. Please report any bugs or
 Compiling
 ---------
 
-You will need a modern C++ comppiler (that supports C++0x), OpenCV, and [https://github.com/lukacu/rescue](Rescue compiler) to build Manus. The code is compiled using CMake.
+You will need a modern C++ comppiler (that supports C++0x), OpenCV, and [Rescue compiler](https://github.com/lukacu/rescue) to build Manus. The code is compiled using CMake.
 
  * Install CMake and OpenCV
  * Download Rescue source code and compile it
