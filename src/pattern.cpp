@@ -16,7 +16,7 @@ using namespace std;
 
 namespace manus {
 
-Pattern::Pattern(int id, double size, const string& filename, Mat offset): id(id), size(size), filename(filename), offset(offset) {
+Pattern::Pattern(int id, float size, const string& filename, Mat offset): id(id), size(size), filename(filename), offset(offset) {
 
     char* buffer;
     size_t buffer_size;
@@ -24,7 +24,7 @@ Pattern::Pattern(int id, double size, const string& filename, Mat offset): id(id
     if (!embedded_copy_resource(filename.c_str(), &buffer, &buffer_size))
         throw runtime_error("Unable to load image");
 
-    _InputArray data(buffer, buffer_size);
+    _InputArray data(buffer, (int)buffer_size);
 
     Mat img = imdecode(data, CV_LOAD_IMAGE_GRAYSCALE);
 
@@ -62,7 +62,7 @@ int Pattern::getIdentifier() {
     return id;
 }
 
-double Pattern::getSize() {
+float Pattern::getSize() {
     return size;
 }
 
@@ -119,7 +119,7 @@ double Pattern::match(const Mat& src, int& orientation) {
 }
 
 
-PatternDetection::PatternDetection(int id, double size, const Mat& rotVec, const Mat& transVec, double confidence, vector<Point2f> corners) : id(id), size(size), confidence(confidence), rotVec(rotVec), transVec(transVec) {
+PatternDetection::PatternDetection(int id, float size, const Mat& rotVec, const Mat& transVec, double confidence, vector<Point2f> corners) : id(id), size(size), confidence(confidence), rotVec(rotVec), transVec(transVec) {
 
 	orientation = -1;
     this->corners[0] = corners.at(0);
@@ -147,7 +147,7 @@ Point2f PatternDetection::getCorner(int i)
     return corners[i];
 }
 
-double PatternDetection::getSize()
+float PatternDetection::getSize()
 {
     return size;
 }
@@ -196,7 +196,7 @@ int PatternDetector::loadPattern(const char* filename, double size) {
 
     library.push_back(make_shared<Pattern>(library.size(), size, filename));
 	
-    return library.size()-1;
+    return (int) (library.size()-1);
 }
 
 
@@ -375,9 +375,8 @@ int PatternDetector::identifyPattern(const Mat& src, double& confidence, int& or
 
 }
 
-void PatternDetector::calculateExtrinsics(const double size, const Mat& cameraMatrix, const Mat& distortions, Mat& rotVec, Mat& transVec, const vector<Point2f>& imagePoints)
+void PatternDetector::calculateExtrinsics(const float size, const Mat& cameraMatrix, const Mat& distortions, Mat& rotVec, Mat& transVec, const vector<Point2f>& imagePoints)
 {
-
 	//3D points in pattern coordinate system
     vector<Point3f> objectPoints;
     objectPoints.push_back(Point3f(0, 0, 0));
@@ -389,8 +388,6 @@ void PatternDetector::calculateExtrinsics(const double size, const Mat& cameraMa
     rotVec.convertTo(rotVec, CV_32F);
     transVec.convertTo(transVec, CV_32F);
 
-	//find extrinsic parameters
-	//cvFindExtrinsicCameraParams2(&objectPts, &imagePts, &intrinsics, &distCoeff, &rot, &tra);
 }
 
 

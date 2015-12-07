@@ -69,13 +69,18 @@ public:
 
     virtual void handle(Request& request) {
         
-        const char* name = (request.get_uri() == "/") ? "index.html" : &(request.get_uri().c_str()[1]);
+        string name;
+		
+		if (request.get_uri() == "/") 
+			name = "index.html";
+		else
+			name = request.get_uri().substr(1);
 
-        if (embedded_has_resource(name)) {
+		if (embedded_has_resource(name.c_str())) {
             request.set_status(200);
             request.set_header("Cache-Control", "max-age=0, post-check=0, pre-check=0, no-store, no-cache, must-revalidate");
             DEBUGMSG("Serving %s\n", name);
-            embedded_get_resource(name, &FilesHandler::serve_data, &request);
+            embedded_get_resource(name.c_str(), &FilesHandler::serve_data, &request);
         } else {
             DEBUGMSG("Not found %s\n", request.get_uri().c_str());
             request.set_status(404);
@@ -181,8 +186,6 @@ public:
 };
 
 static void show_usage_and_exit(void) {
-  const char **names;
-  int i;
 
   fprintf(stderr, "%s version %s (c) ViCoS Lab, built on %s\n",
           APPLICATION_NAME, APPLICATION_VERSION, __DATE__);

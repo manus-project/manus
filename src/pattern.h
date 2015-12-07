@@ -19,20 +19,20 @@ namespace manus {
 class Pattern
 {
     public:
-  		Pattern(int id, double size, const string& filename, Mat offset = cv::Mat::eye(3, 3, CV_32F));
+  		Pattern(int id, float size, const string& filename, Mat offset = cv::Mat::eye(3, 3, CV_32F));
 
 		~Pattern(){};      
 
         int getIdentifier();
 
-        double getSize();
+        float getSize();
 
         double match(const Mat& src, int& orientation);
 
     private:
 
         int id;
-        double size;
+        float size;
         string filename;
         std::vector<cv::Mat> markers;
         cv::Mat offset;
@@ -43,7 +43,7 @@ class Pattern
 class PatternDetection
 {
 	public:
-		PatternDetection(int id, double size, const Mat& rotVec, const Mat& transVec, double confidence, vector<Point2f> corners);
+		PatternDetection(int id, float size, const Mat& rotVec, const Mat& transVec, double confidence, vector<Point2f> corners);
 
 		~PatternDetection() {};
 		
@@ -56,7 +56,7 @@ class PatternDetection
 
         double getConfidence();
 
-        double getSize();
+        float getSize();
 
         Point2f getCorner(int i);
 
@@ -64,7 +64,7 @@ private:
 
 		int id;
 		int orientation;//{0,1,2,3}
-		double size; //in milimeters
+		float size; //in milimeters
 		double confidence;//min: -1, max: 1
 		Mat rotVec, transVec;
         Point2f corners[4];
@@ -89,9 +89,7 @@ public:
 private:
 
 	//solves the exterior orientation problem between patten and camera
-	void calculateExtrinsics(const double size, const Mat& cameraMatrix, const Mat& distortions, Mat& rotVec, Mat& transVec, const vector<Point2f>& vertices);
-
-	void calculateExtrinsicsOld(const double size, const Mat& cameraMatrix, const Mat& distortions, Mat& rotVec, Mat& transVec, const vector<Point2f>& vertices);
+	void calculateExtrinsics(const float size, const Mat& cameraMatrix, const Mat& distortions, Mat& rotVec, Mat& transVec, const vector<Point2f>& vertices);
 
     std::vector<shared_ptr<Pattern> > library;
 

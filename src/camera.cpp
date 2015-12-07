@@ -61,7 +61,7 @@ THREAD_CALLBACK(camera_callback_function, handler) {
 
 CameraHandler::CameraHandler(int id) : device(NULL) {
 
-    Matx44f rotate = translateMatrix(-25, -25, 0) * rotateMatrix(0, 0, M_PI) * translateMatrix(25, 25, 0);
+    Matx44f rotate = translateMatrix(-25, -25, 0) * rotateMatrix(0, 0, (float) M_PI) * translateMatrix(25, 25, 0);
 
     detector.loadPattern("marker1.png", 50);
     pattern_offsets.push_back(rotate * translateMatrix(-130, -190, 0));
@@ -143,7 +143,7 @@ void CameraHandler::handle(Request& request) {
                 request.set_status(200); 
                 request.set_header("Content-Type", "image/jpeg");
                 request.set_header("Cache-Control", "max-age=0, post-check=0, pre-check=0, no-store, no-cache, must-revalidate");
-                request.send_data(&(buffer[0]), buffer.size());
+                request.send_data(&(buffer[0]), (int) buffer.size());
             } else {
                 request.set_status(404); 
                 request.send_data("Not found");
@@ -327,7 +327,7 @@ bool CameraHandler::localize_camera(vector<PatternDetection> detections)
         if (id >= pattern_offsets.size())
             continue;
 
-        float size = detections.at(i).getSize();
+        float size = (float) detections.at(i).getSize();
 
         Matx44f transform =  pattern_offsets.at(id);
 
