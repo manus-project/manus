@@ -79,7 +79,7 @@ public:
 		if (embedded_has_resource(name.c_str())) {
             request.set_status(200);
             request.set_header("Cache-Control", "max-age=0, post-check=0, pre-check=0, no-store, no-cache, must-revalidate");
-            DEBUGMSG("Serving %s\n", name);
+            DEBUGMSG("Serving %s\n", name.c_str());
             embedded_get_resource(name.c_str(), &FilesHandler::serve_data, &request);
         } else {
             DEBUGMSG("Not found %s\n", request.get_uri().c_str());
