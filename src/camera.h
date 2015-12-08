@@ -41,8 +41,10 @@ private:
     cv::Mat frame;
 
     THREAD_MUTEX camera_mutex;
-
     THREAD camera_thread;
+
+    unsigned long frame_counter;
+
 
 };
 

@@ -59,7 +59,7 @@ THREAD_CALLBACK(camera_callback_function, handler) {
 	return NULL;
 }
 
-CameraHandler::CameraHandler(int id) : device(NULL) {
+CameraHandler::CameraHandler(int id) : device(NULL), frame_counter(0) {
 
     Matx44f rotate = translateMatrix(-25, -25, 0) * rotateMatrix(0, 0, (float) M_PI) * translateMatrix(25, 25, 0);
 
@@ -272,31 +272,41 @@ bool CameraHandler::capture() {
 
     if (!device) return false;
 
-    MUTEX_UNLOCK(camera_mutex);
-
     Mat temp;
     *device >> temp; 
+    frame_counter++;
 
-    vector<PatternDetection> detectedPatterns;
+    if (temp.empty()) {
+        if (frame_counter % 100 == 0) {
+            DEBUGMSG("Unable to retrieve image.");
+        }
+        return false;
+    }
 
-    // Process
-    detector.detect(temp, intrinsics, distortion, detectedPatterns); 
+    MUTEX_UNLOCK(camera_mutex);
 
-	/*for (unsigned int i =0; i<detectedPatterns.size(); i++) {
-		detectedPatterns.at(i).draw(temp, intrinsics, distortion);
-	}*/
+    if (frame_counter % 10 == 0) {
+        vector<PatternDetection> detectedPatterns;
+        detector.detect(temp, intrinsics, distortion, detectedPatterns); 
 
-    MUTEX_LOCK(camera_mutex);
+	    /*for (unsigned int i =0; i<detectedPatterns.size(); i++) {
+		    detectedPatterns.at(i).draw(temp, intrinsics, distortion);
+	    }*/
 
-    if (detectedPatterns.size() > 0) {
+        MUTEX_LOCK(camera_mutex);
 
-        localize_camera(detectedPatterns);
+        if (detectedPatterns.size() > 0) {
+
+            localize_camera(detectedPatterns);
+
+        }
+
+        MUTEX_UNLOCK(camera_mutex);
 
     }
 
-
-    frame = temp;
-
+    MUTEX_LOCK(camera_mutex);
+    temp.copyTo(frame);
     MUTEX_UNLOCK(camera_mutex);
 
     return true;
