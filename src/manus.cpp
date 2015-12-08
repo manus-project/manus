@@ -32,8 +32,11 @@
 using namespace manus;
 
 #define APPLICATION_NAME "Manus"
-#define APPLICATION_VERSION "0.1"
 #define APPLICATION_OPTIONS "hdc:a:"
+
+#ifndef APPLICATION_VERSION
+#define APPLICATION_VERSION "dev"
+#endif
 
 
 // http://www.codeproject.com/Articles/74/Adding-Icons-to-the-System-Tray
