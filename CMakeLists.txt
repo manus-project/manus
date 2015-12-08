@@ -20,6 +20,7 @@ IF(WIN32 OR WIN64)
     ENDIF()
 ELSEIF(APPLE)  
 	ADD_DEFINITIONS(-DPLATFORM_OSX)
+    INCLUDE_DIRECTORIES(AFTER /usr/local/include) # Temporary fix for OpenCV headers
 # http://www.cmake.org/pipermail/cmake/attachments/20130920/87614932/attachment-0001.txt
 ELSEIF(UNIX)
     ADD_DEFINITIONS(-DPLATFORM_LINUX)
