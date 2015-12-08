@@ -149,7 +149,10 @@ int SerialPortRobotArm::connect(){
 #if defined (_WIN32) || defined( _WIN64)
 
 		// Open serial port
-		hSerial = CreateFileA(con_param.device.c_str() ,GENERIC_READ | GENERIC_WRITE,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+        string dev = "\\\\.\\";
+        dev.append(con_param.device);
+        hSerial = CreateFileA(dev.c_str() ,GENERIC_READ | GENERIC_WRITE,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+
 		if(hSerial==INVALID_HANDLE_VALUE) {
 			if(GetLastError()==ERROR_FILE_NOT_FOUND)
 				return -1;                                                  // Device not found
