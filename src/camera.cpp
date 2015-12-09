@@ -232,8 +232,8 @@ void CameraHandler::handle(Request& request) {
 
         Json::Value trans;
         trans["m0"] = Json::Value(translation.at<float>(0, 0));
-        trans["m1"] = Json::Value(translation.at<float>(0, 1));
-        trans["m2"] = Json::Value(translation.at<float>(0, 2));
+        trans["m1"] = Json::Value(translation.at<float>(1, 0));
+        trans["m2"] = Json::Value(translation.at<float>(2, 0));
 
         Json::Value hom;
         hom["m00"] = Json::Value(homography.at<float>(0, 0));
