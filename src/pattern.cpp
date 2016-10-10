@@ -292,7 +292,7 @@ void PatternDetector::detect(const Mat& frame, const Mat& cameraMatrix, const Ma
 
 				//push-back pattern in the stack of foundPatterns and find its extrinsics
 				if (id >= 0) {
-					
+				
                     vector<Point2f> candidateCorners;
                     Mat rotVec = (Mat_<float>(3,1) << 0, 0, 0);
                     Mat transVec = (Mat_<float>(3,1) << 0, 0, 0);
@@ -387,7 +387,6 @@ void PatternDetector::calculateExtrinsics(const float size, const Mat& cameraMat
     solvePnP(objectPoints, imagePoints, cameraMatrix, distortions, rotVec, transVec);
     rotVec.convertTo(rotVec, CV_32F);
     transVec.convertTo(transVec, CV_32F);
-
 }
 
 

@@ -24,7 +24,7 @@ IF(WIN32 OR WIN64)
         SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -static-libstdc++")
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
     ENDIF()
-ELSEIF(APPLE)  
+ELSEIF(APPLE)
 	ADD_DEFINITIONS(-DPLATFORM_OSX)
     INCLUDE_DIRECTORIES(AFTER /usr/local/include) # Temporary fix for OpenCV headers
 # http://www.cmake.org/pipermail/cmake/attachments/20130920/87614932/attachment-0001.txt
@@ -48,8 +48,8 @@ INCLUDE_DIRECTORIES(AFTER ${CMAKE_CURRENT_BINARY_DIR} ${OpenCV_INCLUDE_DIR})
 
 ADD_DEFINITIONS(-DMONGOOSE_NO_AUTH -DMONGOOSE_NO_CGI -DMONGOOSE_NO_DAV -DMONGOOSE_NO_USER -DMONGOOSE_NO_WEBSOCKET)
 
-SET(SERVER_SOURCES 
-    src/mongoose.c 
+SET(SERVER_SOURCES
+    src/mongoose.c
     src/threads.c
     src/json.cpp
     src/debug.cpp
@@ -65,7 +65,7 @@ SET(SERVER_SOURCES
 )
 
 # These resources are always embedded
-SET(EMBED_SOURCES 
+SET(EMBED_SOURCES
     res/calibration.xml
     res/marker1.png
     res/marker2.png
@@ -85,7 +85,9 @@ SET(EMBED_SOURCES
 )
 
 # If the program is compiled in Debug mode, then use external web resources for easier development
-SET(CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG} -DSERVER_DOCUMENT_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/res")
+IF (NOT NDEBUG)
+ADD_DEFINITIONS(-DSERVER_DOCUMENT_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/res")
+ENDIF()
 
 EMBED_GENERATE(TARGET "${CMAKE_CURRENT_BINARY_DIR}/embedded.c" FILES ${EMBED_SOURCES})
 SET(SERVER_SOURCES ${SERVER_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/embedded.c)
@@ -101,7 +103,7 @@ IF (BUILD_PACKAGE)
 	SET(CPACK_PACKAGE_NAME "Manus")
 	SET(CPACK_PACKAGE_VENDOR "ViCoS Lab")
 	SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Manus - your personal robotics laboratory")
-	SET(CPACK_PACKAGE_VERSION "0.2.0")
+	SET(CPACK_PACKAGE_VERSION 0.2.0)
 	SET(CPACK_PACKAGE_VERSION_MAJOR "0")
 	SET(CPACK_PACKAGE_VERSION_MINOR "2")
 	SET(CPACK_PACKAGE_VERSION_PATCH "0")

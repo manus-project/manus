@@ -7,7 +7,7 @@ function cameraToWorld(transform) {
     rotation = mat3.transpose(mat3.create(), rotation);
 
     translation = vec3.negate(vec3.create(), vec3.transformMat3(vec3.create(), translation, rotation));
-    
+
     var result = mat4.create();
 
     result[0] = rotation[0];
@@ -64,17 +64,17 @@ $.manus.world = {
              	mouse.dragX = evt.clientX - mouse.clickX;
              	mouse.dragY = evt.clientY - mouse.clickY;
             };
-                 
+
              mouse.onMouseUp = function onMouseUp(evt) {
                 mouse.endDragging();
              	evt.target.removeEventListener('mousemove', mouse.onMouseMove, false);
              };
-             
+
              mouse.onMouseOut = function onMouseOut(evt) {
                 mouse.endDragging();
              	evt.target.removeEventListener('mousemove', mouse.onMouseMove, false);
              };
-             
+
              mouse.onMouseDown = function onMouseDown(evt) {
              	evt.preventDefault();
              	evt.target.addEventListener('mousemove', mouse.onMouseMove, false);
@@ -87,7 +87,7 @@ $.manus.world = {
                 cameraSphere.azimuth = mouse.dragX;
                 cameraSphere.altitude = mouse.dragY;
             }
-         
+
             cameraSphere.update = function(world) {
 
                     var azimuth = this.azimuth + mouse.dragX;
@@ -145,7 +145,7 @@ $.manus.world = {
                 postrender: function(world) {
                     var ctx = world.canvas.getContext('2d');
                     ctx.fillStyle = "#aaaaaa";
-                    ctx.fillText("Drag mouse to rotate the view.", 10, 20); 
+                    ctx.fillText("Drag mouse to rotate the view.", 10, 20);
                 }
             }
         },
@@ -184,8 +184,6 @@ $.manus.world = {
                     transform = mat4.scale(mat4.create(), transform, vec3.fromValues(1, 1, -1)); // Flip Z axis
                     transform = cameraToWorld(transform); // Invert matrix
 
-                    
-
                 });
             }
 
@@ -193,7 +191,7 @@ $.manus.world = {
                 install: function(world) {
                     $.ajax(url + '/describe').done(function(data) {
 
-                        var fov1 = 360 * Math.atan2(data.image.width, 2*data.intrinsics.m00) / Math.PI;        
+                        var fov1 = 360 * Math.atan2(data.image.width, 2*data.intrinsics.m00) / Math.PI;
                         var fov2 = 360 * Math.atan2(data.image.height, 2*data.intrinsics.m11) / Math.PI;
                         world.scene.perspective.aspect = fov1 / fov2;
                         world.scene.perspective.fov = fov2; // (fov1 + fov2) / 2; // Compute average fov
@@ -208,9 +206,10 @@ $.manus.world = {
 
                 },
                 prerender: function(world) {
+					var ctx = world.canvas.getContext('2d');
+
                     if (!image) return;
-
-
+					ctx.clearRect(0, 0, world.canvas.width, world.canvas.height);
                     parameters = lookAtParameters(transform);
 
                     world.scene.camera.position.x = parameters.eye[0];
@@ -225,8 +224,12 @@ $.manus.world = {
                     world.scene.camera.up.y = parameters.up[1];
                     world.scene.camera.up.z = parameters.up[2];
 
-                    var ctx = world.canvas.getContext('2d');
-                    ctx.drawImage(image, 0, 0);
+
+					var scale = Math.max(image.width / world.canvas.width, image.height / world.canvas.height);
+
+
+                    ctx.drawImage(image, (world.canvas.width - (image.width / scale)) / 2,
+						(world.canvas.height - (image.height / scale)) / 2, image.width / scale, image.height / scale);
                     world.render();
                     image = null;
 
@@ -240,9 +243,12 @@ $.manus.world = {
 
     },
 
-    viewer: function (parameters) {
+    viewer: function (options) {
 
-        var canvas = $('<canvas class="visualization" width="640" height="480">');
+		options = $.extend({width : 800, height: 600}, options);
+
+        var canvas = $('<canvas class="visualization" width="' +
+			options.width + '" height="' + options.height + '">');
 
         viewCamera = -1;
         canvas = canvas[0];
@@ -315,7 +321,7 @@ $.manus.world = {
                 transform[13] = data.translation.m1;
                 transform[14] = data.translation.m2;
 
-                transform = mat4.scale(mat4.create(), transform, vec3.fromValues(1, 1, -1));  // Flip Z axis              
+                transform = mat4.scale(mat4.create(), transform, vec3.fromValues(1, 1, -1));  // Flip Z axis
                 transform = cameraToWorld(transform); // Invert matrix
 
                 cameraProxy.matrix = transform;
@@ -328,7 +334,7 @@ $.manus.world = {
 
         $.ajax(url + '/describe').done(function(data) {
 
-            var fov1 = Math.atan(data.image.width / (2*data.intrinsics.m00)) / Math.PI; 
+            var fov1 = Math.atan(data.image.width / (2*data.intrinsics.m00)) / Math.PI;
             var fov2 = Math.atan(data.image.height / (2*data.intrinsics.m11)) / Math.PI;
             var fov = (fov1 + fov2) / 2; // Compute average fov
 
@@ -437,10 +443,10 @@ $.manus.world = {
 
             joint.children.push(segment);
             parentJoint = segment;
-            
+
         }
 
-        return { 
+        return {
             transform : function(transform) {
                 rootTransform = mat4.clone(transform);
             },
@@ -501,7 +507,7 @@ $.manus.world = {
                 objectsortmode: "back"
             }
         }
-        ).translateX(200).rotateX(90 * Phoria.RADIANS).translate(position);        
+        ).translateX(200).rotateX(90 * Phoria.RADIANS).translate(position);
 
         world.scene.graph.push(wireframe);
 
@@ -519,7 +525,7 @@ $.manus.world = {
             break;
          }
       }
-      
+
       // create debug entity if it does not exist
       if (debugEntity === null)
       {

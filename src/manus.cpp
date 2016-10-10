@@ -18,6 +18,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <ctime>
+#include <map>
 
 #include "server.h"
 #include "filesystem.h"
@@ -71,10 +72,10 @@ public:
     ~FilesHandler() {};
 
     virtual void handle(Request& request) {
-        
+
         string name;
-		
-		if (request.get_uri() == "/") 
+
+		if (request.get_uri() == "/")
 			name = "index.html";
 		else
 			name = request.get_uri().substr(1);
@@ -114,7 +115,7 @@ public:
     virtual void handle(Request& request) {
 
         string path = request.get_uri().substr(1);
-       
+
         if (path.empty())
             path = "index.html";
 
@@ -130,7 +131,7 @@ public:
             free(buffer);
         } else {
             DEBUGMSG("Not found %s\n", request.get_uri().c_str());
-            request.set_status(404); 
+            request.set_status(404);
             request.send_data("Not found");
         }
 
@@ -153,16 +154,16 @@ public:
     };
 
     virtual void handle(Request& request) {
-        
+
         if (!request.has_variable("command")) {
-            request.set_status(404); 
+            request.set_status(404);
             request.finish();
             return;
         }
 
         string command = request.get_variable("command");
 
-        request.set_status(200); 
+        request.set_status(200);
         request.set_header("Content-Type", "application/json");
         request.set_header("Cache-Control", "max-age=0, post-check=0, pre-check=0, no-store, no-cache, must-revalidate");
 
@@ -202,7 +203,8 @@ int main(int argc, char *argv[]) {
 
     int c;
     int camera_id = -1;
-    string arm_serial_port;
+    string arm_address;
+	std::map<string, shared_ptr<Handler> > handlers;
 
     while ((c = getopt(argc, argv, APPLICATION_OPTIONS)) != -1)
         switch (c) {
@@ -216,48 +218,52 @@ int main(int argc, char *argv[]) {
             camera_id = atoi(optarg);
             break;
         case 'a':
-            arm_serial_port = string(optarg);
+            arm_address = std::string(optarg);
             break;
-        default: 
+        default:
             show_usage_and_exit();
             throw std::runtime_error(string("Unknown switch -") + string(1, (char) optopt));
-        } 
+        }
 
     RobotArm* arm = NULL;
 
-    if (!arm_serial_port.empty()) {
-        DEBUGMSG("Starting USB driver\n");
-        arm = new SerialPortRobotArm(arm_serial_port);
-    } else {
-        DEBUGMSG("Starting simulation driver\n");
-        arm = new SimulatedRobotArm();
-    }
+    if (!arm_address.empty()) {
+		if (arm_address != "sim") {
+	        DEBUGMSG("Starting USB driver\n");
+    	    arm = new SerialPortRobotArm(arm_address);
+	    } else {
+    	    DEBUGMSG("Starting simulation driver\n");
+    	    arm = new SimulatedRobotArm();
+	    }
+	}
 
-    if (arm->connect() < 0) {
-        printf("Unable to connect to robot arm \n");
-        return -1;
-    }
+	if (arm) {
+		if (arm->connect() < 0) {
+		    printf("Unable to connect to robot arm \n");
+		    return -1;
+		}
 
-    if (arm->startControl() < 0) {
-        printf("Unable to start control of robot arm \n");
-        return -2;
-    }
+		if (arm->startControl() < 0) {
+		    printf("Unable to start control of robot arm \n");
+		    return -2;
+		}
+	}
 
-    shared_ptr<Handler> arm_handler;
-    shared_ptr<Handler> camera_handler;
-    shared_ptr<Handler> files_handler = make_shared<FilesHandler>();
-    shared_ptr<Handler> app_handler = make_shared<AppApiHandler>();
+    handlers["files"] = make_shared<FilesHandler>();
+    handlers["app"] = make_shared<AppApiHandler>();
 
     shared_ptr<Server> server = make_shared<Server>();
-    server->set_default_handler(files_handler);
-    server->append_handler(make_shared<PrefixMatcher>("/api/app/", "command"), app_handler);
+    server->set_default_handler(handlers["files"]);
+    server->append_handler(make_shared<PrefixMatcher>("/api/app/", "command"), handlers["app"]);
 
-    arm_handler = make_shared<ArmApiHandler>(arm);
-    server->append_handler(make_shared<PrefixMatcher>("/api/arm/", "command"), arm_handler);
+	if (arm) {
+	    handlers["arm"] = make_shared<ArmApiHandler>(arm);
+    	server->append_handler(make_shared<PrefixMatcher>("/api/arm/", "command"), handlers["arm"]);
+	}
 
     if (camera_id > -1) {
-        camera_handler = make_shared<CameraHandler>(camera_id);
-        server->append_handler(make_shared<PrefixMatcher>("/api/camera/", "command"), camera_handler);
+        handlers["camera"] = make_shared<CameraHandler>(camera_id);
+        server->append_handler(make_shared<PrefixMatcher>("/api/camera/", "command"), handlers["camera"]);
     }
 
     // Setup signal handler: quit on Ctrl-C
@@ -279,8 +285,11 @@ int main(int argc, char *argv[]) {
     printf("Exiting.\n");
 
     server.reset();
-    arm_handler.reset();
-    camera_handler.reset();
+
+	for (std::map<std::string, shared_ptr<Handler> >::iterator it = handlers.begin();
+			it != handlers.end(); it ++) {
+		it->second.reset();
+	}
 
     if (arm) {
         arm->stopControl();
