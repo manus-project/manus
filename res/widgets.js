@@ -15,13 +15,24 @@ $.manus.widgets = {
     toggleWidget: function(options) {
 
         var container = $('<div/>').addClass('btn-group').data('toggle', 'buttons');
-//type="radio" name="options" id="option1" autocomplete="off" checked
         for (var key in options) {
             var button = $('<option/>').attr({'type': 'radio', 'name': key, 'autocomplete': 'off'}).text(options[key]['text']);
             container.append($('<label/>').addClass('btn btn-primary').append(button));
             button.click(options[key]['callback']);
         }
-        
+
+        return container;
+    },
+
+    buttons: function(options) {
+
+        var container = $('<div/>').addClass('btn-group');
+        for (var key in options) {
+            var button = $('<a/>').addClass('btn btn-primary').attr({'role': 'button', 'name': key, 'autocomplete': 'off'}).text(options[key]['text']);
+            container.append(button);
+            button.click(options[key]['callback']);
+        }
+
         return container;
     },
 
@@ -74,7 +85,7 @@ $.manus.widgets = {
         $(parent).append(container);
 
         return function(v, g) {
-            
+
             var value = parseFloat(v);
             var value_goal = parseFloat(g);
 

@@ -247,11 +247,28 @@ $.manus.world = {
 
 		options = $.extend({width : 800, height: 600}, options);
 
-        var canvas = $('<canvas class="visualization" width="' +
-			options.width + '" height="' + options.height + '">');
+        var canvas = $('<canvas/>').attr({width: options.width, height: options.height});
+		var wrapper = $('<div/>').addClass("viewer").append(canvas);
 
         viewCamera = -1;
         canvas = canvas[0];
+
+		$.manus.widgets.buttons({
+			snapshot: {
+				text: "Save picture",
+				callback: function(e) {
+					var dataURL = canvas.toDataURL('image/png');
+					$(this).attr({href: dataURL, download: 'snapshot.png'});
+				}
+
+			}/*,
+			resize: {
+				text: "Resize",
+				callback: function(e) {
+
+				}
+			}*/
+		}).addClass('tools').appendTo(wrapper);
 
         var scene = new Phoria.Scene();
         scene.camera.position = {x:0.0, y:0.0, z:1.0};
@@ -269,6 +286,7 @@ $.manus.world = {
         var world = {
             scene: scene,
             canvas: canvas,
+			wrapper: wrapper,
             render: function() { dirty = true; },
             view: function(v) { if (v == null) v = defaultView; currentView.uninstall(this); currentView = v; v.install(this); }
         }

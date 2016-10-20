@@ -50,7 +50,7 @@ $(function() {
 
     viewer = $.manus.world.viewer({});
 
-    $('<div class="col-lg-6">').appendTo(worldPanel.container).append(viewer.canvas);
+    $('<div class="col-lg-6">').appendTo(worldPanel.container).append(viewer.wrapper);
 
     $.ajax('/api/camera/describe').done(function(data) {
 

@@ -75,7 +75,23 @@
     margin: 0px 3px;
 }
 
+.viewer {
+	width: 100%;
+	position: relative;
+}
 
-canvas.visualization {
+.viewer .tools {
+	position: absolute;
+	bottom: 10px;
+	left: 10px;
+	display: none;
+}
+
+.viewer:hover .tools {
+	display: block;
+	text-align: right;
+}
+
+.viewer canvas {
     border: 1px gray solid;
 }
