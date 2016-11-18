@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <cmath>
 
 #include "debug.h"
 #include "arm.h"
@@ -26,6 +27,7 @@ string jointTypeToString(JointType type) {
     switch (type) {
         case ROTATION: return "rotation";
         case TRANSLATION: return "translation";
+        case FIXED: return "fixed";
         case GRIPPER: return "gripper";
     }
 
@@ -55,6 +57,24 @@ JointData createJointData(int id, float position) {
     joint.dh_position = position;
     joint.dh_goal = position;
     return joint;
+}
+
+double normalizeAngle(double val, double min, double max) {
+	if (val > max) {
+		//Find actual angle offset
+		double diffangle = std::fmod(val-max,2*M_PI);
+		// Add that to upper bound and go back a full rotation
+		val = max + diffangle - 2*M_PI;
+	}
+
+	if (val < min) {
+		//Find actual angle offset
+		double diffangle = std::fmod(min-val,2*M_PI);
+		// Add that to upper bound and go back a full rotation
+		val = min - diffangle + 2*M_PI;
+	}
+
+	return val;
 }
 
 #define CONVERT_OUTGOING_VALUE(T, V) ((T == ::ROTATION) ? ((V / 180) * M_PI) : V)
@@ -89,16 +109,16 @@ ArmApiHandler::~ArmApiHandler() {
 };
 
 void ArmApiHandler::handle(Request& request) {
-    
+
     if (!request.has_variable("command")) {
-        request.set_status(404); 
+        request.set_status(404);
         request.finish();
         return;
     }
 
     string command = request.get_variable("command");
 
-    request.set_status(200); 
+    request.set_status(200);
     request.set_header("Content-Type", "application/json");
     request.set_header("Cache-Control", "max-age=0, post-check=0, pre-check=0, no-store, no-cache, must-revalidate");
 
@@ -163,7 +183,7 @@ void ArmApiHandler::handle(Request& request) {
         response["goals"] = goals;
 
     } else if (command == "move") {
-        
+
         try {
 
             int joint = stoi(request.get_variable("joint"));
@@ -176,8 +196,19 @@ void ArmApiHandler::handle(Request& request) {
             JointInfo jointInfo;
             arm->getJointInfo(joint, jointInfo);
 
+			int result = -1;
+
             MUTEX_LOCK(mutex);
-            int result = arm->moveTo(joint, speed, CONVERT_INCOMING_VALUE(jointInfo.type, value));
+			if (jointInfo.type == ROTATION) {
+				value = normalizeAngle(value, jointInfo.dh_min, jointInfo.dh_max);
+				value = CONVERT_INCOMING_VALUE(jointInfo.type, value);
+			}
+
+			if (value <= jointInfo.dh_max && value >= jointInfo.dh_min) {
+            	result = arm->moveTo(joint, speed, value);
+			} else {
+				DEBUGMSG("Value %f for joint %d out of range [%f, %f]\n", value, joint, jointInfo.dh_min, jointInfo.dh_max);
+			}
             MUTEX_UNLOCK(mutex);
 
             if (result >= 0)
@@ -228,6 +259,6 @@ bool ArmApiHandler::poll() {
     MUTEX_UNLOCK(mutex);
 
     return result;
-    
+
 }
 

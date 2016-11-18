@@ -406,11 +406,26 @@ $.manus.world = {
             });
 
             switch (status[v].type) {
+                case "fixed":
                 case "translation":
                 case "rotation": {
-                    var segmentMesh = Phoria.Util.generateCuboid({"scalex" : Math.max(1, a / 2),
-                             "scaley" : 10, "scalez" : 10, "offsetx" : - Math.max(1, a / 2),
-                             "offsety" : 0, "offsetz": 0});
+
+					var segmentMesh = null;
+
+					if (a != 0) {
+
+		                segmentMesh = Phoria.Util.generateCuboid({"scalex" : Math.max(1, a / 2),
+		                         "scaley" : 10, "scalez" : 10, "offsetx" : - Math.max(1, a / 2),
+		                         "offsety" : 0, "offsetz": 0});
+
+					} else {
+						segmentMesh = {
+					         points: [],
+					         edges: [],
+					         polygons: []
+						};
+
+					}
 
                     var segment = Phoria.Entity.create({
                         points: segmentMesh.points,
@@ -428,9 +443,9 @@ $.manus.world = {
                 }
                 case "gripper": {
 
-                    var segmentMesh = Phoria.Util.generateCuboid({"scalex" : Math.max(1, a / 2),
-                             "scaley" : Math.max(1, a / 2), "scalez" : 10, "offsetx" : - Math.max(1, a / 2),
-                             "offsety" : 0, "offsetz": 0});
+                    var segmentMesh = Phoria.Util.generateCuboid({"scalex" : 10,
+                             "scaley" : 10, "scalez" : 10, "offsetx" : 0,
+                             "offsety" : 0, "offsetz": 10});
 
                     var segment = Phoria.Entity.create({
                         points: segmentMesh.points,
@@ -440,7 +455,7 @@ $.manus.world = {
                             color: [100,255,100],
                             drawmode: "wireframe",
                             shademode: "plain",
-                            linewidth: 3,
+                            linewidth: 5,
                         }
                     });
 
@@ -478,6 +493,7 @@ $.manus.world = {
                         case "rotation": {theta = status[v]; break; }
                         case "translation": {d = status[v]; break;}
                         case "gripper": { break; }
+                        case "fixed": { break; }
                         default: { update = false; break; }
                     }
                     if (!update) break;
