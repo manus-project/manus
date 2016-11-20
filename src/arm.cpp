@@ -59,7 +59,7 @@ JointData createJointData(int id, float position) {
     return joint;
 }
 
-double normalizeAngle(double val, double min, double max) {
+double normalizeAngleRadian(double val, double min, double max) {
 	if (val > max) {
 		//Find actual angle offset
 		double diffangle = std::fmod(val-max,2*M_PI);
@@ -77,12 +77,31 @@ double normalizeAngle(double val, double min, double max) {
 	return val;
 }
 
-#define CONVERT_OUTGOING_VALUE(T, V) ((T == ::ROTATION) ? ((V / 180) * M_PI) : V)
-#define CONVERT_INCOMING_VALUE(T, V) ((T == ::ROTATION) ? ((V * 180) / M_PI) : V)
+double convertOutgoing(double value, const JointInfo& info) {
+
+	if (info.type == ::ROTATION) {
+		return (value / 180) * M_PI;
+	}
+	if (info.type == ::GRIPPER) {
+		return (value - info.dh_min) / (info.dh_max - info.dh_min);
+	}
+	return value;
+}
+
+double convertIncoming(double value, const JointInfo& info) {
+
+	if (info.type == ::ROTATION) {
+		value = normalizeAngleRadian(value, info.dh_min, info.dh_max);
+		return (value * 180) / M_PI;
+	}
+	if (info.type == ::GRIPPER) {
+		return (value) * (info.dh_max - info.dh_min) + info.dh_min;
+	}
+	return value;
+}
 
 #define DEGREE_TO_RADIAN(X) ((X / 180) * M_PI)
 #define RADIAN_TO_DEGREE(X) ((X * 180) / M_PI)
-
 
 THREAD_CALLBACK(arm_driver_function, handler) {
 
@@ -146,8 +165,8 @@ void ArmApiHandler::handle(Request& request) {
             joint["a"] = Json::Value(jointInfo.dh_a);
             joint["theta"] = Json::Value(DEGREE_TO_RADIAN(jointInfo.dh_theta));
             joint["d"] = Json::Value(jointInfo.dh_d);
-            joint["min"] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointInfo.dh_min));
-            joint["max"] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointInfo.dh_max));
+            joint["min"] = Json::Value(convertOutgoing(jointInfo.dh_min, jointInfo));
+            joint["max"] = Json::Value(convertOutgoing(jointInfo.dh_max, jointInfo));
 
 
             joints[i] = joint;
@@ -168,19 +187,27 @@ void ArmApiHandler::handle(Request& request) {
         Json::Value positions;
         Json::Value goals;
 
+		bool idle = true;
+
         for (int i = 0; i < arm->size(); i++) {
             JointData jointData;
             arm->getJointData(i, jointData);
             JointInfo jointInfo;
             if (arm->getJointInfo(i, jointInfo) < 0) break;
 
-            positions[i] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointData.dh_position));
-            goals[i] = Json::Value(CONVERT_OUTGOING_VALUE(jointInfo.type, jointData.dh_goal));
+			double p = convertOutgoing(jointData.dh_position, jointInfo);
+			double g = convertOutgoing(jointData.dh_goal, jointInfo);
+
+            positions[i] = Json::Value(p);
+            goals[i] = Json::Value(g);
+
+			idle &= std::abs(p - g) < 1;
         }
         MUTEX_UNLOCK(mutex);
 
         response["joints"] = positions;
         response["goals"] = goals;
+		response["idle"] = idle;
 
     } else if (command == "move") {
 
@@ -199,11 +226,7 @@ void ArmApiHandler::handle(Request& request) {
 			int result = -1;
 
             MUTEX_LOCK(mutex);
-			if (jointInfo.type == ROTATION) {
-				value = normalizeAngle(value, jointInfo.dh_min, jointInfo.dh_max);
-				value = CONVERT_INCOMING_VALUE(jointInfo.type, value);
-			}
-
+			value = convertIncoming(value, jointInfo);
 			if (value <= jointInfo.dh_max && value >= jointInfo.dh_min) {
             	result = arm->moveTo(joint, speed, value);
 			} else {
