@@ -508,13 +508,13 @@ $.manus.world = {
             }
         };
     },
-    marker: function(world, position) {
-        var markerMesh = Phoria.Util.generateUnitCube(5);
-        var marker = Phoria.Entity.create({
-            id : "Marker",
-            points: markerMesh.points,
-            edges: markerMesh.edges,
-            polygons: markerMesh.polygons,
+    markers: function(world) {
+        //var markerMesh = Phoria.Util.generateUnitCube(5);
+        var markers = Phoria.Entity.create({
+            id : "Markers",
+            points: [],
+            edges: [],
+            polygons: [],
             style: {
                 color: [255,0,0],
                 drawmode: "wireframe",
@@ -523,9 +523,30 @@ $.manus.world = {
             }
         });
 
-        marker.identity().translate(position);
+        world.scene.graph.push(markers);
 
-        world.scene.graph.push(marker);
+		return {
+			clear : function() {
+				markers.children = [];
+			},
+			add : function(position, orientation, color) {
+                mesh = Phoria.Util.generateCuboid({"scalex" : 10,
+                         "scaley" : 10, "scalez" : 10}); // "offsetx" : 10, "offsetz" : 10, "offsety" : 10
+                var marker = Phoria.Entity.create({
+                    points: mesh.points,
+                    edges: mesh.edges,
+                    polygons: mesh.polygons,
+                    style: {
+                        color: color,
+                        drawmode: "wireframe",
+                        shademode: "plain",
+                        linewidth: 3,
+                    }
+                });
+				marker.identity().translate(position).translate([10, 10, 10]).rotateZ(180 * orientation[2] / Math.PI );
+				markers.children.push(marker);
+			}
+		};
 
     },
     grid: function(world, position) {
@@ -540,8 +561,7 @@ $.manus.world = {
                 linewidth: 2,
                 objectsortmode: "back"
             }
-        }
-        ).translateX(200).rotateX(90 * Phoria.RADIANS).translate(position);
+        }).translateX(200).rotateX(90 * Phoria.RADIANS).translate(position);
 
         world.scene.graph.push(wireframe);
 

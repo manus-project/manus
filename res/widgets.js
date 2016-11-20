@@ -70,8 +70,8 @@ $.manus.widgets = {
         case "gripper": {
 
             status = $('<button type="button" class="btn">Grip</button>').click(function() {
-                var goal = 0;
-                if ($(this).text() == "Release") goal = 1;
+                var goal = 1;
+                if ($(this).text() == "Release") goal = 0;
                 $.ajax('/api/arm/move?joint=' + id + '&speed=1&position=' + goal);
 
             });
@@ -106,7 +106,7 @@ $.manus.widgets = {
                 break;
             }
             case "gripper": {
-                if (value > 0) {
+                if (value < 0.5) {
                     status.removeClass("btn-success").addClass("btn-danger");
                     status.text("Grip");
                 } else {

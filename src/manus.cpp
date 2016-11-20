@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "threads.h"
 #include "simulation.h"
+#include "markers.h"
 #include "serial.h"
 #include "camera.h"
 #include "getopt.h"
@@ -251,10 +252,12 @@ int main(int argc, char *argv[]) {
 
     handlers["files"] = make_shared<FilesHandler>();
     handlers["app"] = make_shared<AppApiHandler>();
+	handlers["markers"] = make_shared<MarkersApiHandler>();
 
     shared_ptr<Server> server = make_shared<Server>();
     server->set_default_handler(handlers["files"]);
     server->append_handler(make_shared<PrefixMatcher>("/api/app/", "command"), handlers["app"]);
+	server->append_handler(make_shared<PrefixMatcher>("/api/markers/", "command"), handlers["markers"]);
 
 	if (arm) {
 	    handlers["arm"] = make_shared<ArmApiHandler>(arm);

@@ -4,8 +4,9 @@ $(function() {
     var emergency;
     var viewer;
     var arm;
+	var markers;
 
-    function queryStatus() {
+    function queryArmStatus() {
 
         $.ajax('/api/arm/status', {timeout : 100}).done(function(data) {
 
@@ -23,11 +24,30 @@ $(function() {
                 emergency.text("Start");
             }
 
-            setTimeout(queryStatus, 500);
+            setTimeout(queryArmStatus, 250);
 
         }).fail(function () {
 
-            //setTimeout(queryStatus, 1000);
+            setTimeout(queryArmStatus, 1000);
+
+        });
+
+    }
+
+    function queryMarkerStatus() {
+
+        $.ajax('/api/markers/get', {timeout : 100}).done(function(data) {
+
+			markers.clear();
+			for (var m in data) {
+				markers.add(data[m]["position"], data[m]["orientation"], data[m]["color"]);
+			}
+
+            setTimeout(queryMarkerStatus, 250);
+
+        }).fail(function () {
+
+            setTimeout(queryMarkerStatus, 1000);
 
         });
 
@@ -77,7 +97,7 @@ $(function() {
 		        return false;
         })));
 
-		var sidebar = $('<div class="col-lg-5">').prependTo(worldPanel.container);
+		var sidebar = $('<div class="col-lg-4">').prependTo(worldPanel.container);
         var header = $('<div class="header">').appendTo(sidebar);
 
         emergency = $('<button type="button" class="btn emergency">Start</button>').click(function() {
@@ -99,7 +119,12 @@ $(function() {
 
         arm.transform(mat4.translate(mat4.create(), mat4.create(), vec3.fromValues(0, 0, 0)));
         $.manus.world.grid(viewer, vec3.fromValues(80, 0, 0));
-        queryStatus();
+
+		markers = $.manus.world.markers(viewer);
+		markers.clear();
+
+        queryArmStatus();
+		queryMarkerStatus();
 
     }).fail(function () {
 

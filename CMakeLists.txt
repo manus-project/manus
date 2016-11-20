@@ -61,6 +61,7 @@ SET(SERVER_SOURCES
     src/serial.cpp
     src/camera.cpp
     src/pattern.cpp
+    src/markers.cpp
     src/getopt.c
 )
 

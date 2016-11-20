@@ -113,7 +113,7 @@ void Request::send_data(const string& str) {
         mg_send_data(connection, str.c_str(), str.size());
 }
 
-string Request::get_variable(const string& name) const {
+string Request::get_variable(const string& name, const string& def) const {
 
     map<string, string>::const_iterator it;
     it = variables.find(name);
@@ -132,7 +132,7 @@ string Request::get_variable(const string& name) const {
     }
 
     free(buffer);
-    return string();
+    return def;
 
 }
 
@@ -148,7 +148,7 @@ bool Request::has_variable(const string& name) const {
     int result = mg_get_var(connection, name.c_str(), buffer, 0);
 
     return result != -1;
-    
+
 }
 
 void Request::finish() {

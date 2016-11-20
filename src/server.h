@@ -35,7 +35,7 @@ public:
     void send_data(const string& str);
     void send_data(const void *data, int data_len);
 
-    string get_variable(const string& name) const;
+    string get_variable(const string& name, const string& def=string()) const;
     bool has_variable(const string& name) const;
 
     void finish();
@@ -112,7 +112,7 @@ private:
 
     static int master_event_handler(struct mg_connection *conn, enum mg_event ev);
     int event_handler(struct mg_connection *conn, enum mg_event ev);
-    
+
     vector<pair<shared_ptr<Matcher>, shared_ptr<Handler> > > handlers;
     shared_ptr<Handler> default_handler;
 
