@@ -14,7 +14,7 @@ namespace manus {
 class CameraHandler : public Handler {
 public:
 
-    CameraHandler(int id = 0);
+    CameraHandler(int id = 0, const std::string& tmpl = std::string("simple"), bool debug = false);
 
     ~CameraHandler();
 
@@ -45,6 +45,10 @@ private:
 
     unsigned long frame_counter;
 
+	unsigned int reposition_throttle;
+
+	cv::Mat debug_frame;
+	bool debug;
 
 };
 

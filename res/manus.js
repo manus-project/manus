@@ -8,7 +8,7 @@ $(function() {
 
     function queryArmStatus() {
 
-        $.ajax('/api/arm/status', {timeout : 100}).done(function(data) {
+        $.ajax('/api/arm/status', {timeout : 300}).done(function(data) {
 
             for (var v in data["joints"]) {
                 joints[v](data["joints"][v], data["goals"][v]);
@@ -36,7 +36,7 @@ $(function() {
 
     function queryMarkerStatus() {
 
-        $.ajax('/api/markers/get', {timeout : 100}).done(function(data) {
+        $.ajax('/api/markers/get', {timeout : 300}).done(function(data) {
 
 			markers.clear();
 			for (var m in data) {

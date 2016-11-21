@@ -34,7 +34,7 @@
 using namespace manus;
 
 #define APPLICATION_NAME "Manus"
-#define APPLICATION_OPTIONS "hdc:a:"
+#define APPLICATION_OPTIONS "hdc:a:t:"
 
 #ifndef APPLICATION_VERSION
 #define APPLICATION_VERSION "dev"
@@ -205,6 +205,7 @@ int main(int argc, char *argv[]) {
     int c;
     int camera_id = -1;
     string arm_address;
+	string camera_template("simple");
 	std::map<string, shared_ptr<Handler> > handlers;
 
     while ((c = getopt(argc, argv, APPLICATION_OPTIONS)) != -1)
@@ -220,6 +221,9 @@ int main(int argc, char *argv[]) {
             break;
         case 'a':
             arm_address = std::string(optarg);
+            break;
+        case 't':
+            camera_template = std::string(optarg);
             break;
         default:
             show_usage_and_exit();
@@ -265,7 +269,7 @@ int main(int argc, char *argv[]) {
 	}
 
     if (camera_id > -1) {
-        handlers["camera"] = make_shared<CameraHandler>(camera_id);
+        handlers["camera"] = make_shared<CameraHandler>(camera_id, camera_template, false);
         server->append_handler(make_shared<PrefixMatcher>("/api/camera/", "command"), handlers["camera"]);
     }
 

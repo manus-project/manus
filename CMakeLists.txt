@@ -62,6 +62,7 @@ SET(SERVER_SOURCES
     src/camera.cpp
     src/pattern.cpp
     src/markers.cpp
+    src/utilities.cpp
     src/getopt.c
 )
 
@@ -70,6 +71,8 @@ SET(EMBED_SOURCES
     res/calibration.xml
     res/marker1.png
     res/marker2.png
+	res/template_simple.json
+	res/template_simple2.json
     res/surface.pdf
     res/objects.pdf
 	res/index.html

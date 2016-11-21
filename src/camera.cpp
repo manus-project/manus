@@ -4,10 +4,8 @@
 #include "definitions.h"
 #include "json.h"
 
-#define embedded_header_only
-#include "embedded.c"
-
 #include "debug.h"
+#include "utilities.h"
 
 using namespace cv;
 
@@ -53,26 +51,53 @@ THREAD_CALLBACK(camera_callback_function, handler) {
 
     while (true) {
         if (!camera_handler->capture()) break;
-        sleep(100);
+        sleep(50);
     }
 
 	return NULL;
 }
 
-CameraHandler::CameraHandler(int id) : device(NULL), frame_counter(0) {
+CameraHandler::CameraHandler(int id, const string& tmpl, bool debug) : device(NULL), frame_counter(0), debug(debug), reposition_throttle(10) {
 
-    Matx44f rotate = translateMatrix(-25, -25, 0) * rotateMatrix(0, 0, (float) M_PI) * translateMatrix(25, 25, 0);
-
-    detector.loadPattern("marker1.png", 50);
-    pattern_offsets.push_back(rotate * translateMatrix(-130, -190, 0));
-    detector.loadPattern("marker2.png", 50);
-    pattern_offsets.push_back(rotate * translateMatrix(-130, 40, 0));
-    
     char* buffer;
     size_t size;
 
-    if (!embedded_copy_resource("calibration.xml", &buffer, &size))
-        throw runtime_error("Unable to load calibration data");
+	string template_filename = string("template_") + tmpl + string(".json");
+
+    if (!get_resource(template_filename, &buffer, &size))
+        throw runtime_error("Unable to load calibration template data: not found");
+
+	Json::Reader reader;
+	Json::Value template_root;
+
+	if (!reader.parse(string(buffer, size), template_root) || !template_root.isArray()) {
+		free(buffer);
+		throw runtime_error("Unable to load calibration template data: parse error");
+	}
+
+	for (int i = 0; i < template_root.size(); i++) {
+		Json::Value template_description = template_root[i];
+
+		if (!template_description.isObject()) continue;
+		int template_size = template_description["size"].asInt();
+		float template_orientation = M_PI * (template_description["orientation"].asFloat()) / 180;
+		float template_rotation = M_PI * (template_description["rotation"].asFloat()) / 180;
+
+		Matx44f rotate = translateMatrix(-template_size/2, -template_size/2, 0) * rotateMatrix(0, 0, template_orientation) * translateMatrix(template_size/2, template_size/2, 0);
+		detector.loadPattern(template_description["file"].asString(), template_size);
+		float ox = template_description["origin"]["x"].asFloat();
+		float oy = template_description["origin"]["y"].asFloat();
+		float oz = template_description["origin"]["z"].asFloat();
+//cout << template_description["file"].asString();
+//cout << ox << " " << oy << " " << oz << " " << template_orientation << " " << template_rotation << endl;
+
+		pattern_offsets.push_back(rotate * translateMatrix(ox, oy, oz) * rotateMatrix(0, 0, template_rotation));
+	}
+
+	free(buffer);
+
+    if (!get_resource("calibration.xml", &buffer, &size))
+        throw runtime_error("Unable to load intrinsic calibration data");
 
     FileStorage fs(string(buffer, size), FileStorage::READ + FileStorage::MEMORY);
     fs["intrinsic"] >> intrinsics;
@@ -81,8 +106,10 @@ CameraHandler::CameraHandler(int id) : device(NULL), frame_counter(0) {
 
     device = new VideoCapture(id);
 
-    if (!device->isOpened()) 
+    if (!device->isOpened())
         throw runtime_error("Camera not available");
+
+	device->set(CV_CAP_PROP_SETTINGS, 1); //set(CV_PROP_AUTOFOCUS, 0);
 
 
     rotation = Mat::eye(3, 3, CV_32F);
@@ -116,11 +143,11 @@ void CameraHandler::handle(Request& request) {
 
 
     if (!request.has_variable("command")) {
-        request.set_status(404); 
+        request.set_status(404);
         request.send_data("Not found");
         request.finish();
         return;
-    } 
+    }
 
     string command = request.get_variable("command");
 
@@ -140,37 +167,21 @@ void CameraHandler::handle(Request& request) {
 
             vector<uchar> buffer;
             if (imencode(".jpg", temp, buffer, params)) {
-                request.set_status(200); 
+                request.set_status(200);
                 request.set_header("Content-Type", "image/jpeg");
                 request.set_header("Cache-Control", "max-age=0, post-check=0, pre-check=0, no-store, no-cache, must-revalidate");
                 request.send_data(&(buffer[0]), (int) buffer.size());
             } else {
-                request.set_status(404); 
+                request.set_status(404);
                 request.send_data("Not found");
             }
 
         } else {
-            request.set_status(404); 
+            request.set_status(404);
             request.send_data("Not found");
         }
 
-    } /*else if (command == "save") {
-
-        MUTEX_LOCK(camera_mutex);
-
-        Mat temp = frame;
-
-        MUTEX_UNLOCK(camera_mutex);
-
-        imwrite("/tmp/test.png", temp);
-
-        cout << rotation << endl;
-        cout << translation << endl;
-
-        request.set_status(200); 
-        request.send_data("OK");
-
-    }*/ else if (command == "describe") {
+    } else if (command == "describe") {
 
         MUTEX_LOCK(camera_mutex);
 
@@ -207,7 +218,7 @@ void CameraHandler::handle(Request& request) {
 
 //calibrationMatrixValues(intrinsics, temp.size(), double apertureWidth, double apertureHeight, double& fovx, double& fovy, double& focalLength, Point2d& principalPoint, double& aspectRatio)
 
-        request.set_status(200); 
+        request.set_status(200);
         request.set_header("Content-Type", "application/json");
         request.set_header("Cache-Control", "max-age=0, post-check=0, pre-check=0, no-store, no-cache, must-revalidate");
 
@@ -250,7 +261,7 @@ void CameraHandler::handle(Request& request) {
         response["translation"] = trans;
         response["homography"] = hom;
 
-        request.set_status(200); 
+        request.set_status(200);
         request.set_header("Content-Type", "application/json");
         request.set_header("Cache-Control", "max-age=0, post-check=0, pre-check=0, no-store, no-cache, must-revalidate");
 
@@ -259,7 +270,7 @@ void CameraHandler::handle(Request& request) {
 
 
     } else {
-        request.set_status(404); 
+        request.set_status(404);
         request.send_data("Not found");
     }
 
@@ -273,8 +284,10 @@ bool CameraHandler::capture() {
     if (!device) return false;
 
     Mat temp;
-    *device >> temp; 
+    *device >> temp;
     frame_counter++;
+
+	bool reposition = frame_counter % reposition_throttle == 0;
 
     if (temp.empty()) {
         if (frame_counter % 100 == 0) {
@@ -283,15 +296,21 @@ bool CameraHandler::capture() {
         return false;
     }
 
+	if (debug && reposition)
+		temp.copyTo(debug_frame);
+
     MUTEX_UNLOCK(camera_mutex);
 
-    if (frame_counter % 10 == 0) {
+    if (reposition) {
         vector<PatternDetection> detectedPatterns;
-        detector.detect(temp, intrinsics, distortion, detectedPatterns); 
+        detector.detect(temp, intrinsics, distortion, detectedPatterns);
 
-	    /*for (unsigned int i =0; i<detectedPatterns.size(); i++) {
-		    detectedPatterns.at(i).draw(temp, intrinsics, distortion);
-	    }*/
+		if (debug) {
+			for (size_t i = 0; i<detectedPatterns.size(); i++) {
+				Matx44f origin = pattern_offsets.at(detectedPatterns.at(i).getIdentifier());
+				detectedPatterns.at(i).draw(debug_frame, intrinsics, distortion, origin.inv());
+			}
+		}
 
         MUTEX_LOCK(camera_mutex);
 
@@ -309,13 +328,12 @@ bool CameraHandler::capture() {
     temp.copyTo(frame);
     MUTEX_UNLOCK(camera_mutex);
 
-    return true;
-}
+	if (debug && reposition)  {
+		imshow("Camera debug", debug_frame);
+		waitKey(1);
+	}
 
-inline Point3f extractHomogeneous(Matx41f hv)
-{
-    Point3f f = Point3f(hv(0, 0) / hv(3, 0), hv(1, 0) / hv(3, 0), hv(2, 0) / hv(3, 0));
-    return f;
+    return true;
 }
 
 bool CameraHandler::localize_camera(vector<PatternDetection> detections)
@@ -330,6 +348,8 @@ bool CameraHandler::localize_camera(vector<PatternDetection> detections)
     vector<Point3f> surfacePoints;
     vector<Point2f> imagePoints;
 
+	Matx44f global = rotateMatrix(0, 0, M_PI);
+
     for (unsigned int i =0; i < detections.size(); i++) {
 
         int id = detections.at(i).getIdentifier();
@@ -339,12 +359,12 @@ bool CameraHandler::localize_camera(vector<PatternDetection> detections)
 
         float size = (float) detections.at(i).getSize();
 
-        Matx44f transform =  pattern_offsets.at(id);
+        Matx44f transform = pattern_offsets.at(id);
 
-        surfacePoints.push_back(extractHomogeneous(transform * Scalar(0, 0, 0, 1)));
-        surfacePoints.push_back(extractHomogeneous(transform * Scalar(size, 0, 0, 1)));
-        surfacePoints.push_back(extractHomogeneous(transform * Scalar(size, size, 0, 1)));
-        surfacePoints.push_back(extractHomogeneous(transform * Scalar(0, size, 0, 1)));
+        surfacePoints.push_back(extractHomogeneous(global * transform * Scalar(0, 0, 0, 1)));
+        surfacePoints.push_back(extractHomogeneous(global * transform * Scalar(size, 0, 0, 1)));
+        surfacePoints.push_back(extractHomogeneous(global * transform * Scalar(size, size, 0, 1)));
+        surfacePoints.push_back(extractHomogeneous(global * transform * Scalar(0, size, 0, 1)));
 
         imagePoints.push_back(detections.at(i).getCorner(0));
         imagePoints.push_back(detections.at(i).getCorner(1));
@@ -352,7 +372,12 @@ bool CameraHandler::localize_camera(vector<PatternDetection> detections)
         imagePoints.push_back(detections.at(i).getCorner(3));
     }
 
-    solvePnP(surfacePoints, imagePoints, intrinsics, distortion, rotVec, translation);
+	//if (surfacePoints.size() > 4) {
+	//	DEBUGMSG("Estimating plane on %d points\n", (int) surfacePoints.size());
+	//	solvePnPRansac(surfacePoints, imagePoints, intrinsics, distortion, rotVec, translation, false, 100, 13.0, std::max(8, (int) surfacePoints.size() / 2));
+	//} else {
+	    solvePnP(surfacePoints, imagePoints, intrinsics, distortion, rotVec, translation);
+	//}
     rotVec.convertTo(rotVec, CV_32F);
     translation.convertTo(translation, CV_32F);
     Rodrigues(rotVec, rotation);

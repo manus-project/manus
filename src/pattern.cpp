@@ -9,9 +9,7 @@
 using namespace cv;
 using namespace std;
 
-#define embedded_header_only
-#include "embedded.c"
-
+#include "utilities.h"
 #include "debug.h"
 
 namespace manus {
@@ -21,7 +19,7 @@ Pattern::Pattern(int id, float size, const string& filename, Mat offset): id(id)
     char* buffer;
     size_t buffer_size;
 
-    if (!embedded_copy_resource(filename.c_str(), &buffer, &buffer_size))
+    if (!get_resource(filename, &buffer, &buffer_size))
         throw runtime_error("Unable to load image");
 
     _InputArray data(buffer, (int)buffer_size);
@@ -31,17 +29,17 @@ Pattern::Pattern(int id, float size, const string& filename, Mat offset): id(id)
     free(buffer);
 
     //Mat img = imread(filename, 0);
-	
+
 	if(img.cols!=img.rows) {
 		throw runtime_error("Not a square pattern");
 	}
 
-	int msize = PATTERN_SIZE; 
+	int msize = PATTERN_SIZE;
 
 	Mat src(msize, msize, CV_8UC1);
 	Point2f center((msize-1)/2.0f,(msize-1)/2.0f);
 	Mat rot_mat(2,3,CV_32F);
-	
+
 	resize(img, src, Size(msize,msize));
 	Mat subImg = src(Range(msize / 4,3 * msize/4), Range(msize / 4,3 * msize / 4));
 	markers.push_back(subImg);
@@ -50,10 +48,10 @@ Pattern::Pattern(int id, float size, const string& filename, Mat offset): id(id)
 
 	for (int i=1; i<4; i++){
 		Mat dst= Mat(msize, msize, CV_8UC1);
-		rot_mat = getRotationMatrix2D( center, -i * 90, 1.0);
-		warpAffine( src, dst , rot_mat, Size(msize,msize));
+		rot_mat = getRotationMatrix2D(center, -i * 90, 1.0);
+		warpAffine(src, dst, rot_mat, Size(msize,msize));
 		Mat subImg = dst(Range(msize/4,3*msize/4), Range(msize/4,3*msize/4));
-		markers.push_back(subImg);	
+		markers.push_back(subImg);
 	}
 
 }
@@ -89,22 +87,22 @@ double Pattern::match(const Mat& src, int& orientation) {
 
 	//zero_mean_mode;
 	int zero_mean_mode = 1;
-	
+
 	//use correlation coefficient as a robust similarity measure
 	double confidence = -1.0;
 	for(i=0; i < markers.size(); i++){
-		
+
 		double const nnn = pow(norm(markers.at(i)),2);
 
 		if (zero_mean_mode ==1){
 
 			double const mmm = mean(markers.at(i)).val[0];
-		
+
 			nom = interior.dot(markers.at(i)) - (N * mean_int.val[0] * mmm);
 			den = sqrt( (normSrcSq - (N * mean_int.val[0] * mean_int.val[0]) ) * (nnn - (N * mmm * mmm)));
 			tempsim = nom/den;
 		}
-		else 
+		else
 		{
 		    tempsim = interior.dot(markers.at(i))/(sqrt(normSrcSq*nnn));
 		}
@@ -114,7 +112,7 @@ double Pattern::match(const Mat& src, int& orientation) {
 			orientation = i;
 		}
 	}
-	
+
     return confidence;
 }
 
@@ -152,25 +150,36 @@ float PatternDetection::getSize()
     return size;
 }
 
-void PatternDetection::draw(Mat& frame, const Mat& camMatrix, const Mat& distMatrix)
+void PatternDetection::draw(Mat& frame, const Mat& camMatrix, const Mat& distMatrix, const Matx44f& offset)
 {
 
 	CvScalar color = cvScalar(255,0,255);
 
-	//model 3D points: they must be projected to the image plane
-	Mat modelPts = (Mat_<float>(4,3) << 0, 0, 0, size, 0, 0, 0, size, 0, 0, 0, size );
-
+	Point3f origin = extractHomogeneous(offset * Scalar(0, 0, 0, 1));
 	std::vector<cv::Point2f> model2ImagePts;
-	/* project model 3D points to the image. Points through the transformation matrix 
-	(defined by rotVec and transVec) are "transfered" from the pattern CS to the 
-	camera CS, and then, points are projected using camera parameters 
+//cout << id << "  " << origin << endl;
+	//model 3D points: they must be projected to the image plane
+	Mat modelPts = (Mat_<float>(5,3) <<
+			0, 0, 0,
+			size, 0, 0,
+			0, size, 0,
+			0, 0, size,
+			origin.x, origin.y, origin.z );
+
+	/* project model 3D points to the image. Points through the transformation matrix
+	(defined by rotVec and transVec) are "transfered" from the pattern CS to the
+	camera CS, and then, points are projected using camera parameters
 	(camera matrix, distortion matrix) from the camera 3D CS to its image plane
 	*/
-	projectPoints(modelPts, rotVec, transVec, camMatrix, distMatrix, model2ImagePts); 
+	projectPoints(modelPts, rotVec, transVec, camMatrix, distMatrix, model2ImagePts);
+
+	cv::line(frame, model2ImagePts.at(0), model2ImagePts.at(4), cvScalar(255,0,255), 1);
 
     cv::line(frame, model2ImagePts.at(0), model2ImagePts.at(1), cvScalar(0,0,255), 3);
     cv::line(frame, model2ImagePts.at(0), model2ImagePts.at(2), cvScalar(0,255,0), 3);
 	cv::line(frame, model2ImagePts.at(0), model2ImagePts.at(3), cvScalar(255,0,0), 3);
+
+	cv::putText(frame, cv::format("%d", id), model2ImagePts.at(0), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 155, 0), 1);
 
 	model2ImagePts.clear();
 
@@ -183,7 +192,7 @@ PatternDetector::PatternDetector(double threshold, int block_size, double conf_t
 	this->block_size = block_size;//for adaptive image thresholding
 	this->confThreshold = conf_threshold;//bound for accepted similarities between detected patterns and loaded patterns
 	normROI = Mat(PATTERN_SIZE, PATTERN_SIZE, CV_8UC1);//normalized ROI
-	
+
 	//corner of normalized area
 	norm2DPts[0] = Point2f(0, 0);
 	norm2DPts[1] = Point2f(PATTERN_SIZE-1, 0);
@@ -192,10 +201,10 @@ PatternDetector::PatternDetector(double threshold, int block_size, double conf_t
 
 }
 
-int PatternDetector::loadPattern(const char* filename, double size) {
+int PatternDetector::loadPattern(const string& filename, double size) {
 
     library.push_back(make_shared<Pattern>(library.size(), size, filename));
-	
+
     return (int) (library.size()-1);
 }
 
@@ -254,7 +263,7 @@ void PatternDetector::detect(const Mat& frame, const Mat& cameraMatrix, const Ma
 						}
 				}
 				Rect box(pMinX, pMinY, pMaxX-pMinX+1, pMaxY-pMinY+1);
-				
+
 				//find the upper left vertex
 				double d;
 				double dmin=(4*avsize*avsize);
@@ -276,8 +285,8 @@ void PatternDetector::detect(const Mat& frame, const Mat& cameraMatrix, const Ma
 
 				//refine corners
 				cornerSubPix(grayImage, refinedVertices, Size(3,3), Size(-1,-1), TermCriteria(1, 3, 1));
-				
-				//rotate vertices based on upper left vertex; this gives you the most trivial homogrpahy 
+
+				//rotate vertices based on upper left vertex; this gives you the most trivial homogrpahy
 				for(j=0; j<4;j++){
 					roi2DPts[j] = Point2f(refinedVertices.at((4+v1-j)%4).x - pMinX, refinedVertices.at((4+v1-j)%4).y - pMinY);
 				}
@@ -292,7 +301,7 @@ void PatternDetector::detect(const Mat& frame, const Mat& cameraMatrix, const Ma
 
 				//push-back pattern in the stack of foundPatterns and find its extrinsics
 				if (id >= 0) {
-				
+
                     vector<Point2f> candidateCorners;
                     Mat rotVec = (Mat_<float>(3,1) << 0, 0, 0);
                     Mat transVec = (Mat_<float>(3,1) << 0, 0, 0);
@@ -304,8 +313,8 @@ void PatternDetector::detect(const Mat& frame, const Mat& cameraMatrix, const Ma
 					//find the transformation (from camera CS to pattern CS)
 					calculateExtrinsics(library[id]->getSize(), cameraMatrix, distortions, rotVec, transVec, candidateCorners);
 
-                    PatternDetection patCand(library[id]->getIdentifier(), library[id]->getSize(), rotVec, transVec, confidence, candidateCorners);
-					foundPatterns.push_back(patCand);
+                    PatternDetection detected_pattern(library[id]->getIdentifier(), library[id]->getSize(), rotVec, transVec, confidence, candidateCorners);
+					foundPatterns.push_back(detected_pattern);
 
 				}
 			}
@@ -326,21 +335,21 @@ void PatternDetector::convertAndBinarize(const Mat& src, Mat& dst1, Mat& dst2)
 	else {
 		src.copyTo(dst2);
 	}
-	
+
 	adaptiveThreshold( dst2, dst1, 255, CV_ADAPTIVE_THRESH_GAUSSIAN_C, CV_THRESH_BINARY_INV, block_size, threshold);
-	
+
 	dilate(dst1, dst1, Mat());
 }
 
 
 void PatternDetector::normalizePattern(const Mat& src, const Point2f roiPoints[], Rect& rec, Mat& dst)
 {
-	
+
 
 	//compute the homography
 	Mat Homo(3,3,CV_32F);
 	Homo = getPerspectiveTransform( roiPoints, norm2DPts);
-	
+
 	cv::Mat subImg = src(cv::Range(rec.y, rec.y+rec.height), cv::Range(rec.x, rec.x+rec.width));
 
 	//warp the input based on the homography model to get the normalized ROI
@@ -361,7 +370,7 @@ int PatternDetector::identifyPattern(const Mat& src, double& confidence, int& or
 	//use correlation coefficient as a robust similarity measure
 	confidence = confThreshold;
 	for (j=0; j < library.size(); j++){
-		
+
         double m = library[j]->match(src, orientation);
 
         if (m > confidence) {

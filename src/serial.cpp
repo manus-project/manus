@@ -139,13 +139,13 @@ int SerialPortRobotArm::setArmParametersDynamic() {
     joint_info.push_back(createJointInfo(7, GRIPPER, 0, 0, 0, 0, 0, 1));
     joint_data.push_back(createJointData(7, 0));
     */
-    motor_info[0] = createJointInfo(0, ROTATION,    0, 90, 115,   0, -135, 135);
+    motor_info[0] = createJointInfo(0, ROTATION,    0, 90, 113,   0, -135, 135);
     motor_info[1] = createJointInfo(1, ROTATION,   140,  0,  0, 108,    0, 180);
     motor_info[2] = createJointInfo(2, ROTATION,  -80, 	0,  0, 112, -150, 150);
     motor_info[3] = createJointInfo(3, ROTATION,    -50, 	0,  0,  20,  -60, 60);
     motor_info[4] = createJointInfo(4,    FIXED,   90, 90,  0,   0,    0,  0);	// FIXED!!
     motor_info[5] = createJointInfo(5, ROTATION,    0,  0,  0,  0,    0, 1);
-    motor_info[6] = createJointInfo(6, GRIPPER,     0,  0,  60,  0,    0, 1);
+    motor_info[6] = createJointInfo(6, GRIPPER,     0,  0,  50,  0,    0, 1);
 
 	for( int q = 0; q < motor_info.size(); q++ ){
 		last_id.motor_info_id[q] = 0;

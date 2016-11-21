@@ -21,7 +21,7 @@ class Pattern
     public:
   		Pattern(int id, float size, const string& filename, Mat offset = cv::Mat::eye(3, 3, CV_32F));
 
-		~Pattern(){};      
+		~Pattern(){};
 
         int getIdentifier();
 
@@ -46,9 +46,9 @@ class PatternDetection
 		PatternDetection(int id, float size, const Mat& rotVec, const Mat& transVec, double confidence, vector<Point2f> corners);
 
 		~PatternDetection() {};
-		
+
 		//augments image with 3D cubes. It;s too simple augmentation jsut for checking
-		void draw(Mat& frame, const Mat& camMatrix, const Mat& distMatrix);
+		void draw(Mat& frame, const Mat& camMatrix, const Mat& distMatrix, const Matx44f& offset = Matx44f());
 
 		void getExtrinsics(Mat& rotation, Mat& translation);
 
@@ -80,7 +80,7 @@ public:
 	//distractor
 	~PatternDetector(){};
 
-    int loadPattern(const char* filename, double realsize = 50);
+    int loadPattern(const string& filename, double realsize = 50);
 
 
     //detect patterns in the input frame
