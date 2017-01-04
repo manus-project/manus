@@ -1,0 +1,17 @@
+%YAML:1.0
+marker1.png:
+  name: marker1
+  size: 50
+  origin:
+    y: 220
+    x: -70
+  rotation:
+    z: 90
+marker2.png:
+  name: marker2
+  size: 50
+  origin:
+    y: -220
+    x: -70
+  rotation:
+    z: 270

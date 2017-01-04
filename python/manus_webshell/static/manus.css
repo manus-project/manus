@@ -1,0 +1,102 @@
+
+.header {
+    margin: 20px 0 50px 0;
+}
+
+.header .emergency {
+    float: right;
+}
+
+.joint {
+    clear: both;
+    display: block;
+    font-size: 120%;
+    margin: 5px;
+    vertical-align: top;
+}
+
+.joint span,
+.joint div,
+.joint button {
+    vertical-align: top;
+}
+
+.joint .information {
+    display: inline-block;
+    width: 40%;
+}
+
+.joint .information .title {
+    display: inline-block;
+    width: 100%;
+}
+
+.joint .information .type {
+    display: inline-block;
+    width: 100%;
+    color: gray;
+    font-size: 80%
+}
+
+.joint .status {
+    display: inline-block;
+    position: relative;
+    width: 59%;
+    height: 20px;
+    border: 1px gray solid;
+    text-align: center;
+    border-radius: 5px;
+    background-color: rgb(200, 200, 200);
+    box-shadow: 1px 1px 4px #888888 inset;
+}
+
+.joint .status .current,
+.joint .status .goal {
+    display: inline-block;
+    position: absolute;
+    top: -10px;
+    width: 8px;
+    height: 40px;
+    border-radius: 5px;
+}
+
+.joint .status .current {
+    background-color: rgb(53, 126, 189);
+    border: 1px rgb(80, 80, 140) solid;
+    z-index: 10;
+}
+
+.joint .status .goal {
+    background-color: rgba(154, 154, 154, 0.5);
+    z-index: 1;
+}
+
+.joint button {
+    margin: 0px 3px;
+}
+
+.viewer {
+	width: 100%;
+	position: relative;
+}
+
+.viewer .tools {
+	position: absolute;
+	bottom: 10px;
+	left: 10px;
+	display: none;
+}
+
+.viewer img {
+    position: absolute;
+    z-index: -100;
+}
+
+.viewer:hover .tools {
+	display: block;
+	text-align: right;
+}
+
+.viewer canvas {
+    border: 1px gray solid;
+}

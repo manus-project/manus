@@ -1,0 +1,65 @@
+{
+"description" : "Manus Serial Port manipulator stack",
+"environment" : {
+"ECHOLIB_SOCKET" : "/tmp/echo.sock",
+"ECHOLIB_DEBUG" : "1"
+},
+"plugins" : ["ignition.plugin.Wait"],
+"programs" : {
+    "echo" : {
+        "command" : "echodaemon",
+        "required" : true,
+        "restart" : false,
+        "wait" : 1
+    },
+    "cameraserver" : {
+        "command" : "echocv_camera 0",
+        "required" : false,
+        "restart" : true,
+        "debug": false,
+        "directory" : "/usr/share/manus/",
+        "depends" : ["echo"],
+        "wait" : 0.1,
+        "mapping" : {
+            "camera" : "camera0.image",
+            "intrinsics" : "camera0.parameters"
+        },
+        "environment" : {
+            "ECHOLIB_MAP" : "camera=camera0.image;intrinsics=camera0.parameters"
+        }
+    },
+    "artracker" : {
+        "command" : "echocv_artrack board1.yml",
+        "required" : false,
+        "restart" : true,
+        "directory" : "/usr/share/manus/arboards",
+        "depends" : ["echo", "cameraserver"],
+        "environment" : {
+            "ECHOLIB_MAP" : "camera=camera0.image;intrinsics=camera0.parameters;location=camera0.location"
+        }
+    },
+    "webshell" : {
+        "command" : "python -u -m manus_webshell",
+        "required" : false,
+        "restart" : true,
+        "depends" : ["echo", "cameraserver", "manipulator"]
+    },
+    "manipulator": {
+        "command": "manus_serial_manipulator",
+        "depends": ["echo"],
+        "environment" : {
+            "ECHOLIB_MAP" : "state=manipulator0.state;description=manipulator0.description;plan=manipulator0.plan"
+        }
+    },
+    "planner" : {
+        "command" : "manus_planner",
+        "required" : false,
+        "restart" : false,
+        "debug" : false,
+        "depends" : ["echo", "manipulator"],
+        "environment" : {
+            "ECHOLIB_MAP" : "state=manipulator0.state;description=manipulator0.description;trajectory=manipulator0.trajectory;plan=manipulator0.plan"
+        }
+    }
+}
+}
