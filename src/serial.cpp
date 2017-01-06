@@ -76,6 +76,8 @@ int SerialManipulator::dynamic_configuration() {
 	_state.joints.resize(7);
 	_description.joints.resize(7);
 
+	_state.state = UNKNOWN;
+
 	min_pos.resize(7);
 	max_pos.resize(7);
 
@@ -86,6 +88,12 @@ int SerialManipulator::dynamic_configuration() {
 	_description.joints[4] = joint_description(FIXED,       90, 90,  0,   0,    0,  0);
 	_description.joints[5] = joint_description(ROTATION,    0,  0,  0,  0,    -90, 90);
 	_description.joints[6] = joint_description(GRIPPER,     0,  0,  50,  0,    0, 1);
+
+	for (int i = 0; i < 7; i++) {
+		if (_description.joints[i].type != FIXED)
+			_state.joints[i].goal = -1000;
+		_state.joints[i].type = IDLE;
+	}
 
 	write_char(1);  // Request manipulator description
 	write_char(16);
@@ -170,8 +178,6 @@ int SerialManipulator::joint_to_motor(int j) {
 			m++;
 	}
 
-	//cout << "Joint " << j << "Motor " << m << endl;
-
 	return m;
 
 }
@@ -187,8 +193,6 @@ int SerialManipulator::motor_to_joint(int m) {
 		if (_description.joints[j].type == FIXED)
 			j++;
 	}
-
-	//cout << "Motor " << mt << "Joint " << j << endl; 
 
 	return j;
 
@@ -301,13 +305,13 @@ int SerialManipulator::read_data(const char* buffer, size_t buffer_length) {
 
 			} case 34: { // manipulator data
 				int state = buffer[position++];
-				switch (state) {
+				/*switch (state) {
 				case 1: _state.state = CONNECTED; break;
 				case 2: _state.state = PASSIVE; break;
 				case 3: _state.state = ACTIVE; break;
 				case 4: _state.state = CALIBRATION; break;
 				default: _state.state = UNKNOWN;
-				}
+				}*/
 
 				int error_id = (unsigned int) buffer[position++];
 				//manipulator_data.hand_sensor = (int)read_buffer[2];
@@ -335,9 +339,11 @@ int SerialManipulator::read_data(const char* buffer, size_t buffer_length) {
 				float limit_current = read_float(buffer, &position);
 				_internal.valid_motor_info = true;
 
-				_internal.configured = 1;
+				if (j == _description.joints.size() - 1) {
+					_internal.configured = 1;
+					//cout << "Configure" << endl;
+				}
 
-				//cout << "Configure" << endl;
 				break;
 
 			} case 36: { // motor state
@@ -347,17 +353,35 @@ int SerialManipulator::read_data(const char* buffer, size_t buffer_length) {
 				float goal = read_float2(buffer, &position);
 
 				_state.joints[j].position = scale_motor_to_joint(j, pos);
-				_state.joints[j].goal = scale_motor_to_joint(j, goal);
+				//_state.joints[j].goal = scale_motor_to_joint(j, goal);
+				/*
+				if (_state.joints[j].goal != goal) {
 
-if (_state.joints[j].goal < _description.joints[j].dh_min || _description.joints[j].dh_max < _state.joints[j].goal)
-{
-	cout << "Illegal joint " << j << " goal:" << _state.joints[j].goal << " - " << goal << " : " << min_pos[j] << " " << max_pos[j] << endl;
-}
+				}*/
+
+				if (_state.joints[j].goal < -999) {
+					cout << "Setting joint goal " << j << " to " << scale_motor_to_joint(j, goal)<< endl;
+					_state.joints[j].goal = scale_motor_to_joint(j, goal);
+
+					if (isinf(_state.joints[j].goal))
+						_state.joints[j].goal = _state.joints[j].position;
+				}
+
+				/*
+				if (_state.joints[j].goal < _description.joints[j].dh_min || _description.joints[j].dh_max < _state.joints[j].goal)
+				{
+					cout << "Illegal joint " << j << " goal:" << _state.joints[j].goal << " - " << goal << " : " << min_pos[j] << " " << max_pos[j] << endl;
+				}*/
 
 				position += 2;
 				//motor_data[ tmp_int ].state_id = (unsigned int) buffer[5];
 				//motor_data[ tmp_int ].error_id = (unsigned int) read_buffer[6];
 				_internal.valid_motor_data = true;
+
+				if (j == _description.joints.size() - 1 && _internal.configured) {
+					_state.state = ACTIVE;
+				}
+
 				break;
 			}
 			}
@@ -378,7 +402,7 @@ bool SerialManipulator::is_connected() {
 }
 
 int SerialManipulator::move(int joint, float pos, float speed) {
-	cout << "Move " << joint << " to " << pos << endl;
+	//cout << "Move " << joint << " to " << pos << endl;
 
 	if (joint < 0 || joint >= _description.joints.size()) return -1;
 
@@ -405,6 +429,9 @@ int SerialManipulator::move(int joint, float pos, float speed) {
 		pos = min_pos[joint];
 	else if (pos > max_pos[joint])
 		pos = max_pos[joint];
+
+	_state.joints[joint].goal = scale_motor_to_joint(joint, pos);
+
 
 	int tmp = (int)(pos * 100.0f);
 
@@ -552,10 +579,10 @@ bool SerialManipulator::handle() {
 			errno = 0;
 			count = ::write(fd, &(write_buffer[write_buffer_position]), write_buffer_available - write_buffer_position);
 
-		for (int i = write_buffer_position; i < write_buffer_position + count; i++) {
+		/*for (int i = write_buffer_position; i < write_buffer_position + count; i++) {
 			cout << ((unsigned short) (write_buffer[i]) & 0xFF) << ",";
 		}
-		cout << endl;
+		cout << endl;*/
 
 			if (count == -1) {
 				if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -573,7 +600,7 @@ bool SerialManipulator::handle() {
 				break;
 			} else {
 				write_buffer_position += count;
-				cout << "Written " << count << endl;
+				//cout << "Written " << count << endl;
 				if (write_buffer_position == write_buffer_available) {
 					write_buffer_position = 0;
 					write_buffer_available = 0;

@@ -119,13 +119,10 @@ inline float normalizeAngle(float val, const float min, const float max) {
     return val;
 }
 
-ManipulatorManager::ManipulatorManager(SharedClient client, shared_ptr<Manipulator> manipulator): manipulator(manipulator),
+ManipulatorManager::ManipulatorManager(SharedClient client, shared_ptr<Manipulator> manipulator): manipulator(manipulator), client(client),
     watcher(client, "state", std::bind(&ManipulatorManager::on_subscribers, this, std::placeholders::_1)), subscribers(0) {
 
     state_publisher = make_shared<TypedPublisher<ManipulatorState> >(client, "state");
-
-    ManipulatorDescription description = manipulator->describe();
-    description_publisher = make_shared<StaticPublisher<ManipulatorDescription> >(client, "description", description);
 
     plan_listener = make_shared<TypedSubscriber<Plan> >(client, "plan",
     [this](shared_ptr<Plan> param) {
@@ -143,13 +140,13 @@ ManipulatorManager::~ManipulatorManager() {
 void ManipulatorManager::flush() {
 
     plan.clear();
-
+/*
     ManipulatorState state = manipulator->state();
 
     for (size_t i = 0; i < manipulator->size(); i++) {
         manipulator->move(i, state.joints[i].position, 1);
     }
-
+*/
 }
 
 void ManipulatorManager::push(shared_ptr<Plan> t) {
@@ -192,7 +189,12 @@ void ManipulatorManager::push(shared_ptr<Plan> t) {
 
 void ManipulatorManager::update() {
 
-    if (manipulator->state().state != PASSIVE) {
+    if (manipulator->state().state != UNKNOWN && !description_publisher) {
+        ManipulatorDescription description = manipulator->describe();
+        description_publisher = make_shared<StaticPublisher<ManipulatorDescription> >(client, "description", description);
+    }
+
+    if (manipulator->state().state != PASSIVE && manipulator->state().state != UNKNOWN) {
         state_publisher->send(manipulator->state());
     }
 
@@ -221,7 +223,7 @@ void ManipulatorManager::step(bool force) {
         goal &= close_enough(state.joints[i].goal, plan[0].joints[i].goal);
         //cout << i << ": " << idle << " " << goal << " - " << state.joints[i].goal << " "  << plan[0].joints[i].goal << endl;
     }
-cout << goal << endl;
+
     if (goal || force) {
 
         for (size_t i = 0; i < manipulator->size(); i++) {

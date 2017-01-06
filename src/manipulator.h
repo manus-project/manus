@@ -61,6 +61,8 @@ private:
 
     void step(bool force = false);
 
+    SharedClient client;
+
     int subscribers = 0;
 
 	SubscriptionWatcher watcher;
