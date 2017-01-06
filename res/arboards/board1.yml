@@ -4,14 +4,30 @@ marker1.png:
   size: 50
   origin:
     y: 220
-    x: -70
+    x: -90
   rotation:
-    z: 90
+    z: 180
 marker2.png:
   name: marker2
   size: 50
   origin:
     y: -220
-    x: -70
+    x: -90
   rotation:
-    z: 270
+    z: 0
+marker3.png:
+  name: marker3
+  size: 50
+  origin:
+    y: -220
+    x: 360
+  rotation:
+    z: 180
+marker4.png:
+  name: marker4
+  size: 50
+  origin:
+    y: 220
+    x: 360
+  rotation:
+    z: 90
