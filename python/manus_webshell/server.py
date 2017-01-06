@@ -20,8 +20,6 @@ import tornado.websocket
 from tornado.options import options, define, parse_command_line
 from tornado.iostream import StreamClosedError
 
-import cv2
-
 import echolib
 import echocv
 import echocv.tornado
@@ -81,7 +79,6 @@ class CameraLocationHandler(JsonHandler):
         return {
             "rotation" : location.rotation,
             "translation" : location.translation,
-            "homography" : location.rotation
         }
 
     def push_camera_location(self, camera, location):

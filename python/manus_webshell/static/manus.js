@@ -46,7 +46,7 @@ $(function() {
     $.ajax('/api/camera/describe').done(function(data) {
 
         var cameraView = $.manus.world.views.camera('camera', '/api/camera/video', data);
-        $.manus.world.camera(viewer, 'camera', data);
+        //$.manus.world.camera(viewer, 'camera', data);
 
         $('#menu').prepend($('<li>').attr({'id': 'menu-camera'})
             .append($('<a>').attr({'href' : '#world'}).data('toggle', 'tab').text("Camera").tab().click(function (e) {
