@@ -81,7 +81,7 @@ int SerialManipulator::dynamic_configuration() {
 	min_pos.resize(7);
 	max_pos.resize(7);
 
-	_description.joints[0] = joint_description(ROTATION,    0, 90, 113,   0, -135, 135);
+	_description.joints[0] = joint_description(ROTATION,    0, 90, 111,   0, -135, 135);
 	_description.joints[1] = joint_description(ROTATION,   140,  0,  0, 108,    0, 180);
 	_description.joints[2] = joint_description(ROTATION,   -80, 	0,  0, 112, -150, 150);
 	_description.joints[3] = joint_description(ROTATION,    -50, 	0,  0,  20,  -60, 60);
@@ -333,6 +333,7 @@ int SerialManipulator::read_data(const char* buffer, size_t buffer_length) {
 				if (_description.joints[j].type != GRIPPER) {
 					_description.joints[j].dh_min = (minp / 180.0) * M_PI;
 					_description.joints[j].dh_max = (maxp / 180.0) * M_PI;
+					cout << "Setting joint " << j << " limits to " << _description.joints[j].dh_min << " to " << _description.joints[j].dh_max << endl; 
 				}
 
 				float limit_voltage = read_float(buffer, &position);

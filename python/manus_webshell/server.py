@@ -291,12 +291,12 @@ def main():
 
         echocv.tornado.install_client(tornado_loop, client, on_disconnect)
 
-        logger.info("Starting web console")
+        logger.info("Starting %s webshell" % manus.NAME)
 
         try:
             tornado_loop.start()
         except KeyboardInterrupt:
-            logger.info("Stopping web console")
+            logger.info("Stopping %s webshell" % manus.NAME)
         except Exception, err:
             print traceback.format_exc()
 

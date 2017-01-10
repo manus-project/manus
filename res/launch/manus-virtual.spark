@@ -13,11 +13,11 @@
         "wait" : 1
     },
     "cameraserver" : {
-        "command" : "echocv_image board1.jpg",
+        "command" : "echocv_camera 0",
         "required" : false,
         "restart" : true,
         "debug": false,
-        "directory" : "/usr/share/manus/static",
+        "directory" : "/usr/share/manus/",
         "depends" : ["echo"],
         "wait" : 0.1,
         "mapping" : {
