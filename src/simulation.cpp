@@ -134,15 +134,13 @@ ManipulatorState SimulatedManipulator::state() {
 
 int main(int argc, char** argv) {
 
-    IOLoop loop;
-
-    SharedClient client = connect(loop);
+    SharedClient client = echolib::connect();
 
     shared_ptr<SimulatedManipulator> manipulator = shared_ptr<SimulatedManipulator>(new SimulatedManipulator());
 
     ManipulatorManager manager(client, manipulator);
 
-    while (loop.wait(50)) {
+    while (echolib::wait(50)) {
         manipulator->step(50);
         manager.update();
     }

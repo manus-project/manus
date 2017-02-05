@@ -503,7 +503,7 @@ int SerialManipulator::write_char(unsigned char c) {
 }
 
 
-bool SerialManipulator::handle() {
+bool SerialManipulator::handle_input() {
 	int error = 0;
 	ssize_t count = 0;
 	while (true) {
@@ -618,6 +618,10 @@ bool SerialManipulator::handle() {
 
 }
 
+bool SerialManipulator::handle_output() {
+	return true;
+}
+
 int SerialManipulator::get_file_descriptor() {
 	return fd;
 }
@@ -646,17 +650,15 @@ void SerialManipulator::disconnect() {
 
 int main(int argc, char** argv) {
 
-	IOLoop loop;
-
-	SharedClient client = connect(loop);
+	SharedClient client = echolib::connect();
 
 	shared_ptr<SerialManipulator> manipulator = shared_ptr<SerialManipulator>(new SerialManipulator("/dev/ttyACM0"));
 
-	loop.add_handler(manipulator);
+	echolib::default_loop()->add_handler(manipulator);
 
 	ManipulatorManager manager(client, manipulator);
 
-	while (loop.wait(50)) {
+	while (echolib::wait(50)) {
 		manager.update();
 	}
 

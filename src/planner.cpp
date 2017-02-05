@@ -200,16 +200,12 @@ private:
 
 int main(int argc, char** argv) {
 
-	IOLoop loop;
-
-	SharedClient client = connect(loop);
+	SharedClient client = echolib::connect();
 
 	Planner planner(client);
 
-	while (loop.wait(5000)) {
+	while (echolib::wait(5000)) {
 		planner.idle();
-
-
 	}
 
 	exit(0);

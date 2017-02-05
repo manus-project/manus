@@ -36,7 +36,8 @@ public:
 	virtual ManipulatorState state();
 
 	virtual int get_file_descriptor();
-	virtual bool handle();
+	virtual bool handle_output();
+	virtual bool handle_input();
 	virtual void disconnect();
 
 private:
