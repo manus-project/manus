@@ -29,7 +29,7 @@
         }
     },
     "artracker" : {
-        "command" : "echocv_artrack simple.yml",
+        "command" : "echocv_artrack board1.yml",
         "required" : false,
         "restart" : true,
         "directory" : "/usr/share/manus/arboards",
