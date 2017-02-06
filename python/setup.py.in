@@ -4,7 +4,6 @@ from distutils.core import setup
 
 setup(name='Manus Python support',
 	version='${PACKAGE_VERSION}',
-    package_dir={ '': '${CMAKE_CURRENT_SOURCE_DIR}' },
 	description='Python code for Manus-specific messages',
 	author='Luka Cehovin',
 	author_email='luka.cehovin@gmail.com',
@@ -15,7 +14,6 @@ setup(name='Manus Python support',
 
 setup(name='Manus Webshell',
 	version='${PACKAGE_VERSION}',
-    package_dir={ '': '${CMAKE_CURRENT_SOURCE_DIR}' },
 	description='Web interface for the Manus project',
 	author='Luka Cehovin',
 	author_email='luka.cehovin@gmail.com',

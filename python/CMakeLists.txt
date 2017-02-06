@@ -1,19 +1,13 @@
-find_program(PYTHON "python")
+find_package(PythonInterp ${ECHO_PYTHON_VERSION})
 
-if (PYTHON)
-    set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
-    set(SETUP_PY "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-    set(DEPS "${CMAKE_CURRENT_SOURCE_DIR}/manus_webshell/__init__.py")
-    set(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
+if (PYTHON_EXECUTABLE)
+    #install(CODE "execute_process(COMMAND ${PYTHON} ${SETUP_PY} install --prefix=${CMAKE_INSTALL_PREFIX} ${DISTUTILS_INSTALL_FLAGS})")
 
-    configure_file(${SETUP_PY_IN} ${SETUP_PY})
+    # Determine installation path
+    execute_process(COMMAND
+        ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(prefix='${CMAKE_INSTALL_PREFIX}'))"
+        OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    add_custom_command(OUTPUT ${OUTPUT}
-                       COMMAND ${PYTHON} ${SETUP_PY} build ${DISTUTILS_BUILD_FLAGS}
-                       COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
-                       DEPENDS ${DEPS} ${SETUP_PY})
-
-    add_custom_target(manus_python ALL DEPENDS ${OUTPUT})
-
-    install(CODE "execute_process(COMMAND ${PYTHON} ${SETUP_PY} install ${DISTUTILS_INSTALL_FLAGS})")
+    install(DIRECTORY manus DESTINATION ${PYTHON_SITE_PACKAGES})
+    install(DIRECTORY manus_webshell DESTINATION ${PYTHON_SITE_PACKAGES})
 endif()
