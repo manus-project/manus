@@ -100,3 +100,7 @@
 .viewer canvas {
     border: 1px gray solid;
 }
+
+#app-list {
+    font-size: 200%;
+}

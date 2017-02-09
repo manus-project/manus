@@ -25,11 +25,31 @@ $(function() {
 
     }
 
-    $.ajax('/api/app').done(function(data) {
+    $.ajax('/api/info').done(function(data) {
 
         $('#appname').text(data.name);
         $('#appversion').text(data.version);
 
+    });
+
+    function update_apps(data) {
+        $('#app-list').empty();
+        $.each(data, function(i, a) {
+            $('#app-list').append($('<li/>').append($("<a />").text(a).click(function (e) {
+
+                $.ajax('/api/apps?run=' + i).done(function(data) {
+                    update_apps(data);
+                });
+
+            })));
+        });
+
+    }
+
+    $.ajax('/api/apps').done(function(data) {
+
+        update_apps(data);
+        
     });
 
     $('#tabs').append($('<div>').attr({'class' : 'tab-pane', 'id' : 'world'}));

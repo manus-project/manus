@@ -195,6 +195,23 @@ class ManipulatorMoveHandler(JsonHandler):
     def check_etag_header(self):
         return False
 
+class AppsHandler(JsonHandler):
+    def __init__(self, application, request, apps):
+        super(AppsHandler, self).__init__(application, request)
+        self._apps = apps
+
+    def get(self):
+        run = self.request.arguments.get("run", "")
+        if len(run) > 0:
+            self._apps.run(run[0])
+
+        self.response = self._apps.list()
+        self.write_json()
+
+    def check_etag_header(self):
+        return False
+
+
 class ApiWebSocket(tornado.websocket.WebSocketHandler):
     connections = []
 
@@ -235,6 +252,30 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
 
     def on_planner_state(self, manipulator, state):
         pass
+
+class AppsList(object):
+
+    def __init__(self, client):
+        self._listsub = echolib.DictionarySubscriber(client, "app_list", lambda x: self._list(x))
+        self._annsub = echolib.DictionarySubscriber(client, "app_announce", lambda x: self._announce(x))
+        self._control = echolib.DictionaryPublisher(client, "app_control")
+
+    def list(self):
+        return self._apps
+
+    def run(self, id):
+        if len(id) > 0:
+            msg = echolib.Dictionary()
+            msg["command"] = "run"
+            msg["identifier"] = id
+            self._control.send(msg)
+
+    def _list(self, msg):
+        self._apps = {k: v for k, v in msg.items()}
+
+    def _announce(self, msg):
+        pass
+
 
 def main():
     logging_level = logging.DEBUG
@@ -277,8 +318,12 @@ def main():
         except Exception, e:
             print traceback.format_exc()
 
+        #handlers.append((r'/api/markers', MarkersStorageHandler))
+        apps = AppsList(client)
+        handlers.append((r'/api/apps', AppsHandler, {"apps" : apps}))
+
         handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators}))
-        handlers.append((r'/api/app', ApplicationHandler))
+        handlers.append((r'/api/info', ApplicationHandler))
         handlers.append((r'/', RedirectHandler, {'url' : '/index.html'}))
         handlers.append((r'/(.*)', DevelopmentStaticFileHandler, {'path': os.path.dirname(manus_webshell.static.__file__)}))
 
