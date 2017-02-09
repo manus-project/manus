@@ -20,6 +20,8 @@ enum JointType { ROTATION, FIXED, TRANSLATION, GRIPPER };
 
 enum JointStateType { IDLE, MOVING, ERROR };
 
+enum PlanStateType { COMPLETED, FAILED, RUNNING, PLANNING, STOPPED, PLANNED };
+
 
 class Point;
 class Rotation;
@@ -30,6 +32,7 @@ class PlanSegment;
 class TrajectorySegment;
 class ManipulatorDescription;
 class ManipulatorState;
+class PlanState;
 class Plan;
 class Trajectory;
 
@@ -128,10 +131,21 @@ public:
 	
 };
 
+class PlanState {
+public:
+	PlanState() {};
+	virtual ~PlanState() {};
+	string identifier;
+	PlanStateType type;
+	long timestamp;
+	
+};
+
 class Plan {
 public:
 	Plan() {};
 	virtual ~Plan() {};
+	string identifier;
 	std::vector<PlanSegment> segments;
 	
 };
@@ -140,6 +154,7 @@ class Trajectory {
 public:
 	Trajectory() {};
 	virtual ~Trajectory() {};
+	string identifier;
 	std::vector<TrajectorySegment> segments;
 	
 };
@@ -220,6 +235,32 @@ template <> inline void write(MessageWriter& writer, const manus::manipulator::J
 
 
 
+template <> inline void read(MessageReader& reader, manus::manipulator::PlanStateType& dst) {
+	switch (reader.read<int>()) {
+	case 5: dst = manus::manipulator::COMPLETED; break;
+	case 1: dst = manus::manipulator::FAILED; break;
+	case 3: dst = manus::manipulator::RUNNING; break;
+	case 0: dst = manus::manipulator::PLANNING; break;
+	case 4: dst = manus::manipulator::STOPPED; break;
+	case 2: dst = manus::manipulator::PLANNED; break;
+	
+	}
+}
+
+template <> inline void write(MessageWriter& writer, const manus::manipulator::PlanStateType& src) {
+	switch (src) {
+	case manus::manipulator::COMPLETED: writer.write<int>(5); return;
+	case manus::manipulator::FAILED: writer.write<int>(1); return;
+	case manus::manipulator::RUNNING: writer.write<int>(3); return;
+	case manus::manipulator::PLANNING: writer.write<int>(0); return;
+	case manus::manipulator::STOPPED: writer.write<int>(4); return;
+	case manus::manipulator::PLANNED: writer.write<int>(2); return;
+	
+	}
+}
+
+
+
 
 
 template <> inline void read(MessageReader& reader, manus::manipulator::Point& dst) {
@@ -294,20 +335,28 @@ template <> inline void write(MessageWriter& writer, const manus::manipulator::M
 	write(writer, src.state);write(writer, src.joints);
 }
 
+template <> inline void read(MessageReader& reader, manus::manipulator::PlanState& dst) {
+	read(reader, dst.identifier);read(reader, dst.type);read(reader, dst.timestamp);
+}
+
+template <> inline void write(MessageWriter& writer, const manus::manipulator::PlanState& src) {
+	write(writer, src.identifier);write(writer, src.type);write(writer, src.timestamp);
+}
+
 template <> inline void read(MessageReader& reader, manus::manipulator::Plan& dst) {
-	read(reader, dst.segments);
+	read(reader, dst.identifier);read(reader, dst.segments);
 }
 
 template <> inline void write(MessageWriter& writer, const manus::manipulator::Plan& src) {
-	write(writer, src.segments);
+	write(writer, src.identifier);write(writer, src.segments);
 }
 
 template <> inline void read(MessageReader& reader, manus::manipulator::Trajectory& dst) {
-	read(reader, dst.segments);
+	read(reader, dst.identifier);read(reader, dst.segments);
 }
 
 template <> inline void write(MessageWriter& writer, const manus::manipulator::Trajectory& src) {
-	write(writer, src.segments);
+	write(writer, src.identifier);write(writer, src.segments);
 }
 
 
@@ -350,7 +399,25 @@ template<> inline shared_ptr<manus::manipulator::ManipulatorState > echolib::Mes
 
 
 
-template <> inline string get_type_identifier<manus::manipulator::Plan>() { return string("cf6fb0339b954d09c854f9a3cb2f1004"); }
+template <> inline string get_type_identifier<manus::manipulator::PlanState>() { return string("e71277a431b2a2ae33cec5a1f7b7c5dc"); }
+
+template<> inline shared_ptr<Message> echolib::Message::pack<manus::manipulator::PlanState >(const manus::manipulator::PlanState &data) {
+    MessageWriter writer;
+    write(writer, data);
+    return make_shared<BufferedMessage>(writer);
+}
+
+template<> inline shared_ptr<manus::manipulator::PlanState > echolib::Message::unpack<manus::manipulator::PlanState>(SharedMessage message) {
+    MessageReader reader(message);
+    shared_ptr<manus::manipulator::PlanState> result(new manus::manipulator::PlanState());
+    read(reader, *result);
+    return result;
+}
+
+
+
+
+template <> inline string get_type_identifier<manus::manipulator::Plan>() { return string("0864ba11e8f58c49f1a733570e523677"); }
 
 template<> inline shared_ptr<Message> echolib::Message::pack<manus::manipulator::Plan >(const manus::manipulator::Plan &data) {
     MessageWriter writer;
@@ -368,7 +435,7 @@ template<> inline shared_ptr<manus::manipulator::Plan > echolib::Message::unpack
 
 
 
-template <> inline string get_type_identifier<manus::manipulator::Trajectory>() { return string("dc40378b85222525ac9a3aef0953dde3"); }
+template <> inline string get_type_identifier<manus::manipulator::Trajectory>() { return string("678df76c0bbe7662da93756eeed579b1"); }
 
 template<> inline shared_ptr<Message> echolib::Message::pack<manus::manipulator::Trajectory >(const manus::manipulator::Trajectory &data) {
     MessageWriter writer;

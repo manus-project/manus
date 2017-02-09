@@ -14,9 +14,6 @@ using namespace echolib;
 using namespace manus::manipulator;
 using namespace std;
 
-#define RADIAN_TO_DEGREE(X) ((X * 180) / M_PI )
-#define DEGREE_TO_RADIAN(X) ((X / 180) * M_PI )
-
 class Planner {
 public:
 	Planner(SharedClient client) {
@@ -27,6 +24,7 @@ public:
 		trajectory_subscriber = make_shared<TypedSubscriber<Trajectory> >(client, "trajectory",
 		                        bind(&Planner::on_trajectory, this, std::placeholders::_1));
 		plan_publisher = make_shared<TypedPublisher<Plan> >(client, "plan");
+		planstate_publisher = make_shared<TypedPublisher<PlanState> >(client, "planstate");
 
 	}
 
@@ -36,8 +34,8 @@ public:
 
 	void idle() {
 		if (cache) {
-			cout << "Precomputing ..." << endl;
-			cache->precompute(100);
+			//cout << "Precomputing ..." << endl;
+			cache->precompute(1000);
 		}
 	}
 
@@ -57,14 +55,14 @@ protected:
 
 			switch (joint.type) {
 			case ROTATION: {
-				kinematic_chain.addSegment(Segment(Joint(Joint::RotZ), Frame::DH(joint.dh_a, DEGREE_TO_RADIAN(joint.dh_alpha), joint.dh_d, 0)));
-				lmin.push_back(DEGREE_TO_RADIAN(joint.dh_min));
-				lmax.push_back(DEGREE_TO_RADIAN(joint.dh_max));
-				spos.push_back(DEGREE_TO_RADIAN(joint.dh_theta));
+				kinematic_chain.addSegment(Segment(Joint(Joint::RotZ), Frame::DH(joint.dh_a, joint.dh_alpha, joint.dh_d, 0)));
+				lmin.push_back(joint.dh_min);
+				lmax.push_back(joint.dh_max);
+				spos.push_back(joint.dh_theta);
 				break;
 			}
 			case TRANSLATION: {
-				kinematic_chain.addSegment(Segment(Joint(Joint::TransZ), Frame::DH(joint.dh_a, DEGREE_TO_RADIAN(joint.dh_alpha), 0, DEGREE_TO_RADIAN(joint.dh_theta))));
+				kinematic_chain.addSegment(Segment(Joint(Joint::TransZ), Frame::DH(joint.dh_a, joint.dh_alpha, 0, joint.dh_theta)));
 				lmin.push_back(joint.dh_min);
 				lmax.push_back(joint.dh_max);
 				spos.push_back(joint.dh_d);
@@ -74,7 +72,7 @@ protected:
 				gripper = j;
 			}
 			case FIXED: {
-				kinematic_chain.addSegment(Segment(Joint(Joint::None), Frame::DH(joint.dh_a, DEGREE_TO_RADIAN(joint.dh_alpha), joint.dh_d, DEGREE_TO_RADIAN(joint.dh_theta))));
+				kinematic_chain.addSegment(Segment(Joint(Joint::None), Frame::DH(joint.dh_a, joint.dh_alpha, joint.dh_d, joint.dh_theta)));
 				break;
 			}
 			}
@@ -91,11 +89,11 @@ protected:
 		}
 
 
-		cache = make_shared<VoxelGrid>(kinematic_chain, limits_min, limits_max, 0.1, 40, 100);
+		cache = make_shared<VoxelGrid>(kinematic_chain, limits_min, limits_max, 0.005, 50, 200);
 
 		description_subscriber.reset();
-
-		cache->precompute(5000);
+		
+		cache->precompute(20000);
 	}
 
 
@@ -109,6 +107,13 @@ protected:
 			return;
 
 		Plan plan;
+		plan.identifier = trajectory->identifier;
+
+		PlanState planstate;
+		planstate.identifier = trajectory->identifier;
+
+		planstate.type = PLANNING;
+		planstate_publisher->send(planstate);
 
 		JntArray initial = state_to_array(*state);
 
@@ -121,7 +126,7 @@ protected:
 			//KDL::Rotation rotation(goal.rotation.x, goal.rotation.y, goal.rotation.z);
 			KDL::Frame frame(rotation, KDL::Vector(goal.location.x, goal.location.y, goal.location.z));
 
-cout << goal.location.x << ", " <<  goal.location.y << ", " << goal.location.z << endl;
+//cout << goal.location.x << ", " <<  goal.location.y << ", " << goal.location.z << endl;
 
 			JntArray out(kinematic_chain.getNrOfJoints());
 			int result = cache->CartToJnt(initial, frame, out);
@@ -132,15 +137,18 @@ cout << goal.location.x << ", " <<  goal.location.y << ", " << goal.location.z <
 				segment.joints[gripper].goal = goal.gripper;
 				plan.segments.push_back(segment);
 			} else {
-				cout << "Plan unsuccessful" << endl;
+				cout << "Plan unsuccessful (result code: " << result << ")" << endl;
+				planstate.type = FAILED;
+				planstate_publisher->send(planstate);
 				return;
 			}
 
 		}
 
-
-
 		plan_publisher->send(plan);
+
+		planstate.type = PLANNED;
+		planstate_publisher->send(planstate);
 
 	}
 
@@ -170,7 +178,7 @@ cout << goal.location.x << ", " <<  goal.location.y << ", " << goal.location.z <
 				joint.goal = 0;
 				joint.speed = speed;
 			} else {
-				joint.goal = kinematic_chain.getSegment(i).getJoint().getType() == Joint::RotZ ? RADIAN_TO_DEGREE(array(j++)) : array(j++);
+				joint.goal = array(j++);
 				joint.speed = speed;
 			}
 			res.joints.push_back(joint);
@@ -187,6 +195,7 @@ private:
 	SharedTypedSubscriber<ManipulatorState> state_subscriber;
 	SharedTypedSubscriber<Trajectory> trajectory_subscriber;
 	SharedTypedPublisher<Plan> plan_publisher;
+	SharedTypedPublisher<PlanState> planstate_publisher;
 
 	Chain kinematic_chain;
 	shared_ptr<VoxelGrid> cache;
@@ -204,7 +213,7 @@ int main(int argc, char** argv) {
 
 	Planner planner(client);
 
-	while (echolib::wait(5000)) {
+	while (echolib::wait(1000)) {
 		planner.idle();
 	}
 

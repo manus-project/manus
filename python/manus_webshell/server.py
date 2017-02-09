@@ -230,8 +230,11 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
     def push_camera_location(self, camera, location):
         self.distribute_message({"type": "update", "object" : "camera", "data" : CameraLocationHandler.encode_location(location)})
 
-    def push_manipulator_state(self, manipulator, state):
+    def on_manipulator_state(self, manipulator, state):
         self.distribute_message({"type": "update", "object" : 'manipulator', "data" : ManipulatorStateHandler.encode_state(state)})
+
+    def on_planner_state(self, manipulator, state):
+        pass
 
 def main():
     logging_level = logging.DEBUG

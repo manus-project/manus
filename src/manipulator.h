@@ -69,9 +69,10 @@ private:
 
     shared_ptr<Manipulator> manipulator;
 
-    vector<PlanSegment> plan;
+    shared_ptr<Plan> plan;
 
     SharedTypedPublisher<ManipulatorState> state_publisher;
+    SharedTypedPublisher<PlanState> planstate_publisher;
     shared_ptr<StaticPublisher<ManipulatorDescription> > description_publisher;
     SharedTypedSubscriber<Plan> plan_listener;
 

@@ -25,6 +25,11 @@ JointStateType = enum("JointStateType", { 'IDLE' : 0, 'MOVING' : 1, 'ERROR' : 2 
 echolib.registerType(JointStateType, lambda x: JointStateType.reverse_mapping[x.readInt()], lambda x, o: x.writeInt(getattr(JointStateType, o)))
 
 
+PlanStateType = enum("PlanStateType", { 'COMPLETED' : 5, 'FAILED' : 1, 'RUNNING' : 3, 'PLANNING' : 0, 'STOPPED' : 4, 'PLANNED' : 2 })
+	
+echolib.registerType(PlanStateType, lambda x: PlanStateType.reverse_mapping[x.readInt()], lambda x, o: x.writeInt(getattr(PlanStateType, o)))
+
+
 
 
 class Point(object): 
@@ -384,14 +389,56 @@ class ManipulatorState(object):
 echolib.registerType(ManipulatorState, ManipulatorState.read, ManipulatorState.write)
 
 
+class PlanState(object): 
+	def __init__(self):
+		self.identifier = None
+		self.type = None
+		self.timestamp = None
+		
+
+	@staticmethod
+	def read(reader):
+		dst = PlanState()
+		
+		dst.identifier = echolib.readType(str, reader)
+		
+		
+		dst.type = echolib.readType(PlanStateType, reader)
+		
+		
+		dst.timestamp = echolib.readType(long, reader)
+		
+		
+		return dst
+
+	@staticmethod
+	def write(writer, obj):
+		
+		echolib.writeType(str, writer, obj.identifier)
+		
+		
+		echolib.writeType(PlanStateType, writer, obj.type)
+		
+		
+		echolib.writeType(long, writer, obj.timestamp)
+		
+		
+
+echolib.registerType(PlanState, PlanState.read, PlanState.write)
+
+
 class Plan(object): 
 	def __init__(self):
+		self.identifier = None
 		self.segments = []
 		
 
 	@staticmethod
 	def read(reader):
 		dst = Plan()
+		
+		dst.identifier = echolib.readType(str, reader)
+		
 		dst.segments = echolib.readList(PlanSegment, reader)
 		
 		
@@ -399,6 +446,9 @@ class Plan(object):
 
 	@staticmethod
 	def write(writer, obj):
+		
+		echolib.writeType(str, writer, obj.identifier)
+		
 		echolib.writeList(PlanSegment, writer, obj.segments)
 		
 		
@@ -408,12 +458,16 @@ echolib.registerType(Plan, Plan.read, Plan.write)
 
 class Trajectory(object): 
 	def __init__(self):
+		self.identifier = None
 		self.segments = []
 		
 
 	@staticmethod
 	def read(reader):
 		dst = Trajectory()
+		
+		dst.identifier = echolib.readType(str, reader)
+		
 		dst.segments = echolib.readList(TrajectorySegment, reader)
 		
 		
@@ -421,6 +475,9 @@ class Trajectory(object):
 
 	@staticmethod
 	def write(writer, obj):
+		
+		echolib.writeType(str, writer, obj.identifier)
+		
 		echolib.writeList(TrajectorySegment, writer, obj.segments)
 		
 		
@@ -475,6 +532,28 @@ class ManipulatorStatePublisher(echolib.Publisher):
 
 
 
+class PlanStateSubscriber(echolib.Subscriber):
+
+	def __init__(self, client, alias, callback):
+		def _read(message):
+			reader = echolib.MessageReader(message)
+			return PlanState.read(reader)
+
+		super(PlanStateSubscriber, self).__init__(client, alias, "e71277a431b2a2ae33cec5a1f7b7c5dc", lambda x: callback(_read(x)))
+
+
+class PlanStatePublisher(echolib.Publisher):
+
+	def __init__(self, client, alias):
+		super(PlanStatePublisher, self).__init__(client, alias, "e71277a431b2a2ae33cec5a1f7b7c5dc")
+
+	def send(self, obj):
+		writer = echolib.MessageWriter()
+		PlanState.write(writer, obj)
+		super(PlanStatePublisher, self).send(writer)
+
+
+
 class PlanSubscriber(echolib.Subscriber):
 
 	def __init__(self, client, alias, callback):
@@ -482,13 +561,13 @@ class PlanSubscriber(echolib.Subscriber):
 			reader = echolib.MessageReader(message)
 			return Plan.read(reader)
 
-		super(PlanSubscriber, self).__init__(client, alias, "cf6fb0339b954d09c854f9a3cb2f1004", lambda x: callback(_read(x)))
+		super(PlanSubscriber, self).__init__(client, alias, "0864ba11e8f58c49f1a733570e523677", lambda x: callback(_read(x)))
 
 
 class PlanPublisher(echolib.Publisher):
 
 	def __init__(self, client, alias):
-		super(PlanPublisher, self).__init__(client, alias, "cf6fb0339b954d09c854f9a3cb2f1004")
+		super(PlanPublisher, self).__init__(client, alias, "0864ba11e8f58c49f1a733570e523677")
 
 	def send(self, obj):
 		writer = echolib.MessageWriter()
@@ -504,13 +583,13 @@ class TrajectorySubscriber(echolib.Subscriber):
 			reader = echolib.MessageReader(message)
 			return Trajectory.read(reader)
 
-		super(TrajectorySubscriber, self).__init__(client, alias, "dc40378b85222525ac9a3aef0953dde3", lambda x: callback(_read(x)))
+		super(TrajectorySubscriber, self).__init__(client, alias, "678df76c0bbe7662da93756eeed579b1", lambda x: callback(_read(x)))
 
 
 class TrajectoryPublisher(echolib.Publisher):
 
 	def __init__(self, client, alias):
-		super(TrajectoryPublisher, self).__init__(client, alias, "dc40378b85222525ac9a3aef0953dde3")
+		super(TrajectoryPublisher, self).__init__(client, alias, "678df76c0bbe7662da93756eeed579b1")
 
 	def send(self, obj):
 		writer = echolib.MessageWriter()

@@ -98,7 +98,7 @@ double convertIncoming(double value, const JointInfo& info) {
 }*/
 
 bool close_enough(float a, float b) {
-    return abs(a - b) < 0.001;
+    return std::fabs(a - b) < 0.1;
 }
 
 inline float normalizeAngle(float val, const float min, const float max) {
@@ -124,6 +124,8 @@ ManipulatorManager::ManipulatorManager(SharedClient client, shared_ptr<Manipulat
 
     state_publisher = make_shared<TypedPublisher<ManipulatorState> >(client, "state");
 
+    planstate_publisher = make_shared<TypedPublisher<PlanState> >(client, "planstate");
+
     plan_listener = make_shared<TypedSubscriber<Plan> >(client, "plan",
     [this](shared_ptr<Plan> param) {
         this->push(param);
@@ -139,7 +141,7 @@ ManipulatorManager::~ManipulatorManager() {
 
 void ManipulatorManager::flush() {
 
-    plan.clear();
+    plan.reset();
 /*
     ManipulatorState state = manipulator->state();
 
@@ -181,7 +183,12 @@ void ManipulatorManager::push(shared_ptr<Plan> t) {
 
     flush();
 
-    plan = t->segments;
+    PlanState state;
+    state.identifier = t->identifier;
+    state.type = RUNNING;
+    planstate_publisher->send(state);
+
+    plan = t;
 
     step(true);
 
@@ -210,8 +217,16 @@ void ManipulatorManager::on_subscribers(int s) {
 
 void ManipulatorManager::step(bool force) {
 
-    if (plan.size() < 1)
+    if (!plan) return;
+
+    if (plan->segments.size() < 1) {
+        PlanState state;
+        state.identifier = plan->identifier;
+        state.type = COMPLETED;
+        planstate_publisher->send(state);
+        plan.reset();
         return;
+    }
 
     bool idle = true;
     bool goal = true;
@@ -220,17 +235,17 @@ void ManipulatorManager::step(bool force) {
 
     for (size_t i = 0; i < manipulator->size(); i++) {
         idle &= state.joints[i].type == IDLE;
-        goal &= close_enough(state.joints[i].goal, plan[0].joints[i].goal);
-        //cout << i << ": " << idle << " " << goal << " - " << state.joints[i].goal << " "  << plan[0].joints[i].goal << endl;
+        goal &= close_enough(state.joints[i].position, state.joints[i].goal);
+        //cout << i << ": " << idle << " " << goal << " - " << state.joints[i].position << " "  << state.joints[i].goal << endl;
     }
 
     if (goal || force) {
 
         for (size_t i = 0; i < manipulator->size(); i++) {
-            manipulator->move(i, plan[0].joints[i].goal, plan[0].joints[i].speed);
+            manipulator->move(i, plan->segments[0].joints[i].goal, plan->segments[0].joints[i].speed);
         }
 
-        plan.erase(plan.begin());
+        plan->segments.erase(plan->segments.begin());
     }
 
 }

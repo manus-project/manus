@@ -4,6 +4,8 @@ enumerate ManipulatorStateType { UNKNOWN, CONNECTED, PASSIVE, ACTIVE, CALIBRATIO
 enumerate JointType { ROTATION, TRANSLATION, GRIPPER, FIXED }
 enumerate JointStateType { IDLE, MOVING, ERROR }
 
+enumerate PlanStateType { PLANNING, FAILED, PLANNED, RUNNING, STOPPED, COMPLETED }
+
 structure Point {
 	float x;
 	float y;
@@ -61,10 +63,18 @@ message ManipulatorState {
 	JointState joints[];
 }
 
+message PlanState {
+	string identifier;
+	PlanStateType type;
+	long timestamp;
+}
+
 message Plan {
+	string identifier;
 	PlanSegment segments[];
 }
 
 message Trajectory {
+	string identifier;
 	TrajectorySegment segments[];
 }
