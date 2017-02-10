@@ -35,7 +35,7 @@ public:
 	void idle() {
 		if (cache) {
 			//cout << "Precomputing ..." << endl;
-			cache->precompute(1000);
+			cache->precompute(5000);
 		}
 	}
 
@@ -89,11 +89,11 @@ protected:
 		}
 
 
-		cache = make_shared<VoxelGrid>(kinematic_chain, limits_min, limits_max, 0.005, 50, 200);
+		cache = make_shared<VoxelGrid>(kinematic_chain, limits_min, limits_max, 0.01, 50, 200);
 
 		description_subscriber.reset();
 		
-		cache->precompute(20000);
+		cache->precompute(50000);
 	}
 
 

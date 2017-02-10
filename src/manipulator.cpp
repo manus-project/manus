@@ -98,7 +98,7 @@ double convertIncoming(double value, const JointInfo& info) {
 }*/
 
 bool close_enough(float a, float b) {
-    return std::fabs(a - b) < 0.1;
+    return std::fabs(a - b) < 0.15;
 }
 
 inline float normalizeAngle(float val, const float min, const float max) {

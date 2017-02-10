@@ -138,11 +138,12 @@ VoxelGrid::VoxelGrid(const Chain& _chain, const JntArray& _q_min, const JntArray
 	L(0)=1;
 	L(1)=1;
 	L(2)=1;
-	L(3)=0.01;
-	L(4)=0.01;
-	L(5)=0.01;
+	L(3)=0.001;
+	L(4)=0.001;
+	L(5)=0.001;
 
-	iksolver = new ChainIkSolverPos_LMA(_chain, L, _eps, 500, 0.0000001);
+	//iksolver = new ChainIkSolverPos_LMA(_chain, L, _eps, 500, 0.0000001);
+    iksolver = new ChainIkSolverPos_LMA(_chain, L, _eps, 500, 0.0001);
 	//iksolver = new ChainIkSolverPos_NR(_chain, fksolver, _impl->iks, 300, 1);
 
     for (uint i=0; i<chain.segments.size(); i++) {
