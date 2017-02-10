@@ -259,6 +259,7 @@ class AppsList(object):
         self._listsub = echolib.DictionarySubscriber(client, "app_list", lambda x: self._list(x))
         self._annsub = echolib.DictionarySubscriber(client, "app_announce", lambda x: self._announce(x))
         self._control = echolib.DictionaryPublisher(client, "app_control")
+        self._apps = {}
 
     def list(self):
         return self._apps
