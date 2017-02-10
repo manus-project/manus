@@ -60,6 +60,12 @@
         "environment" : {
             "ECHOLIB_MAP" : "state=manipulator0.state;description=manipulator0.description;trajectory=manipulator0.trajectory;plan=manipulator0.plan"
         }
+    },
+    "webshell" : {
+        "command" : "python -u -m manus_apps",
+        "required" : false,
+        "restart" : true,
+        "depends" : ["echo"]
     }
 }
 }
