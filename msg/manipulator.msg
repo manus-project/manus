@@ -1,22 +1,13 @@
 namespace manus.manipulator;
 
+import "geometry.msg";
+import "headers.msg";
+
 enumerate ManipulatorStateType { UNKNOWN, CONNECTED, PASSIVE, ACTIVE, CALIBRATION }
 enumerate JointType { ROTATION, TRANSLATION, GRIPPER, FIXED }
 enumerate JointStateType { IDLE, MOVING, ERROR }
 
 enumerate PlanStateType { PLANNING, FAILED, PLANNED, RUNNING, STOPPED, COMPLETED }
-
-structure Point {
-	float x;
-	float y;
-	float z;
-}
-
-structure Rotation {
-	float x;
-	float y;
-	float z;
-}
 
 structure JointDescription {
 	JointType type;
@@ -41,12 +32,12 @@ structure JointCommand {
 }
 
 structure PlanSegment {
-	JointCommand joints[];
+	JointCommand[] joints;
 }
 
 structure TrajectorySegment {
-	Point location;
-	Rotation rotation;
+	Point3D location;
+	Rotation3D rotation;
 	bool required;
 	float gripper;
 	float speed;
@@ -55,12 +46,12 @@ structure TrajectorySegment {
 message ManipulatorDescription {
 	string name;
 	float version;
-	JointDescription joints[];
+	JointDescription[] joints;
 }
 
 message ManipulatorState {
 	ManipulatorStateType state;
-	JointState joints[];
+	JointState[] joints;
 }
 
 message PlanState {
@@ -71,10 +62,11 @@ message PlanState {
 
 message Plan {
 	string identifier;
-	PlanSegment segments[];
+	PlanSegment[] segments;
 }
 
 message Trajectory {
 	string identifier;
-	TrajectorySegment segments[];
+	TrajectorySegment[] segments;
 }
+

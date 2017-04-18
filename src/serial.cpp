@@ -50,11 +50,11 @@ SerialManipulator::SerialManipulator(const string& device, int rate) {
 
 	read_buffer_position = 0;
 	read_buffer_available = 0;
-	read_buffer_length = BUFFER_SIZE;
+	read_buffer_length = SERIAL_BUFFER_SIZE;
 
 	write_buffer_position = 0;
 	write_buffer_available = 0;
-	write_buffer_length = BUFFER_SIZE;
+	write_buffer_length = SERIAL_BUFFER_SIZE;
 
 	serial_connect();
 

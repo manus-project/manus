@@ -18,7 +18,7 @@
 
 #include "manipulator.h"
 
-#define BUFFER_SIZE 128
+#define SERIAL_BUFFER_SIZE 128
 
 class SerialManipulator : public Manipulator, public IOBase {
 public:
@@ -111,8 +111,8 @@ private:
     int write_buffer_length;
     int read_buffer_length;
 
-	char write_buffer[BUFFER_SIZE];	// send data to dev.
-	char read_buffer[BUFFER_SIZE];	// read data from dev.
+	char write_buffer[SERIAL_BUFFER_SIZE];	// send data to dev.
+	char read_buffer[SERIAL_BUFFER_SIZE];	// read data from dev.
 
 	unsigned int factor_pwm; // sending 16 bit data -> values from 0 to 2^16-1
 	int fd;
