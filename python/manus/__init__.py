@@ -19,8 +19,8 @@ class MoveTo(object):
 
     def generate(self, manipulator):
         seg = messages.TrajectorySegment()
-        seg.location = messages.Point()
-        seg.rotation = messages.Rotation()
+        seg.location = messages.Point3D()
+        seg.rotation = messages.Rotation3D()
         seg.location.x = self.location[0]
         seg.location.y = self.location[1]
         seg.location.z = self.location[2]
@@ -55,7 +55,7 @@ class Manipulator(object):
     def description(self):
         return self._description.data
 
-    def move_safe(self, identifier=''):
+    def move_safe(self, identifier='safe'):
         self.move({0 : -0.43, 1: 2.22, 2: -1.84, 3: -0.63, 4: 0.0, 5: -1.5, 6: 0.01}, identifier=identifier)
 
     def move(self, joints, speed = 1.0, identifier='move'):

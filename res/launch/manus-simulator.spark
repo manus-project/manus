@@ -1,10 +1,13 @@
 {
 "description" : "Manus Simulator stack",
 "environment" : {
-"ECHOLIB_SOCKET" : "/tmp/echo.sock",
-"ECHOLIB_DEBUG" : "1"
+"MANUS_ROOT" : "/home/lukacu/Local/builds/manus",
+"PATH" : "${MANUS_ROOT}/bin:${PATH}",
+"LD_LIBRARY_PATH" : "${MANUS_ROOT}/lib",
+"PYTHONPATH" : "${PYTHON6PPATH}:${MANUS_ROOT}/lib/python2.7/site-packages/",
+"ECHOLIB_SOCKET" : "/tmp/echo.sock"
 },
-"plugins" : ["ignition.plugin.Wait"],
+"plugins" : ["ignition.plugin.Wait", "echolib.ignition.Mapping"],
 "programs" : {
     "echo" : {
         "command" : "echodaemon",
@@ -20,12 +23,9 @@
         "directory" : "/usr/share/manus/static",
         "depends" : ["echo"],
         "wait" : 0.1,
-        "mapping" : {
+        "remap" : {
             "camera" : "camera0.image",
             "intrinsics" : "camera0.parameters"
-        },
-        "environment" : {
-            "ECHOLIB_MAP" : "camera=camera0.image;intrinsics=camera0.parameters"
         }
     },
     "artracker" : {
@@ -34,8 +34,10 @@
         "restart" : true,
         "directory" : "/usr/share/manus/arboards",
         "depends" : ["echo", "cameraserver"],
-        "environment" : {
-            "ECHOLIB_MAP" : "camera=camera0.image;intrinsics=camera0.parameters;location=camera0.location"
+        "remap" : {
+            "camera" : "camera0.image",
+            "intrinsics" : "camera0.parameters",
+            "location" : "camera0.location"
         }
     },
     "webshell" : {
@@ -47,8 +49,10 @@
     "manipulator": {
         "command": "manus_simulator_manipulator",
         "depends": ["echo"],
-        "environment" : {
-            "ECHOLIB_MAP" : "state=manipulator0.state;description=manipulator0.description;plan=manipulator0.plan"
+        "remap" : {
+            "state" : "manipulator0.state",
+            "description" : "manipulator0.description",
+            "plan" : "manipulator0.plan"
         }
     },
     "planner" : {
@@ -57,8 +61,12 @@
         "restart" : false,
         "debug" : false,
         "depends" : ["echo", "manipulator"],
-        "environment" : {
-            "ECHOLIB_MAP" : "state=manipulator0.state;description=manipulator0.description;trajectory=manipulator0.trajectory;plan=manipulator0.plan"
+        "remap" : {
+            "state" : "manipulator0.state",
+            "description" : "manipulator0.description",
+            "plan" : "manipulator0.plan",
+            "planstate" : "manipulator0.planstate",
+            "trajectory" : "manipulator0.trajectory"
         }
     },
     "apps" : {
