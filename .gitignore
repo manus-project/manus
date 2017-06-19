@@ -27,7 +27,6 @@ build
 # Executables
 *.exe
 *.out
-*.app
 
 build
 *.pyc
