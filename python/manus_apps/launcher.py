@@ -7,11 +7,9 @@ import signal
 
 import echolib
 
-__author__ = 'lukacu'
+from manus.apps import AppCommandType, AppEventType, AppListingPublisher, AppEventPublisher, AppCommandSubscriber, AppEvent, AppData, AppListing
 
-CONTAINERS = {"webox" : "${WEBOX_DIR}/webox.sh %(path)s",
-      "flashbox" : "/usr/bin/wine ${FLASH_PLAYER} %(swf)s",
-      "python" : "python %(path)s/application.py"}
+__author__ = 'lukacu'
 
 def terminate_process(proc_pid):
     process = psutil.Process(proc_pid)
@@ -21,18 +19,24 @@ def terminate_process(proc_pid):
 
 class Application(object):
 
-    def __init__(self, identifier, name, path, description='', version=1, container=None, categories=[], metadata={}):
-        self.path = path
-        self.identifier = identifier
-        self.name = name
-        self.description = description
-        self.version = version
-        self.container = container
-        self.categories = categories
-        self.metadata = metadata
+    def __init__(self, appfile, listed=True):
+        absfile = os.path.abspath(appfile)
+        try:
+            with open(appfile) as f:
+                content = f.readlines()
+            digest = hashlib.md5()
+            digest.update(appfile)
+            self.identifier = digest.hexdigest()
+            self.name = content[0]
+            self.description = content[1]
+            self.version = float(content[2])
+            self.script = content[3]
+            self.dir = os.path.dirname(appfile)
+            self.listed = listed
+        except ValueError, e:
+            raise Exception("Unable to read app file %s" % appfile)
+
         self.process = None
-        if container and not CONTAINERS.has_key(container):
-          raise ValueError("Unknown container type %s" % container)
 
     def __str__(self):
         return self.name
@@ -46,28 +50,21 @@ class Application(object):
         variables = self.metadata.copy()
         variables.update({"path" : self.path, "name": self.name, "version": self.version})
 
-        if self.container:
-            command = CONTAINERS[self.container] % variables
-        else:
-            command = os.path.join(path, self.name)
+        command = "python %s" % self.script
         environment = os.environ.copy()
         environment.update(environment)
         environment["APPLICATION_ID"] = self.identifier
         environment["APPLICATION_NAME"] = self.name
         environment["APPLICATION_PATH"] = self.path
         command = os.path.expandvars(command)
-
-        #environment["LD_PRELOAD"] = '/home/lukacu/Local/matrix/libxparam.so'
         self.process = subprocess.Popen(shlex.split(command), stdin=subprocess.PIPE,
              stdout=sys.stdout, stderr=subprocess.STDOUT, env=environment,
-             shell=False, bufsize=1, cwd=self.path) # preexec_fn=os.setsid
+             shell=False, bufsize=1, cwd=self.dir)
 
     def stop(self):
         if not self.process:
             return
         self.process.kill()
-        #terminate_process(self.pid)
-        #os.killpg(self.process.pid, signal.SIGTERM)
         self.process = None
 
     def kill(self):
@@ -76,32 +73,24 @@ class Application(object):
         self.process.kill()
         self.process = None
 
+    def message_data(self):
+        d = AppData()
+        d.name = self.name
+        d.id = self.identifier
+        d.version = self.version
+        d.listed = self.listed
+        return d
+
 def scan_applications(pathlist):
     applications = {}
     for path in pathlist:
         for dirpath, dirnames, filenames in os.walk(path):
-            for dirname in dirnames[:]:
-                manifest = os.path.join(dirpath, dirname, 'application.json')
-                if not os.path.exists(manifest):
+            for filename in filenames[:]:
+                if not filename.endswith(".app"):
                     continue
                 try:
-                    metadata = json.load(open(manifest, 'r'))
-                    digest = hashlib.md5()
-                    digest.update(manifest)
-                    identifier = digest.hexdigest()
-                except ValueError, e:
-                    print e
-                    continue
-                try:
-                    # Legacy support
-                    if metadata.has_key("identifier"):
-                        del metadata["identifier"]
-                    applications[identifier] = Application(identifier,
-                        path=os.path.dirname(manifest), **metadata)
-                except TypeError, e:
-                    print e
-                    continue
-                except ValueError, e:
+                    applications[identifier] = Application(os.join(dirpath, script))
+                except Exception, e:
                     print e
                     continue
     return applications
@@ -125,44 +114,43 @@ def application_launcher(autorun=None):
 
     def start_application(identifier):
         global active_application
-        if not identifier:
-            return
+        starting_application = None
 
-        if not applications.has_key(identifier):
+        if identifier and not applications.has_key(identifier):
+            if identifier.endswith(".app") and os.path.isfile(identifier):
+                try:
+                    starting_application = Application(identifier, listed=False)
+                except Exception, e:
+                    print e
+                    return
             print "Application does not exist"
             return
+        else:
+            starting_application = applications[identifier]
 
         if active_application:
             terminate = active_application
             active_application = None
             terminate.stop()
-            message = echolib.Dictionary()
-            message["event"] = "stop"
-            message["name"] = terminate.name
-            message["identifier"] = terminate.identifier
+            event = AppEvent()
+            event.event = "STOP"
+            event.app = terminate.message_data()
             announce.send(message)
 
-        active_application = applications[identifier]
-        #if terminate.identifier == active_application.identifier
+        if not identifier:
+            return
+
+        active_application = starting_application
         active_application.run()
         print "Running application %s (%s)" % (active_application.name, identifier)
-        message = echolib.Dictionary()
-        message["event"] = "start"
-        message["name"] = active_application.name
-        message["identifier"] = active_application.identifier
+        event = AppEvent()
+        event.event = "START"
+        event.app = terminate.message_data()
         announce.send(message)
 
-    def control_callback(message):
-        command = message.get("command", "unknown")
-        if command == "run":
-            identifier = message.get("identifier", "")
-            if not identifier:
-                name = message.get("name", "")
-                identifier = find_by_name(applications, name)
-                if not identifier:
-                    print "Application does not exist"
-                    return
-            start_application(identifier)
+    def control_callback(command):
+        if command.type == AppCommandType.RUN:
+            start_application(command.id)
 
     def shutdown_handler():
         print "Stopping application"
@@ -171,16 +159,13 @@ def application_launcher(autorun=None):
 
     signal.signal(signal.SIGTERM, shutdown_handler)
 
-    def publish_list():
-        pass
-
     loop = echolib.IOLoop()
     client = echolib.Client()
     loop.add_handler(client)
 
-    control = echolib.DictionarySubscriber(client, "app_control", control_callback)
-    announce = echolib.DictionaryPublisher(client, "app_announce")
-    listing = echolib.DictionaryPublisher(client, "app_list")
+    control = AppCommandSubscriber(client, "apps.control", control_callback)
+    announce = AppEventPublisher(client, "apps.announce")
+    listing = AppListingPublisher(client, "apps.list")
 
     if autorun:
         start_application(find_by_name(applications, autorun))
@@ -188,9 +173,9 @@ def application_launcher(autorun=None):
     try:
         while loop.wait(1000):
             # Announce list every second
-            message = echolib.Dictionary()
+            message = AppListing()
             for identifier, app in applications.items():
-                message[identifier] = app.name
+                message.apps.append(app.message_data())
             listing.send(message)
     except KeyboardInterrupt:
         pass
