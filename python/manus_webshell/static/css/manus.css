@@ -90,6 +90,7 @@
 .viewer img {
     position: absolute;
     z-index: -100;
+    background-color: white;
 }
 
 .viewer:hover .tools {
@@ -103,4 +104,29 @@
 
 #app-list {
     font-size: 200%;
+}
+
+.list.list-group {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.list-group-item .list-tools {
+    display: none;
+    float: right;
+}
+
+.list-group-item:hover .list-tools,
+.list-group-item.editable .list-tools {
+    display: block;
+}
+
+.list-group-item .list-tools i {
+    font-size: 120%;
+    margin-left: 5px;
+}
+
+
+.list-group-item .list-tools i.glyphicon-trash {
+    color: red;
 }

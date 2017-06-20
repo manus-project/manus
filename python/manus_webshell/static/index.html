@@ -3,22 +3,23 @@
   <head>
     <title>Manus - your personal robotics laboratory</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="bootstrap.min.css" rel="stylesheet" media="screen">
-    <link href="manus.css" rel="stylesheet" media="screen">   
-    <script src="jquery.js"></script>  
-    <script src="bootstrap.min.js"></script>  
-    <script src="glmatrix.min.js"></script> 
-    <script src="phoria.min.js"></script>
-    <script src="pubsub.js"></script>
-    <script src="debug.js"></script>
-    <script src="widgets.js"></script>
-    <script src="world.js"></script>
-    <script src="manus.js"></script>  
+    <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="css/manus.css" rel="stylesheet" media="screen">   
+    <script src="js/jquery.js"></script>  
+    <script src="js/bootstrap.min.js"></script>  
+    <script src="js/glmatrix.min.js"></script> 
+    <script src="js/phoria.min.js"></script>
+    <script src="js/list.min.js"></script>    
+    <script src="js/pubsub.js"></script>
+    <script src="js/debug.js"></script>
+    <script src="js/widgets.js"></script>
+    <script src="js/world.js"></script>
+    <script src="js/manus.js"></script>  
   </head>
   <body>
     <!-- Static navbar -->
-    <div class="navbar navbar-static-top">
-      <div class="container">
+    <div class="navbar navbar-default">
+      <div class="container-fluid">
         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
@@ -26,20 +27,38 @@
         </button>
         <span class="navbar-brand">Manus</span>  
         <ul class="nav navbar-nav nav-collapse" id="menu">
-          <li id="menu-apps"><a href="#apps" data-toggle="tab"><i class="icon-wrench"> </i>Apps</a></li>
-          <li id="menu-settings"><a href="#settings" data-toggle="tab"><i class="icon-wrench"> </i>Settings</a></li>        
-          <li id="menu-about"><a href="#about" data-toggle="tab"><i class="icon-wrench"> </i>About</a></li>
+          <li id="menu-control"><a href="#control" data-toggle="tab"> <i class="glyphicon glyphicon-dashboard"> </i> Control</a></li>
+          <li id="menu-program"><a href="#program" data-toggle="tab"> <i class="glyphicon glyphicon-pencil"> </i> Program</a></li>
+          <li id="menu-apps"><a href="#apps" data-toggle="tab"> <i class="glyphicon glyphicon-cog"> </i> Apps</a></li>
+          <li id="menu-settings"><a href="#settings" data-toggle="tab"> <i class="glyphicon glyphicon-wrench"> </i> Settings</a></li>        
+          <li id="menu-about"><a href="#about" data-toggle="tab"> <i class="glyphicon glyphicon-info-sign"> </i> About</a></li>
         </ul>
       </div>
     </div>
 
-    <div id="container" class="container">
-        <div id="debug"></div>
-        <div class="tab-content" id="tabs">
+    <div id="container" class="container-fluid">
+        <div class="tab-content col-xs-12 col-sm-8 col-md-7 col-lg-6" id="tabs">
 
+          <div class="tab-pane active row" id="control">
+              <h1>Control your manipulator</h1>
+              <div id="controls" class="col-xs-12 col-sm-12 col-md-8 col-lg-8"></div>
+              <div id="poseslist" class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+                <div class="list list-group"></div>
+              </div>
+          </div>
+
+          <div class="tab-pane" id="program">
+              <h1>Program your manipulator</h1>
+  
+          </div>
+
+          <div class="tab-pane" id="apps">
+              <h1>Applications</h1>
+              <ul id="app-list"></ul>
+          </div>
 
           <div class="tab-pane" id="settings">
-              <h1><span id="appname">Settings</span></h1>
+              <h1>Settings</h1>
               <h2>Resources</h2>
               <ul>
                 <li><a href="surface.pdf">Working surface</a> - PDF template for working surface</li>
@@ -47,23 +66,20 @@
               </ul>
 
           </div>
-          <div class="tab-pane active" id="about">
+          <div class="tab-pane" id="about">
             <div class="jumbotron">
               <h1><span id="appname">Manus</span></h1>
-              <p>Version: <span id="appversion"></span></p>
-              <p>Manus is a manipulation robotics framework for educational purposes. It was written as a support software for a course on robotics and computer vision. This webshell enables access to a robotic manipulator and a web camera through a HTTP requests. </p>
+              <p>Version: <span id="appversion">unknown</span></p>
+              <p>Manipulator: <span id="manipulator">unknown</span></p>
+              <p>Manus is a modular manipulation robotics platform for educational purposes. The project consists of open-source software components as well as open hardware designs. The project was started to support a course on robotics and computer vision. 
+
+              <br />This webshell enables access to a robotic manipulator and a web camera. </p>
               <p><a class="btn btn-primary btn-lg" href="https://github.com/lukacu/manus" role="button">Github</a></p>
+            </div>
           </div>
 
-          </div>
-
-          <div class="tab-pane" id="apps">
-              <h1>Applications</h1>
-              <ul id="app-list">
-              </ul>
-          </div>
-
-     </div>
+        </div>
+        <div class="tab-content col-xs-12 col-sm-4 col-md-5 col-lg-6" id="view"><div id="viewer"></div></div>
    </div> 
 
   </body>

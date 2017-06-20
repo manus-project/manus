@@ -78,7 +78,7 @@ try:
               else:
                   kwargs['message'] = 'Unknown error.'
        
-          #self.response = kwargs
+          self.response = kwargs
           self.write_json()
        
       def write_json(self):

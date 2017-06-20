@@ -11,6 +11,7 @@ import uuid
 import logging
 import logging.handlers
 import os.path
+from bsddb3 import db  
 
 import tornado.httpserver
 import tornado.ioloop
@@ -211,6 +212,37 @@ class AppsHandler(JsonHandler):
     def check_etag_header(self):
         return False
 
+class StorageHandler(tornado.web.RequestHandler):
+    def __init__(self, application, request, storage):
+        super(StorageHandler, self).__init__(application, request)
+        self._storage = storage
+
+    def get(self):
+        key = self.request.arguments.get("key", "")[0].strip()
+        if not key:
+            self.set_status(401)
+            self.finish('Illegal request')
+            return
+        raw = self._storage.get(key, "")
+        ctype, data = raw.split(";", 1)
+        self.set_header('Content-Type', ctype)
+        self.finish(data)
+
+    def post(self):
+        key = self.request.arguments.get("key", "")[0].strip()
+        if not key:
+            self.set_status(401)
+            self.finish('Illegal request')
+            return
+
+        data = "%s;%s" % (self.request.headers.get('Content-Type').split(";", 1), self.request.body)
+        self._storage.put(key, data)
+        self.finish()
+
+
+    def check_etag_header(self):
+        return False
+
 
 class ApiWebSocket(tornado.websocket.WebSocketHandler):
     connections = []
@@ -292,8 +324,12 @@ def main():
     scriptdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
     client = echolib.Client()
+    storage = db.DB()
 
     try:
+
+        storagefile = os.getenv('MANUS_STORAGE', "/tmp/manus_storage.db")
+        storage.open(storagefile, None, db.DB_HASH, db.DB_CREATE)
 
         handlers = []
         cameras = []
@@ -322,7 +358,7 @@ def main():
         #handlers.append((r'/api/markers', MarkersStorageHandler))
         apps = AppsList(client)
         handlers.append((r'/api/apps', AppsHandler, {"apps" : apps}))
-
+        handlers.append((r'/api/storage', StorageHandler, {"storage" : storage}))
         handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators}))
         handlers.append((r'/api/info', ApplicationHandler))
         handlers.append((r'/', RedirectHandler, {'url' : '/index.html'}))
@@ -351,8 +387,12 @@ def main():
 
         echocv.tornado.uninstall_client(tornado_loop, client)
 
-    finally:
-        pass
+    except Exception, e:
+        if not storage.get_dbname() is None:
+            storage.close()
+        print e
+
+    logger.info("Stopping %s webshell" % manus.NAME)
 
 if __name__ == '__main__':
     main()

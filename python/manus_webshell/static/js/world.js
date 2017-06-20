@@ -52,6 +52,8 @@ if (!$.manus.world) {
 
 $.manus.world = {
 
+    _transparent : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+
     views : {
         free : function(options) {
             options = $.extend({azimuth : 20, altitude : -10, distance: 1000, elevation: 100, offsetx: 200, offsety: 0}, options);
@@ -128,6 +130,7 @@ $.manus.world = {
                     world.canvas.addEventListener('mouseup', mouse.onMouseUp, false);
                     world.canvas.addEventListener('mouseout', mouse.onMouseOut, false);
                     cameraSphere.update(world);
+                    world.render();
                 },
                 uninstall: function(world) {
                     world.canvas.removeEventListener('mousedown', mouse.onMouseDown, false);
@@ -185,11 +188,11 @@ $.manus.world = {
                     var fov2 = 360 * Math.atan2(data.image.height, 2*data.intrinsics[1][1]) / Math.PI;
                     world.scene.perspective.aspect = fov1 / fov2;
                     world.scene.perspective.fov = fov2; // (fov1 + fov2) / 2; // Compute average fov
-                    world.projection.attr({src: url}).show();
+                    world.projection.attr({src: url});
 
                 },
                 uninstall: function(world) {
-                    world.projection.hide().attr({src: ""});
+                    world.projection.attr({src: $.manus.world._transparent});
 
                 },
                 prerender: function(world) {
@@ -211,19 +214,11 @@ $.manus.world = {
                     world.scene.camera.up.y = parameters.up[1];
                     world.scene.camera.up.z = parameters.up[2];
 
-/*
-					var scale = Math.max(image.width / world.canvas.width, image.height / world.canvas.height);
-
-                    ctx.drawImage(image, (world.canvas.width - (image.width / scale)) / 2,
-						(world.canvas.height - (image.height / scale)) / 2, image.width / scale, image.height / scale);
-                        */
                     world.render();
 
                 },
                 clear:  function(ctx) {},
-                postrender: function(world) {
-
-                }
+                postrender: function(world) {}
             }
         }
 
@@ -234,7 +229,7 @@ $.manus.world = {
 		options = $.extend({width : 800, height: 600}, options);
 
         var canvas = $('<canvas/>').attr({width: options.width, height: options.height});
-        var projection = $('<img/>').attr({width: options.width, height: options.height}).hide();
+        var projection = $('<img/>').attr({width: options.width, height: options.height, src: $.manus.world._transparent});
 		var wrapper = $('<div/>').addClass("viewer").append(projection).append(canvas);
 
         viewCamera = -1;
@@ -276,7 +271,18 @@ $.manus.world = {
             projection: projection,
 			wrapper: wrapper,
             render: function() { dirty = true; },
-            view: function(v) { if (v == null) v = defaultView; currentView.uninstall(this); currentView = v; v.install(this); }
+            view: function(v) { if (v == null) v = defaultView; currentView.uninstall(this); currentView = v; v.install(this); },
+            resize: function(width, height) {
+                options.width = width;
+                options.height = height;
+                $(canvas).attr({width: options.width, height: options.height});
+                projection.attr({width: options.width, height: options.height});
+                scene.perspective.aspect = canvas.width / canvas.height;
+                scene.viewport.width = canvas.width;
+                scene.viewport.height = canvas.height;
+                var dirty = true;
+                world.render();
+            }
         }
 
         function render() {

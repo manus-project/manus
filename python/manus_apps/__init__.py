@@ -18,7 +18,7 @@ class AppsManager(object):
     def run(self, id):
         if len(id) > 0:
             msg = AppCommand
-            msg.type = "RUN"
+            msg.type = "EXECUTE"
             msg.id = id
             self._control.send(msg)
 
