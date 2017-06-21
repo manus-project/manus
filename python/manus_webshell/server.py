@@ -224,7 +224,11 @@ class StorageHandler(tornado.web.RequestHandler):
             self.finish('Illegal request')
             return
         raw = self._storage.get(key, "")
-        ctype, data = raw.split(";", 1)
+        try:
+            ctype, data = raw.split(";", 1)
+        except ValueError:
+            ctype = 'text/plain'
+            data = ''
         self.set_header('Content-Type', ctype)
         self.finish(data)
 
@@ -234,8 +238,11 @@ class StorageHandler(tornado.web.RequestHandler):
             self.set_status(401)
             self.finish('Illegal request')
             return
-
-        data = "%s;%s" % (self.request.headers.get('Content-Type').split(";", 1), self.request.body)
+        try:
+            ctype, _ = self.request.headers.get('Content-Type').split(";", 1)
+        except ValueError:
+            ctype = self.request.headers.get('Content-Type')
+        data = "%s;%s" % (ctype, self.request.body)
         self._storage.put(key, data)
         self.finish()
 

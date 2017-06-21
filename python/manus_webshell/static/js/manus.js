@@ -1,12 +1,84 @@
 
+function uniqueIdentifier() {
+  return Math.round(new Date().getTime() + (Math.random() * 100));
+}
+
 function posesList() {
+
+    var augmentItem = function(item) {
+        var container = $(item.elm);
+        if (container.hasClass('pose-item'))
+            return;
+
+        container.addClass('pose-item');
+        var tools = $('<div />').addClass('list-tools').appendTo(container);
+
+        container.click(function () {
+
+            var data = item.values().pose;
+            
+            var params = "";
+            for (var i = 0; i < data.joints.length; i++)
+                params += "j" + (i+1) + "=" + data.joints[i].position + "&";
+            $.ajax('/api/manipulator/move?' + params);
+
+        });
+
+        tools.append($('<i />').addClass('glyphicon glyphicon-pencil').click(function() {
+
+            if (container.hasClass('editable'))
+                return;
+
+            container.addClass('editable');
+            var textbox = container.children(".name");
+            textbox.text(item.values().name);
+            textbox.attr('contenteditable', 'true');
+
+            var sel = window.getSelection();
+
+            textbox.bind('blur', function() {
+                textbox.attr('contenteditable', 'false');
+                container.removeClass('editable');
+            }).focus();
+
+            var sel = window.getSelection();
+            var range = document.createRange();
+            range.setStart(textbox[0], 1);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            
+            textbox.bind('keyup', function(event) {
+                if(event.keyCode == 13) {
+                    container.removeClass('editable');
+                    item.values({"name": textbox.text()});
+                    list.update();
+                    event.stopPropagation();
+                } else if (event.keyCode == 27) {
+                    textbox.attr('contenteditable', 'false');
+                    container.removeClass('editable');
+                    textbox.text(item.values().name);
+                    container.focus();
+                    event.stopPropagation();
+                }
+                return true;
+            });
+
+            return false;
+        }));
+
+        tools.append($('<i />').addClass('glyphicon glyphicon-trash').click(function() {
+            list.remove("identifier", item.values().identifier);
+            return false;
+        }));
+
+    }
 
     var currentPose = null;
 
     var list = new List("poseslist", {
         valueNames : ["name"],
         item: "<a class='list-group-item'><span class='name'></span></a>"
-
     }, []);
 
     $.ajax('/api/storage?key=poses').done(function(data) {
@@ -21,13 +93,22 @@ function posesList() {
 
     });
 
+    PubSub.subscribe("storage.update", function(msg, data) {
+
+        if (data.key != "poses") 
+            return;
+
+    });
+
     var index = 0;
 
     list.on("updated", function() {
 
         var data = [];
-        for (var i = 0; i < list.items.length; i++)
+        for (var i = 0; i < list.items.length; i++) {
             data.push(list.items[i].values());
+            augmentItem(list.items[i]);
+        }
         $.ajax({
             'type': 'POST',
             'url': '/api/storage?key=poses',
@@ -45,72 +126,10 @@ function posesList() {
                 if (!currentPose) return;
                 index++;
                 list.add([{
-                    index : index,
+                    identifier : uniqueIdentifier(),
                     name : "New pose " + index,
                     pose: currentPose
                 }]);
-                var item = list.items[list.items.length-1];
-                var container = $(list.items[list.items.length-1].elm);
-                var tools = $('<div />').addClass('list-tools').appendTo(container);
-
-                container.click(function () {
-
-                    var data = item.values().pose;
-                    
-                    var params = "";
-                    for (var i = 0; i < data.joints.length; i++)
-                        params += "j" + (i+1) + "=" + data.joints[i].position + "&";
-                    $.ajax('/api/manipulator/move?' + params);
-
-                });
-
-                tools.append($('<i />').addClass('glyphicon glyphicon-pencil').click(function() {
-
-                    if (container.hasClass('editable'))
-                        return;
-
-                    container.addClass('editable');
-                    var textbox = container.children(".name");
-                    textbox.text(item.values().name);
-                    textbox.attr('contenteditable', 'true');
-
-                    var sel = window.getSelection();
-
-                    textbox.bind('blur', function() {
-                        textbox.attr('contenteditable', 'false');
-                        container.removeClass('editable');
-                    }).focus();
- 
-                    var sel = window.getSelection();
-                    var range = document.createRange();
-                    range.setStart(textbox[0], 1);
-                    range.collapse(true);
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                    
-                    textbox.bind('keyup', function(event) {
-                        if(event.keyCode == 13) {
-                            container.removeClass('editable');
-                            item.values({"name": textbox.text()});
-                            event.stopPropagation();
-                        } else if (event.keyCode == 27) {
-                            textbox.attr('contenteditable', 'false');
-                            container.removeClass('editable');
-                            textbox.text(item.values().name);
-                            container.focus();
-                            event.stopPropagation();
-                        }
-                        return true;
-                    });
-
-                    return false;
-                }));
-
-                tools.append($('<i />').addClass('glyphicon glyphicon-trash').click(function() {
-                    list.remove("index", item.values().index);
-                    return false;
-                }));
-
             } 
         }
 

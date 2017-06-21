@@ -71,7 +71,6 @@ try:
           self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
    
       def write_error(self, status_code, **kwargs):
-          print kwargs
           if 'message' not in kwargs:
               if status_code == 405:
                   kwargs['message'] = 'Invalid HTTP method.'
