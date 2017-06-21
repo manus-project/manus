@@ -300,6 +300,23 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
     def on_app_active(self, app_id):
         self.distribute_message({"channel": "apps", "action" : "activated", "identifier" : app_id})
 
+class CodeSubmitonHandler(JsonHandler):
+
+    def __init__(self, application, request):
+        super(CodeSubmitonHandler, self).__init__(application, request)
+
+    def get(self):
+        self.response = {
+            "status" : "OK",
+            "note" : "You really should use POST :D"
+        }
+        self.write_json()
+
+    def post(self):
+        print "POST handler reporting for duty"
+        print self.request.arguments
+
+
 def main():
     logging_level = logging.DEBUG
 
@@ -350,6 +367,7 @@ def main():
 
         #handlers.append((r'/api/markers', MarkersStorageHandler))
         apps = AppsManager(client)
+        handlers.append((r'/api/code/submit', CodeSubmitonHandler))
         handlers.append((r'/api/apps', AppsHandler, {"apps" : apps}))
         handlers.append((r'/api/storage', StorageHandler, {"storage" : storage}))
         handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators, "apps": apps}))

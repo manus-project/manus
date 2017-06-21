@@ -120,5 +120,40 @@ function showCode() {
 }
 
 function runCode() {
-    alert("Not working yet!");
+    var code = Blockly.Python.workspaceToCode(workspace);
+    callwebapi("/api/code/submit", 
+        {"code": code},
+        function(data) {
+            alert("code submition successful!");
+        },
+        function(){
+            alert("code submition FAILED!");
+        }
+    );
+}
+
+function callwebapi(url, reqdata_raw, ok_func, err_func) {
+    var reqdata = JSON.stringify(reqdata_raw, null);
+
+    // Send data using POST
+    $.ajax({
+        url: url,
+        dataType: 'json',
+        type: 'POST',
+        data: reqdata,
+        jsonp: false,
+        timeout: 2000,
+        success: function (data) {
+            console.log("Successfully posted to "+url+". It responded with "+data);
+            if ('function' === typeof (ok_func)) {
+                ok_func(data);
+            }
+        },
+        error: function (jqXHR, textStatus, errorThrown ) {
+          console.log("Failed to call "+url+" because "+textStatus+": "+errorThrown);
+          if ('function' === typeof (err_func)) {
+              err_func();
+          }
+        }
+    });
 }
