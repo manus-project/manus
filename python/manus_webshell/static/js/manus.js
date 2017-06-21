@@ -11,7 +11,7 @@ function posesList() {
             return;
 
         container.addClass('pose-item');
-        var tools = $('<div />').addClass('list-tools').appendTo(container);
+        var tools = $('<div />').addClass('list-tools').prependTo(container);
 
         container.click(function () {
 
@@ -75,15 +75,18 @@ function posesList() {
     }
 
     var currentPose = null;
+    var updating = false;
 
     var list = new List("poseslist", {
         valueNames : ["name"],
-        item: "<a class='list-group-item'><span class='name'></span></a>"
+        item: "<a class='list-group-item'><div class='name'></div></a>"
     }, []);
 
     $.ajax('/api/storage?key=poses').done(function(data) {
 
+        updating = true;
         list.add(data);
+        updating = false;
         
     });
 
@@ -93,10 +96,19 @@ function posesList() {
 
     });
 
-    PubSub.subscribe("storage.update", function(msg, data) {
+    PubSub.subscribe("storage.update", function(msg, key) {
 
-        if (data.key != "poses") 
+        if (key != "poses") 
             return;
+
+        $.ajax('/api/storage?key=poses').done(function(data) {
+
+            updating = true;
+            list.clear();
+            list.add(data);
+            updating = false;
+            
+        });
 
     });
 
@@ -104,11 +116,20 @@ function posesList() {
 
     list.on("updated", function() {
 
+        if (list.items.length > 0) {
+            $(list.listContainer).children(".alert").hide();
+        } else {
+            $(list.listContainer).children(".alert").show();
+        }
+
         var data = [];
         for (var i = 0; i < list.items.length; i++) {
             data.push(list.items[i].values());
             augmentItem(list.items[i]);
         }
+
+        if (updating) return;
+
         $.ajax({
             'type': 'POST',
             'url': '/api/storage?key=poses',
@@ -119,7 +140,7 @@ function posesList() {
 
     });
 
-    $("#poseslist").prepend($.manus.widgets.buttons({
+    $("#poseslist").append($.manus.widgets.buttons({
         add : {
             text: "Save pose",
             callback: function() {
@@ -134,6 +155,49 @@ function posesList() {
         }
 
     }));
+
+}
+
+function appsList() {
+
+    var augmentItem = function(item) {
+        var container = $(item.elm);
+        if (container.hasClass('pose-item'))
+            return;
+
+        container.addClass('apps-item');
+
+        container.click(function () {
+            $.ajax('/api/apps?run=' + item.values().identifier).done(function(data) {
+                
+            });
+        });
+
+    }
+
+    var updating = false;
+
+    var list = new List("appslist", {
+        valueNames : ["name"],
+        item: "<a class='list-group-item'><div class='name'></div><div class='version'></div><div class='description'></div></a>"
+    }, []);
+
+    $.ajax('/api/apps').done(function(data) {
+        items = [];
+        for (var key in data) { items.push(data[key]); }
+        console.log(items)
+        list.add(items);
+    });
+
+    var index = 0;
+
+    list.on("updated", function() {
+
+        for (var i = 0; i < list.items.length; i++) {
+            augmentItem(list.items[i]);
+        }
+
+    });
 
 }
 
@@ -171,25 +235,7 @@ $(function() {
 
     });
 
-    function update_apps(data) {
-        $('#app-list').empty();
-        $.each(data, function(i, a) {
-            $('#app-list').append($('<li/>').append($("<a />").text(a).click(function (e) {
 
-                $.ajax('/api/apps?run=' + i).done(function(data) {
-                    update_apps(data);
-                });
-
-            })));
-        });
-
-    }
-
-    $.ajax('/api/apps').done(function(data) {
-
-        update_apps(data);
-        
-    });
 
     /* Camera stuff */
 
@@ -257,6 +303,8 @@ $(function() {
 
     posesList();
 
+    appsList();
+
     /* Websocket events connection */
 
     var loc = window.location, new_uri;
@@ -276,6 +324,10 @@ $(function() {
             } else if (msg.object == "manipulator") {
 
                 PubSub.publish("manipulator.update", msg.data);
+                
+            } else if (msg.object == "storage") {
+
+                PubSub.publish("storage.update", msg.key);
                 
             }
 

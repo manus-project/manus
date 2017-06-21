@@ -30,6 +30,7 @@ import manus_webshell.static
 
 from manus.manipulator import JointType
 import manus
+from manus_apps import AppsManager
 
 __author__ = 'lukacu'
 
@@ -205,7 +206,8 @@ class AppsHandler(JsonHandler):
         run = self.request.arguments.get("run", "")
         if len(run) > 0:
             self._apps.run(run[0])
-
+            self.response = {"result" : "ok"}
+            self.write_json()
         self.response = self._apps.list()
         self.write_json()
 
@@ -245,7 +247,7 @@ class StorageHandler(tornado.web.RequestHandler):
         data = "%s;%s" % (ctype, self.request.body)
         self._storage.put(key, data)
         self.finish()
-
+        ApiWebSocket.distribute_message({"type": "update", "object" : "storage", "key" : key, "content" : "ctype"})
 
     def check_etag_header(self):
         return False
@@ -287,35 +289,10 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
         self.distribute_message({"type": "update", "object" : "camera", "data" : CameraLocationHandler.encode_location(location)})
 
     def on_manipulator_state(self, manipulator, state):
-        self.distribute_message({"type": "update", "object" : 'manipulator', "data" : ManipulatorStateHandler.encode_state(state)})
+        self.distribute_message({"type": "update", "object" : "manipulator", "data" : ManipulatorStateHandler.encode_state(state)})
 
     def on_planner_state(self, manipulator, state):
         pass
-
-class AppsList(object):
-
-    def __init__(self, client):
-        self._listsub = echolib.DictionarySubscriber(client, "app_list", lambda x: self._list(x))
-        self._annsub = echolib.DictionarySubscriber(client, "app_announce", lambda x: self._announce(x))
-        self._control = echolib.DictionaryPublisher(client, "app_control")
-        self._apps = {}
-
-    def list(self):
-        return self._apps
-
-    def run(self, id):
-        if len(id) > 0:
-            msg = echolib.Dictionary()
-            msg["command"] = "run"
-            msg["identifier"] = id
-            self._control.send(msg)
-
-    def _list(self, msg):
-        self._apps = {k: v for k, v in msg.items()}
-
-    def _announce(self, msg):
-        pass
-
 
 def main():
     logging_level = logging.DEBUG
@@ -336,7 +313,10 @@ def main():
     try:
 
         storagefile = os.getenv('MANUS_STORAGE', "/tmp/manus_storage.db")
-        storage.open(storagefile, None, db.DB_HASH, db.DB_CREATE)
+        if os.path.exists(storagefile):
+            storage.open(storagefile, None, db.DB_HASH)
+        else:
+            storage.open(storagefile, None, db.DB_HASH, db.DB_CREATE)
 
         handlers = []
         cameras = []
@@ -363,7 +343,7 @@ def main():
             print traceback.format_exc()
 
         #handlers.append((r'/api/markers', MarkersStorageHandler))
-        apps = AppsList(client)
+        apps = AppsManager(client)
         handlers.append((r'/api/apps', AppsHandler, {"apps" : apps}))
         handlers.append((r'/api/storage', StorageHandler, {"storage" : storage}))
         handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators}))
@@ -371,9 +351,9 @@ def main():
         handlers.append((r'/', RedirectHandler, {'url' : '/index.html'}))
         handlers.append((r'/(.*)', DevelopmentStaticFileHandler, {'path': os.path.dirname(manus_webshell.static.__file__)}))
 
-        app = tornado.web.Application(handlers)
+        application = tornado.web.Application(handlers)
 
-        server = tornado.httpserver.HTTPServer(app)
+        server = tornado.httpserver.HTTPServer(application)
         server.listen(8080)
 
         tornado_loop = tornado.ioloop.IOLoop.instance()
@@ -388,18 +368,17 @@ def main():
         try:
             tornado_loop.start()
         except KeyboardInterrupt:
-            logger.info("Stopping %s webshell" % manus.NAME)
+            pass
         except Exception, err:
             print traceback.format_exc()
 
         echocv.tornado.uninstall_client(tornado_loop, client)
 
     except Exception, e:
-        if not storage.get_dbname() is None:
-            storage.close()
         print e
 
     logger.info("Stopping %s webshell" % manus.NAME)
+    storage.close()
 
 if __name__ == '__main__':
     main()
