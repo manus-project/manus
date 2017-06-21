@@ -17,7 +17,7 @@
     <script src="js/manus.js"></script>  
 
     <!-- Blockly includes -->
-    <script src="blockly/blockly_uncompressed.js"></script>
+    <script src="blockly/blockly_compressed.js"></script>
     <script src="blockly/generators/python.js"></script>
     <script src="blockly/generators/python/logic.js"></script>
     <script src="blockly/generators/python/loops.js"></script>
@@ -41,7 +41,7 @@
     <script src="blockly/blocks/manus.js"></script>
 
     <!-- Blockly tab -->
-    <script src="blockly_loader.js"></script>
+    <script src="js/blockly_loader.js"></script>
   </head>
   <body>
 
@@ -91,7 +91,7 @@
 
           <div class="tab-pane" id="program">
               <h1>Program your manipulator</h1>
-  
+              <div id="blockly-container"></div>
           </div>
 
           <div class="tab-pane" id="apps">
