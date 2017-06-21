@@ -17,13 +17,13 @@ class AppsManager(object):
 
     def run(self, id):
         if len(id) > 0:
-            msg = AppCommand
+            msg = AppCommand()
             msg.type = "EXECUTE"
             msg.id = id
             self._control.send(msg)
 
     def _list(self, msg):
-        self._apps = {v.id: {'identifier': v.id, 'name': v.name, 'version': v.version} for v in msg.apps}
+        self._apps = {v.id: {'identifier': v.id, 'name': v.name, 'version': v.version, 'description' : v.description} for v in msg.apps if v.listed}
 
     def _announce(self, msg):
         pass

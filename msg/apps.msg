@@ -7,8 +7,9 @@ enumerate AppCommandType {EXECUTE, TERMINATE, RESCAN}
 structure AppData {
 	string id;
 	string name;
+	int version = 1;
+	string description;
 	string script;
-	float version = 1.0;
 	bool listed = true;
 }
 

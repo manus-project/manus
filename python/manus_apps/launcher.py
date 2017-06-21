@@ -27,10 +27,13 @@ class Application(object):
             digest = hashlib.md5()
             digest.update(appfile)
             self.identifier = digest.hexdigest()
-            self.name = content[0]
-            self.description = content[1]
-            self.version = float(content[2])
-            self.script = content[3]
+            self.name = content[0].strip()
+            self.version = int(content[1].strip())
+            self.script = content[2].strip()
+            if len(content) > 3:
+                self.description = "".join(content[3:])
+            else:
+                self.description = ""
             self.dir = os.path.dirname(appfile)
             self.listed = listed
         except ValueError, e:
@@ -46,9 +49,6 @@ class Application(object):
             return
 
         import subprocess
-
-        variables = self.metadata.copy()
-        variables.update({"path" : self.path, "name": self.name, "version": self.version})
 
         command = "python %s" % self.script
         environment = os.environ.copy()
@@ -77,7 +77,9 @@ class Application(object):
         d = AppData()
         d.name = self.name
         d.id = self.identifier
+        d.script = self.script
         d.version = self.version
+        d.description = self.description
         d.listed = self.listed
         return d
 
@@ -89,7 +91,8 @@ def scan_applications(pathlist):
                 if not filename.endswith(".app"):
                     continue
                 try:
-                    applications[identifier] = Application(os.join(dirpath, script))
+                    app = Application(os.path.join(dirpath, filename))
+                    applications[app.identifier] = app
                 except Exception, e:
                     print e
                     continue
@@ -149,7 +152,7 @@ def application_launcher(autorun=None):
         announce.send(message)
 
     def control_callback(command):
-        if command.type == AppCommandType.RUN:
+        if command.type == AppCommandType.EXECUTE:
             start_application(command.id)
 
     def shutdown_handler():
