@@ -87,6 +87,7 @@ $(document).ready(function(){
           <block type="manus_position_vector"></block> \
           <block type="manus_position_vector_var"></block> \
           <block type="manus_move_arm"></block> \
+          <block type="manus_wait"></block> \
         </category> \
         <sep></sep> \
         <category name="Variables" colour="330" custom="VARIABLE"></category> \
@@ -125,6 +126,15 @@ function runCode() {
         {"code": code},
         function(data) {
             alert("code submition successful!");
+            if (!('status' in data)){
+                console.error("status field missing from respons data");
+            }
+            if (data.status != "OK"){
+                if (!('description' in data)){
+                    console.error("description field missing from non-OK response data");
+                }
+                alert("Code execution failed. "+data.status+": "+data.description);
+            }
         },
         function(){
             alert("code submition FAILED!");
@@ -150,7 +160,7 @@ function callwebapi(url, reqdata_raw, ok_func, err_func) {
             }
         },
         error: function (jqXHR, textStatus, errorThrown ) {
-          console.log("Failed to call "+url+" because "+textStatus+": "+errorThrown);
+          console.error("Failed to call "+url+" because "+textStatus+": "+errorThrown);
           if ('function' === typeof (err_func)) {
               err_func();
           }

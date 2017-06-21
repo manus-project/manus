@@ -11,6 +11,7 @@ import uuid
 import logging
 import logging.handlers
 import os.path
+import os
 from bsddb3 import db  
 
 import tornado.httpserver
@@ -25,6 +26,7 @@ import echolib
 import echocv
 import echocv.tornado
 
+from .code_generator import CodeGenerator
 from .utilities import synchronize, RedirectHandler, DevelopmentStaticFileHandler, JsonHandler, NumpyEncoder
 import manus_webshell.static
 
@@ -314,7 +316,22 @@ class CodeSubmitonHandler(JsonHandler):
 
     def post(self):
         print "POST handler reporting for duty"
+        print os.getcwd()
         print self.request.arguments
+        self.response = {
+            "status" : "OK",
+        }
+        try:
+            generator = CodeGenerator("/home/gasper/FRI/checkouts/manus/python/manus_webshell/code_template.py", "/home/gasper/Local/builds/manus/share/manus/apps/generated_app")
+            generator.generate_app_with_code(self.request.arguments[u"code"], True)
+        except Exception as e:
+            print "code generation failed: "+e.message
+            self.response = {
+                "status" : "Error",
+                "description" : e.message
+            }
+       
+        self.write_json()
 
 
 def main():

@@ -30,7 +30,7 @@ Blockly.Python['manus_move_joint'] = function(block) {
   var dropdown_joint_dropdown = block.getFieldValue('joint_dropdown');
   var value_position_value = Blockly.Python.valueToCode(block, 'position_value', Blockly.Python.ORDER_ATOMIC);
   // TODO: Assemble Python into code variable.
-  var code = 'moveJoint("'+ dropdown_joint_dropdown +'", '+ value_position_value +')\n';
+  var code = 'manus_move_joint("'+ dropdown_joint_dropdown +'", '+ value_position_value +')\n';
   return code;
 };
 
@@ -58,5 +58,12 @@ Blockly.Python['manus_move_arm'] = function(block) {
   var value_coordinates = Blockly.Python.valueToCode(block, 'coordinates', Blockly.Python.ORDER_ATOMIC);
   // TODO: Assemble Python into code variable.
   var code = 'manus_move_arm_to_coordinates('+value_coordinates+')\n';
+  return code;
+};
+
+Blockly.Python['manus_wait'] = function(block) {
+  var value_wait_val = Blockly.Python.valueToCode(block, 'wait_val', Blockly.Python.ORDER_ATOMIC);
+  // TODO: Assemble Python into code variable.
+  var code = 'manus_wait('+value_wait_val+')\n';
   return code;
 };

@@ -33,6 +33,8 @@ Blockly.Blocks['manus_move_joint'] = {
     this.appendValueInput("position_value")
         .setCheck("Number")
         .appendField("to position");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
     this.setInputsInline(true);
     this.setColour(0);
     this.setTooltip('');
@@ -92,5 +94,19 @@ Blockly.Blocks['manus_move_arm'] = {
     this.setColour(0);
     this.setTooltip('Move robot arm to coordinates');
     this.setHelpUrl('');
+  }
+};
+
+Blockly.Blocks['manus_wait'] = {
+  init: function() {
+    this.appendValueInput("wait_val")
+        .setCheck("Number")
+        .appendField("Wait");
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(0);
+    this.setTooltip('');
+    this.setHelpUrl('Wait halts execution for number of miliseconds');
   }
 };
