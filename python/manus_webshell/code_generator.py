@@ -13,9 +13,12 @@ class CodeGenerator(object):
         self.read_template()
         
         self.app_file_content = """Generated App
-App generated from Blockly code
 1
-generated_app.py"""
+generated_app.py
+Blockly generated app
+
+App generated from Blockly code
+"""
 
     def read_template(self):
         try:

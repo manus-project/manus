@@ -83,10 +83,16 @@ $(document).ready(function(){
           <block type="colour_blend"></block> \
         </category> \
         <category name="Manus" colour="0"> \
-          <block type="manus_move_joint"></block> \
-          <block type="manus_position_vector"></block> \
-          <block type="manus_position_vector_var"></block> \
-          <block type="manus_move_arm"></block> \
+          <category name="Move arm" colour="0"> \
+            <block type="manus_move_joint"></block> \
+            <block type="manus_move_arm"></block> \
+            <block type="manus_position_vector"></block> \
+            <block type="manus_position_vector_var"></block> \
+          </category> \
+          <category name="Detection" colour="0"> \
+            <block type="manus_any_block_detector"></block> \
+            <block type="manus_colored_block_detector"></block> \
+          </category> \
           <block type="manus_wait"></block> \
         </category> \
         <sep></sep> \
@@ -112,6 +118,22 @@ $(document).ready(function(){
         if (workspace)
           Blockly.svgResize(workspace);
     })
+    // Register on create and delete callbacks
+    function onEvent(event) {
+        if (event.type == Blockly.Events.CHANGE &&
+            event.element == 'comment' &&
+            !event.oldValue && event.newValue) {
+            alert('Congratulations on creating your first comment!')
+            workspace.removeChangeListener(onFirstComment);
+        }
+}
+    workspace.addChangeListener(function(event){
+        if (event.type == Blockly.Events.CREATE)
+            onBlockCreate(event);
+        else if (event.type == Blockly.Events.DELETE)
+            onBlockDelete(event);
+    });
+
 });
 
 function showCode() {
@@ -166,4 +188,33 @@ function callwebapi(url, reqdata_raw, ok_func, err_func) {
           }
         }
     });
+}
+
+
+
+var detector_count = 0;
+function onBlockCreate(event){
+    var block_type = event.xml.getAttribute("type");
+    if (block_type == "manus_any_block_detector" || block_type == "manus_colored_block_detector"){
+        if (detector_count == 0){
+            workspace.createVariable("detection_x");
+            workspace.createVariable("detection_y");
+            workspace.createVariable("detection_z");
+            workspace.createVariable("detection_color");
+        }
+        detector_count++;
+    }
+}
+
+function onBlockDelete(event){
+    var block_type = event.oldXml.getAttribute("type");
+    if (block_type == "manus_any_block_detector" || block_type == "manus_colored_block_detector"){
+        detector_count--;
+        if (detector_count == 0){
+            workspace.deleteVariable("detection_x");
+            workspace.deleteVariable("detection_y");
+            workspace.deleteVariable("detection_z");
+            workspace.createVariable("detection_color");
+        }
+    }
 }

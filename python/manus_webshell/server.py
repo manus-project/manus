@@ -304,8 +304,9 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
 
 class CodeSubmitonHandler(JsonHandler):
 
-    def __init__(self, application, request):
+    def __init__(self, application, request, apps):
         super(CodeSubmitonHandler, self).__init__(application, request)
+        self._apps = apps
 
     def get(self):
         self.response = {
@@ -384,7 +385,7 @@ def main():
 
         #handlers.append((r'/api/markers', MarkersStorageHandler))
         apps = AppsManager(client)
-        handlers.append((r'/api/code/submit', CodeSubmitonHandler))
+        handlers.append((r'/api/code/submit', CodeSubmitonHandler, {"apps" : apps}))
         handlers.append((r'/api/apps', AppsHandler, {"apps" : apps}))
         handlers.append((r'/api/storage', StorageHandler, {"storage" : storage}))
         handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators, "apps": apps}))

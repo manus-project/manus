@@ -27,10 +27,10 @@
 goog.require('Blockly.Python');
 
 Blockly.Python['manus_move_joint'] = function(block) {
-  var dropdown_joint_dropdown = block.getFieldValue('joint_dropdown');
-  var value_position_value = Blockly.Python.valueToCode(block, 'position_value', Blockly.Python.ORDER_ATOMIC);
+  var dropdown_joint_id = block.getFieldValue('joint_id');
+  var angle_joint_angle = block.getFieldValue('joint_angle');
   // TODO: Assemble Python into code variable.
-  var code = 'manus_move_joint("'+ dropdown_joint_dropdown +'", '+ value_position_value +')\n';
+  var code = 'manus_move_joint('+ dropdown_joint_id +', '+ angle_joint_angle +')\n';
   return code;
 };
 
@@ -66,4 +66,19 @@ Blockly.Python['manus_wait'] = function(block) {
   // TODO: Assemble Python into code variable.
   var code = 'manus_wait('+value_wait_val+')\n';
   return code;
+};
+
+Blockly.Python['manus_any_block_detector'] = function(block) {
+  // TODO: Assemble Python into code variable.
+  var code = 'manus_any_block_detected()';
+  // TODO: Change ORDER_NONE to the correct strength.
+  return [code, Blockly.Python.ORDER_NONE];
+};
+
+Blockly.Python['manus_colored_block_detector'] = function(block) {
+  var dropdown_block_color = block.getFieldValue('block_color');
+  // TODO: Assemble Python into code variable.
+  var code = 'manus_block_with_color_detected("'+dropdown_block_color+'")';
+  // TODO: Change ORDER_NONE to the correct strength.
+  return [code, Blockly.Python.ORDER_NONE];
 };

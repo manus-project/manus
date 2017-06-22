@@ -29,16 +29,17 @@ goog.require('Blockly.Blocks');
 Blockly.Blocks['manus_move_joint'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField(new Blockly.FieldDropdown([["Move joint 1","joint_1"], ["Move joint 2","joint_3"], ["Move joint 3","joint_3"], ["Move joint 4","joint_4"], ["Move joint 5","joint_5"], ["Move joint 7","joint_7"]]), "joint_dropdown");
-    this.appendValueInput("position_value")
-        .setCheck("Number")
-        .appendField("to position");
+        .appendField("Move joint ")
+        .appendField(new Blockly.FieldDropdown([["1","0"], ["2","1"], ["3","2"], ["4","3"], ["6","5"], ["7 - Gripper","6"]]), "joint_id");
+    this.appendDummyInput()
+        .appendField(" to position ")
+        .appendField(new Blockly.FieldAngle(90), "joint_angle");
+    this.setInputsInline(true);
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
-    this.setInputsInline(true);
     this.setColour(0);
     this.setTooltip('');
-    this.setHelpUrl('');
+    this.setHelpUrl('Set the angle for one joint.');
   }
 };
 
@@ -108,5 +109,30 @@ Blockly.Blocks['manus_wait'] = {
     this.setColour(0);
     this.setTooltip('');
     this.setHelpUrl('Wait halts execution for number of miliseconds');
+  }
+};
+
+Blockly.Blocks['manus_any_block_detector'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("Any block is visible");
+    this.setInputsInline(true);
+    this.setOutput(true, "Boolean");
+    this.setColour(0);
+    this.setTooltip('Returns true if it sees any block');
+    this.setHelpUrl('');
+  }
+};
+
+Blockly.Blocks['manus_colored_block_detector'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField(new Blockly.FieldDropdown([["Red","red"], ["Blue","blue"], ["Green","green"]]), "block_color")
+        .appendField("block is visible");
+    this.setInputsInline(true);
+    this.setOutput(true, "Boolean");
+    this.setColour(0);
+    this.setTooltip('Returns true if it sees block with specified colour');
+    this.setHelpUrl('');
   }
 };
