@@ -165,27 +165,46 @@ function appsList() {
         if (container.hasClass('pose-item'))
             return;
 
+        container.attr("id", "app-" + item.values().identifier);
+
         container.addClass('apps-item');
 
         container.click(function () {
-            $.ajax('/api/apps?run=' + item.values().identifier).done(function(data) {
-                
-            });
+            if (container.hasClass("expanded")) {
+                container.removeClass("expanded");
+            } else {
+                container.siblings().removeClass("expanded");
+                container.addClass("expanded");
+            }
         });
+
+        var tools = $('<div />').addClass('list-tools').prependTo(container);
+
+        tools.append($('<i />').addClass('glyphicon glyphicon-play').click(function() {
+            if ($(this).hasClass('glyphicon-play')) {
+
+                $.ajax('/api/apps?run=' + item.values().identifier).done(function(data) {});
+
+            } else {
+
+                $.ajax('/api/apps?stop=' + item.values().identifier).done(function(data) {});
+
+            }
+            return false;
+        }));
 
     }
 
     var updating = false;
 
     var list = new List("appslist", {
-        valueNames : ["name"],
-        item: "<a class='list-group-item'><div class='name'></div><div class='version'></div><div class='description'></div></a>"
+        valueNames : ["name", "version", "description"],
+        item: "<a class='list-group-item'><div class='name'></div><div class='version'></div><pre class='description'></pre></a>"
     }, []);
 
     $.ajax('/api/apps').done(function(data) {
         items = [];
         for (var key in data) { items.push(data[key]); }
-        console.log(items)
         list.add(items);
     });
 
@@ -196,6 +215,18 @@ function appsList() {
         for (var i = 0; i < list.items.length; i++) {
             augmentItem(list.items[i]);
         }
+
+    });
+
+    PubSub.subscribe("apps.started", function(msg, identifier) {
+
+        $(list.listContainer).children("#app-" + identifier + " .glyphicon-play").removeClass("glyphicon-play").addClass("glyphicon-stop");
+
+    });
+
+    PubSub.subscribe("apps.stopped", function(msg, identifier) {
+
+        $(list.listContainer).children("#app-" + identifier + " .glyphicon-stop").removeClass("glyphicon-stop").addClass("glyphicon-play");
 
     });
 
@@ -315,20 +346,24 @@ $(function() {
     socket.onmessage = function (event) {
         var msg = JSON.parse(event.data);
 
-        if (msg.type == "update") {
-        
-            if (msg.object == "camera") {
+        if (msg.channel == "camera") {
 
-                PubSub.publish("camera.update", msg.data);
+            PubSub.publish("camera.update", msg.data);
 
-            } else if (msg.object == "manipulator") {
+        } else if (msg.channel == "manipulator") {
 
-                PubSub.publish("manipulator.update", msg.data);
-                
-            } else if (msg.object == "storage") {
+            PubSub.publish("manipulator.update", msg.data);
+            
+        } else if (msg.channel == "storage") {
 
-                PubSub.publish("storage.update", msg.key);
-                
+            PubSub.publish("storage.update", msg.key);
+            
+        } else if (msg.channel == "apps") {
+
+            if (msg.action == "started") {
+                PubSub.publish("apps.started", msg.identifier);
+            } else if (msg.action == "stopped") {
+                PubSub.publish("apps.stopped", msg.identifier);
             }
 
         }

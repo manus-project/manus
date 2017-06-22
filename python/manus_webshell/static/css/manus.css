@@ -135,3 +135,21 @@
 .list-group-item.pose-item {
     cursor: pointer;
 }
+
+.list-group-item.apps-item .name {
+    font-size: 120%;
+}
+
+.list-group-item.apps-item .version {
+    font-size: 90%;
+    color: gray;
+}
+
+.list-group-item.apps-item .description {
+    font-size: 90%;
+    display: none;
+}
+
+.list-group-item.apps-item.expanded .description {
+    display: block;
+}

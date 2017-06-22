@@ -82,10 +82,10 @@ class Manipulator(object):
 
     def on_planner_state(self, manipulator, state):
         if state.identifier == self.move_waiting:
-            if state.type == 'COMPLETED':
+            if state.type == PlanStateType.COMPLETED:
                 self.move_result = True
                 self.move_waiting = None
-            if state.type == 'FAILED':
+            if state.type == PlanStateType.FAILED:
                 self.move_result = False
                 self.move_waiting = None
     
@@ -128,8 +128,8 @@ class Workspace(object):
         if not self.manipulator.safe():
             raise Exception("Unable to move to safe position")
         self.wait(500)
-
         detector = BlockDetector(block_size=block_size, bounds=self.bounds)
+    
         blocks = detector.detect(self.camera)
         return blocks
 

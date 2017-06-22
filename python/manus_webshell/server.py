@@ -247,7 +247,7 @@ class StorageHandler(tornado.web.RequestHandler):
         data = "%s;%s" % (ctype, self.request.body)
         self._storage.put(key, data)
         self.finish()
-        ApiWebSocket.distribute_message({"type": "update", "object" : "storage", "key" : key, "content" : "ctype"})
+        ApiWebSocket.distribute_message({"channel": "storage", "action" : "update", "key" : key, "content" : "ctype"})
 
     def check_etag_header(self):
         return False
@@ -256,10 +256,11 @@ class StorageHandler(tornado.web.RequestHandler):
 class ApiWebSocket(tornado.websocket.WebSocketHandler):
     connections = []
 
-    def __init__(self, application, request, cameras, manipulators):
+    def __init__(self, application, request, cameras, manipulators, apps):
         super(ApiWebSocket, self).__init__(application, request)
         self.cameras = cameras
         self.manipulators = manipulators
+        self.apps = apps
 
     def open(self):
         ApiWebSocket.connections.append(self)
@@ -267,6 +268,7 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
             c.listen_location(self)
         for m in self.manipulators:
             m.listen(self)
+        self.apps.listen(self)
 
     def on_message(self, raw):
         message = json.loads(message)
@@ -278,6 +280,7 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
             c.unlisten_location(self)
         for m in self.manipulators:
             m.unlisten(self)
+        self.apps.unlisten(self)
 
     @staticmethod
     def distribute_message(message):
@@ -286,13 +289,19 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
             c.write_message(message)
 
     def push_camera_location(self, camera, location):
-        self.distribute_message({"type": "update", "object" : "camera", "data" : CameraLocationHandler.encode_location(location)})
+        self.distribute_message({"channel": "camera", "action" : "update", "data" : CameraLocationHandler.encode_location(location)})
 
     def on_manipulator_state(self, manipulator, state):
-        self.distribute_message({"type": "update", "object" : "manipulator", "data" : ManipulatorStateHandler.encode_state(state)})
+        self.distribute_message({"channel": "manipulator", "action" : "update", "data" : ManipulatorStateHandler.encode_state(state)})
 
     def on_planner_state(self, manipulator, state):
         pass
+
+    def on_app_started(self, app):
+        self.distribute_message({"channel": "apps", "action" : "started", "identifier" : app.id})
+
+    def on_app_stopped(self, app):
+        self.distribute_message({"channel": "apps", "action" : "stopped", "identifier" : app.id})
 
 def main():
     logging_level = logging.DEBUG
@@ -346,7 +355,7 @@ def main():
         apps = AppsManager(client)
         handlers.append((r'/api/apps', AppsHandler, {"apps" : apps}))
         handlers.append((r'/api/storage', StorageHandler, {"storage" : storage}))
-        handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators}))
+        handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators, "apps": apps}))
         handlers.append((r'/api/info', ApplicationHandler))
         handlers.append((r'/', RedirectHandler, {'url' : '/index.html'}))
         handlers.append((r'/(.*)', DevelopmentStaticFileHandler, {'path': os.path.dirname(manus_webshell.static.__file__)}))
@@ -354,7 +363,7 @@ def main():
         application = tornado.web.Application(handlers)
 
         server = tornado.httpserver.HTTPServer(application)
-        server.listen(8080)
+        server.listen(int(os.getenv('MANUS_WEBSHELL_PORT', "8080")))
 
         tornado_loop = tornado.ioloop.IOLoop.instance()
 

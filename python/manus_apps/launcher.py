@@ -63,6 +63,11 @@ class Application(object):
              stdout=sys.stdout, stderr=subprocess.STDOUT, env=environment,
              shell=False, bufsize=1, cwd=self.dir)
 
+    def alive(self):
+        if not self.process:
+            return False
+        return self.process.poll() is None
+
     def stop(self):
         if not self.process:
             return
@@ -128,8 +133,9 @@ def application_launcher(autorun=None):
                 except Exception, e:
                     print traceback.format_exc()
                     return
-            print "Application does not exist"
-            return
+            else:
+                print "Application does not exist"
+                return
         else:
             starting_application = applications[identifier]
 
@@ -138,7 +144,7 @@ def application_launcher(autorun=None):
             active_application = None
             terminate.stop()
             event = AppEvent()
-            event.event = AppEventType.STOP
+            event.type = AppEventType.STOP
             event.app = terminate.message_data()
             announce.send(event)
 
@@ -149,7 +155,7 @@ def application_launcher(autorun=None):
         active_application.run()
         print "Starting application %s (%s)" % (active_application.name, identifier)
         event = AppEvent()
-        event.event = AppEventType.START
+        event.type = AppEventType.START
         event.app = active_application.message_data()
         announce.send(event)
 
@@ -160,7 +166,7 @@ def application_launcher(autorun=None):
         except Exception, e:
             print traceback.format_exc()
 
-    def shutdown_handler():
+    def shutdown_handler(signum, frame):
         print "Stopping application"
         if active_application:
             active_application.stop()
@@ -185,10 +191,17 @@ def application_launcher(autorun=None):
             for identifier, app in applications.items():
                 message.apps.append(app.message_data())
             listing.send(message)
+        if not active_application is None:
+            if not active_application.alive():
+                event = AppEvent()
+                event.type = AppEventType.STOP
+                event.app = active_application.message_data()
+                announce.send(event)
+                active_application = None
     except KeyboardInterrupt:
         pass
     finally:
         pass
 
-    shutdown_handler()
+    shutdown_handler(0, None)
 

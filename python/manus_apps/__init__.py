@@ -11,6 +11,13 @@ class AppsManager(object):
         self._annsub = AppEventSubscriber(client, "apps.announce", lambda x: self._announce(x))
         self._control = AppCommandPublisher(client, "apps.control")
         self._apps = {}
+        self._listeners = []
+
+    def listen(self, listener):
+        self._listeners.append(listener)
+
+    def unlisten(self, listener):
+        self._listeners.remove(listener)
 
     def list(self):
         return self._apps
@@ -26,4 +33,9 @@ class AppsManager(object):
         self._apps = {v.id: {'identifier': v.id, 'name': v.name, 'version': v.version, 'description' : v.description} for v in msg.apps if v.listed}
 
     def _announce(self, msg):
-        pass
+        if msg.type == AppEventType.START:
+            for s in self._listeners:
+                s.on_app_started(msg.app)
+        if msg.type == AppEventType.STOP:
+            for s in self._listeners:
+                s.on_app_stopped(msg.app)

@@ -18,8 +18,8 @@ message AppListing {
 }
 
 message AppEvent {
+	AppEventType type;
 	AppData app;
-	AppEventType event;
 }
 
 message AppCommand {
