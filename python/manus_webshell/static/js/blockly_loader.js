@@ -100,6 +100,34 @@ $(document).ready(function(){
         <category name="Functions" colour="290" custom="PROCEDURE"></category> \
       </xml> \
       <xml id="startBlocks" style="display: none"> \
+        <block type="controls_if" x="20" y="20" > \
+            <value name="IF0"> \
+                <block type="manus_any_block_detector" /> \
+            </value> \
+            <statement name="DO0"> \
+                <block type="manus_move_arm" > \
+                    <value name="coordinates"> \
+                    <block type="manus_position_vector_var"> \
+                        <value name="X"> \
+                            <block type="variables_get" > \
+                                <field name="VAR">detection_x</field> \
+                            </block> \
+                        </value> \
+                        <value name="Y"> \
+                            <block type="variables_get"> \
+                                <field name="VAR">detection_y</field> \
+                            </block> \
+                        </value> \
+                        <value name="Z"> \
+                            <block type="variables_get"> \
+                                <field name="VAR">detection_z</field> \
+                            </block> \
+                        </value> \
+                    </block> \
+                    </value> \
+                </block> \
+            </statement> \
+        </block> \
       </xml>');
 
     workspace = Blockly.inject('blockly-workspace',
@@ -143,11 +171,18 @@ function showCode() {
 }
 
 function runCode() {
+    // Generate code
     var code = Blockly.Python.workspaceToCode(workspace);
+    // Also generate xml
+    var xml = Blockly.Xml.workspaceToDom(workspace);
+    var xml_text = Blockly.Xml.domToText(xml);
     callwebapi("/api/code/submit", 
-        {"code": code},
+        {
+            "code": code,
+            "xml_code": xml_text,
+        },
         function(data) {
-            alert("code submition successful!");
+            console.log("code submition successful!");
             if (!('status' in data)){
                 console.error("status field missing from respons data");
             }

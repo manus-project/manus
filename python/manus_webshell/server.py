@@ -325,6 +325,7 @@ class CodeSubmitonHandler(JsonHandler):
         try:
             generator = CodeGenerator("/home/gasper/FRI/checkouts/manus/python/manus_webshell/code_template.py", "/home/gasper/Local/builds/manus/share/manus/apps/generated_app")
             generator.generate_app_with_code(self.request.arguments[u"code"], True)
+            self._apps.run("/home/gasper/Local/builds/manus/share/manus/apps/generated_app/generated_app.app")
         except Exception as e:
             print "code generation failed: "+e.message
             self.response = {

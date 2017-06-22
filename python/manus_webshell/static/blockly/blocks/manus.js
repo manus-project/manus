@@ -77,7 +77,7 @@ Blockly.Blocks['manus_position_vector_var'] = {
     this.appendValueInput("Z")
         .setCheck("Number")
         .appendField("z:");
-    this.setInputsInline(true);
+    this.setInputsInline(false);
     this.setOutput(true, "manus_position_vector");
     this.setColour(0);
     this.setTooltip('Manus variable position vector');

@@ -16,6 +16,12 @@ from manus_apps.workspace import Workspace
 
 workspace = Workspace(bounds=[(100, -200), (360, -200), (360, 200), (100, 200)])
 
+detection_color = None
+detection_x = None
+detection_y = None
+detection_z = None
+
+
 def manus_move_joint(joint, angle):
     print "manus_move_joint("+str(joint)+", "+str(angle)+")"
     # Angle is in degrees so we convert it to radians
@@ -26,7 +32,7 @@ def manus_move_joint(joint, angle):
     # TODO: also do some joint-angle-limit checks here?
 
     # Move joint
-    workspace.manipulator.move_joint(id, position, speed)
+    workspace.manipulator.joint(joint, angle)
 
 
 def manus_wait(milisecs):
@@ -35,6 +41,8 @@ def manus_wait(milisecs):
 
 def manus_move_arm_to_coordinates(p):
     print "manus_move_arm_to_coordinates("+str(p)+")"
+    if (p[0] is None or p[1] is None or p[2] is None):
+        raise RuntimeError("Coordinates don't appear to be set. This can happen if no detection block was used.")
     # TODO: Calculate appropriate angle here
     angle = 0.0
     # Move arm
@@ -42,19 +50,30 @@ def manus_move_arm_to_coordinates(p):
         manus.MoveTo((p[0], p[1], p[2]), (0.0, 0.0, angle), 0.0)
     ])
 
-def manus_any_block_detector:
-    print "manus_any_block_detector"
+def manus_any_block_detected():
+    print "manus_any_block_detected"
+    # Set detection variables!
+    global detection_color, detection_x, detection_y, detection_z 
+    detection_color = "red"
+    detection_x = 200
+    detection_y = 100
+    detection_z = 100
     return True # Dont't forget to return something
 
-def manus_colored_block_detector(color):
-    print "manus_colored_block_detector('"+color+"')"
+def manus_block_with_color_detected(color):
+    print "manus_block_with_color_detected('"+color+"')"
+    # Set detection variables!
+    global detection_color, detection_x, detection_y, detection_z
+    detection_color = "red"
+    detection_x = 200
+    detection_y = 100
+    detection_z = 100
     return True # Dont't forget to return something
 
 try:
+    workspace.wait(1000)
     print "Starting Blockly code execution"
 {{code_container}}
 
 except KeyboardInterrupt:
     pass
-except Exception as e:
-    print "Blockly code execution failed: "+e.message
