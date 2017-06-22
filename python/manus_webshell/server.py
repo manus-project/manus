@@ -117,7 +117,7 @@ class ManipulatorDescriptionHandler(JsonHandler):
     def encode_description(description):
         joints = []
         for j in description.joints:
-            joints.append({"type" : j.type, "theta" : j.dh_theta,
+            joints.append({"type" : JointType.str(j.type), "theta" : j.dh_theta,
                     "alpha" : j.dh_alpha, "d" : j.dh_d, "a" : j.dh_a, "min" : j.dh_min, "max" : j.dh_max} )
         return {"name": description.name, "version": description.version, "joints" : joints}
 

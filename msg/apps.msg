@@ -24,5 +24,5 @@ message AppEvent {
 
 message AppCommand {
 	AppCommandType type;
-	string id;
+	string[] arguments;
 }

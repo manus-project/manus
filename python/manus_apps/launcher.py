@@ -4,6 +4,7 @@ import json
 import hashlib
 import shlex
 import signal
+import traceback
 
 import echolib
 
@@ -30,6 +31,7 @@ class Application(object):
             self.name = content[0].strip()
             self.version = int(content[1].strip())
             self.script = content[2].strip()
+            self.path = os.path.dirname(absfile)
             if len(content) > 3:
                 self.description = "".join(content[3:])
             else:
@@ -50,7 +52,7 @@ class Application(object):
 
         import subprocess
 
-        command = "python %s" % self.script
+        command = "python %s" % os.path.join(self.path, self.script)
         environment = os.environ.copy()
         environment.update(environment)
         environment["APPLICATION_ID"] = self.identifier
@@ -94,7 +96,7 @@ def scan_applications(pathlist):
                     app = Application(os.path.join(dirpath, filename))
                     applications[app.identifier] = app
                 except Exception, e:
-                    print e
+                    print traceback.format_exc()
                     continue
     return applications
 
@@ -124,7 +126,7 @@ def application_launcher(autorun=None):
                 try:
                     starting_application = Application(identifier, listed=False)
                 except Exception, e:
-                    print e
+                    print traceback.format_exc()
                     return
             print "Application does not exist"
             return
@@ -136,24 +138,27 @@ def application_launcher(autorun=None):
             active_application = None
             terminate.stop()
             event = AppEvent()
-            event.event = "STOP"
+            event.event = AppEventType.STOP
             event.app = terminate.message_data()
-            announce.send(message)
+            announce.send(event)
 
         if not identifier:
             return
 
         active_application = starting_application
         active_application.run()
-        print "Running application %s (%s)" % (active_application.name, identifier)
+        print "Starting application %s (%s)" % (active_application.name, identifier)
         event = AppEvent()
-        event.event = "START"
-        event.app = terminate.message_data()
-        announce.send(message)
+        event.event = AppEventType.START
+        event.app = active_application.message_data()
+        announce.send(event)
 
     def control_callback(command):
-        if command.type == AppCommandType.EXECUTE:
-            start_application(command.id)
+        try:
+            if command.type == AppCommandType.EXECUTE:
+                start_application(command.arguments[0])
+        except Exception, e:
+            print traceback.format_exc()
 
     def shutdown_handler():
         print "Stopping application"
