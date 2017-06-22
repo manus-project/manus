@@ -12,6 +12,7 @@ SET(CMAKE_CXX_STANDARD 11)
 
 FIND_PROGRAM(ECHOGEN echogen)
 
+
 ADD_CUSTOM_TARGET(manus_messages ALL
                 DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/manipulator.h
                 COMMENT "Generating message wrappers")
@@ -26,15 +27,16 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/manipulator
                 COMMENT "Processing message descriptions")
 
 FIND_PACKAGE(echolib REQUIRED)
+FIND_PACKAGE(OpenServo REQUIRED)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src/ ${CMAKE_CURRENT_BINARY_DIR}/messages/ ${echolib_INCLUDE_DIRS} include/)
 
 ADD_EXECUTABLE(manus_simulator_manipulator src/manipulator.cpp src/simulation.cpp)
 TARGET_LINK_LIBRARIES(manus_simulator_manipulator ${echolib_LIBRARIES})
 add_dependencies(manus_simulator_manipulator manus_messages)
 
-ADD_EXECUTABLE(manus_serial_manipulator src/manipulator.cpp src/serial.cpp src/debug.cpp)
-TARGET_LINK_LIBRARIES(manus_serial_manipulator ${echolib_LIBRARIES})
-add_dependencies(manus_serial_manipulator manus_messages)
+ADD_EXECUTABLE(manus_openservo_manipulator src/manipulator.cpp src/openservorobot.cpp src/debug.cpp)
+TARGET_LINK_LIBRARIES(manus_openservo_manipulator ${echolib_LIBRARIES} ${OpenServo_LIBRARIES})
+add_dependencies(manus_openservo_manipulator manus_messages)
 
 find_path(EIGEN3_INCLUDE_DIR NAMES signature_of_eigen3_matrix_library PATHS ${CMAKE_INSTALL_PREFIX}/include PATH_SUFFIXES eigen3 eigen)
 FIND_PACKAGE(orocos_kdl REQUIRED)
@@ -44,7 +46,7 @@ TARGET_LINK_LIBRARIES(manus_planner ${echolib_LIBRARIES} ${orocos_kdl_LIBRARIES}
 
 ADD_SUBDIRECTORY(python)
 
-install(TARGETS manus_simulator_manipulator manus_serial_manipulator manus_planner DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS manus_simulator_manipulator manus_openservo_manipulator manus_planner DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY
     ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/manus
