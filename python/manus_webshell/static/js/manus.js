@@ -228,11 +228,16 @@ function appsList() {
 
 }
 
+function showOverlay(title, message) {
 
-        $(list.listContainer).children("#app-" + identifier + " .glyphicon-stop").removeClass("glyphicon-stop").addClass("glyphicon-play");
+    $('#overlay .modal-title').text(title);
+    $('#overlay .modal-body').text(message);
 
-    });
+    $('#overlay').modal('show');
+}
 
+function hideOverlay() {
+    $('#overlay').modal('hide');
 }
 
 $(function() {
@@ -242,6 +247,10 @@ $(function() {
     var viewer;
     var manipulator;
 	var markers;
+
+    $('#overlay').modal({backdrop: 'static', keyboard : false, show: false});
+
+    showOverlay("Loading ...", "Please wait, the interface is loading.");
 
     function queryMarkerStatus() {
 
@@ -345,6 +354,19 @@ $(function() {
     if (loc.protocol === "https:") { new_uri = "wss:"; } else { new_uri = "ws:"; }
     new_uri += "//" + loc.host;
     var socket = new WebSocket(new_uri + "/api/websocket");
+
+    socket.onopen = function(event) {
+        console.log("open");
+        hideOverlay();
+    }
+
+    socket.onerror = function(event) {
+        showOverlay("Connection lost", "Unable to communicate with the system.");
+    }
+
+    socket.onclose = function(event) {
+        showOverlay("Connection lost", "Unable to communicate with the system.");
+    }
 
     socket.onmessage = function (event) {
         var msg = JSON.parse(event.data);
