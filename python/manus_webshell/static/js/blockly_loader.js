@@ -92,8 +92,11 @@ $(document).ready(function(){
           <category name="Detection" colour="0"> \
             <block type="manus_any_block_detector"></block> \
             <block type="manus_colored_block_detector"></block> \
+            <block type="manus_detected_blocks_array"></block> \
+            <block type="manus_detect_and_store_blocks"></block> \
           </category> \
           <block type="manus_wait"></block> \
+          <block type="manus_retrieve_component"></block> \
         </category> \
         <sep></sep> \
         <category name="Variables" colour="330" custom="VARIABLE"></category> \

@@ -82,3 +82,26 @@ Blockly.Python['manus_colored_block_detector'] = function(block) {
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_NONE];
 };
+
+Blockly.Python['manus_detected_blocks_array'] = function(block) {
+  // TODO: Assemble Python into code variable.
+  var code = 'manus_detect_blocks()';
+  // TODO: Change ORDER_NONE to the correct strength.
+  return [code, Blockly.Python.ORDER_NONE];
+};
+
+Blockly.Python['manus_detect_and_store_blocks'] = function(block) {
+  var variable_blocks = Blockly.Python.variableDB_.getName(block.getFieldValue('BLOCKS'), Blockly.Variables.NAME_TYPE);
+  // TODO: Assemble Python into code variable.
+  var code = variable_blocks+' = manus_detect_blocks()\n';
+  return code;
+};
+
+Blockly.Python['manus_retrieve_component'] = function(block) {
+  var dropdown_component_dropdown = block.getFieldValue('component_dropdown');
+  var variable_selected_block_for_component_access = Blockly.Python.variableDB_.getName(block.getFieldValue('SELECTED_BLOCK_FOR_COMPONENT_ACCESS'), Blockly.Variables.NAME_TYPE);
+  // TODO: Assemble Python into code variable.
+  var code = 'manus_retrieve_component_from_block("'+dropdown_component_dropdown+'", '+variable_selected_block_for_component_access+')';
+  // TODO: Change ORDER_NONE to the correct strength.
+  return [code, Blockly.Python.ORDER_NONE];
+};

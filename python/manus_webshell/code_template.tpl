@@ -11,6 +11,7 @@ from math import *
 import manus
 
 from manus_apps.blocks import block_color_name
+from manus_apps.blocks import Block
 from manus_apps.workspace import Workspace
 #from manus_webshell.markers import Markers
 
@@ -69,6 +70,25 @@ def manus_block_with_color_detected(color):
     detection_y = 100
     detection_z = 100
     return True # Dont't forget to return something
+
+def manus_detect_blocks():
+
+    return [
+        Block([100, 100, 100], [0, 0, 0], 20, [0, 0, 0]),
+        Block([200, 0, 100], [0, 0, 0], 20, [0, 0, 0]),
+        Block([100, -100, 100], [0, 0, 0], 20, [0, 0, 0])
+    ] # dont't forget to return for manus_detect_and_store_blocks block
+
+def manus_retrieve_component_from_block(comp, block):
+    if comp == "x":
+        return block.position[0]
+    elif comp == "y":
+        return block.position[1]
+    elif comp == "z":
+        return block.position[2]
+    elif comp == "color":
+        return block_color_name(block)
+
 
 try:
     workspace.wait(1000)

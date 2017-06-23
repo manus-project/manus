@@ -136,3 +136,41 @@ Blockly.Blocks['manus_colored_block_detector'] = {
     this.setHelpUrl('');
   }
 };
+
+Blockly.Blocks['manus_detected_blocks_array'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("All detected blocks");
+    this.setOutput(true, "Array");
+    this.setColour(0);
+    this.setTooltip('Array of all detected blocks');
+    this.setHelpUrl('');
+  }
+};
+
+Blockly.Blocks['manus_detect_and_store_blocks'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("Detect and store blocks into:")
+        .appendField(new Blockly.FieldVariable("blocks"), "BLOCKS");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(0);
+    this.setTooltip('Detects all blocks and stores them in array');
+    this.setHelpUrl('');
+  }
+};
+
+Blockly.Blocks['manus_retrieve_component'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("Get")
+        .appendField(new Blockly.FieldDropdown([["x","x"], ["y","y"], ["z","z"], ["color","color"]]), "component_dropdown")
+        .appendField("from")
+        .appendField(new Blockly.FieldVariable("block"), "SELECTED_BLOCK_FOR_COMPONENT_ACCESS");
+    this.setOutput(true, null);
+    this.setColour(0);
+    this.setTooltip('Retrieves selected component from selected block.');
+    this.setHelpUrl('');
+  }
+};
