@@ -294,6 +294,8 @@ function treverse_xml(depth, xml, element_callback){
 function detection_var_used_before_detection(xml){
     var used_before_detection = false;
     treverse_xml(0, xml, function(element){
+        if (!element || !element.getAttribute || typeof element.getAttribute !== "function")
+            return true;
         if (element.getAttribute("type") == "variables_get" &&(
             element.textContent == "detection_x" ||
             element.textContent == "detection_y" ||
