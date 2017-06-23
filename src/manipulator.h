@@ -33,6 +33,15 @@ public:
 
 };
 
+class ManipulatorException : public std::runtime_error
+{
+public:
+    ManipulatorException(char const* const message) throw();
+    virtual char const* what() const throw();
+};
+
+bool parse_description(const string& filename, ManipulatorDescription& manipulator);
+
 string manipulator_state_string(ManipulatorStateType status);
 string joint_type_string(JointType type);
 

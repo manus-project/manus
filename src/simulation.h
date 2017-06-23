@@ -5,7 +5,7 @@
 
 class SimulatedManipulator : public Manipulator {
 public:
-    SimulatedManipulator();
+    SimulatedManipulator(const string& filename);
     ~SimulatedManipulator();
 
 	bool step(float time);

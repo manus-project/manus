@@ -12,31 +12,15 @@ using namespace echolib;
 
 #include "simulation.h"
 
-SimulatedManipulator::SimulatedManipulator() {
+SimulatedManipulator::SimulatedManipulator(const string& filename) {
 
-    _description.version = 0.1;
-    _description.name = string("Simulated Robot Arm");
+    if (!parse_description(filename, _description)) {
+        throw ManipulatorException("Unable to parse manipulator model description");
+    }
 
-    _description.joints.push_back(joint_description(::ROTATION, 0, 90, 65, 0, -180, 180));
-    _state.joints.push_back(joint_state(_description.joints[_description.joints.size()-1],0));
-
-    _description.joints.push_back(joint_description(::ROTATION, 90, 0, 0, 90, 0, 180));
-    _state.joints.push_back(joint_state(_description.joints[_description.joints.size()-1],90));
-
-    _description.joints.push_back(joint_description(::ROTATION, -90, 0, 0, 132, -110, 110));
-    _state.joints.push_back(joint_state(_description.joints[_description.joints.size()-1],-90));
-
-    _description.joints.push_back(joint_description(::ROTATION, 0, 0, 0, 60, -90, 90));
-    _state.joints.push_back(joint_state(_description.joints[_description.joints.size()-1],0));
-
-    _description.joints.push_back(joint_description(FIXED, 90, 90, 0, 0, 0, 0));
-    _state.joints.push_back(joint_state(_description.joints[_description.joints.size()-1],0));
-
-    _description.joints.push_back(joint_description(::ROTATION, 0, 0, 20, 0, -90, 90));
-    _state.joints.push_back(joint_state(_description.joints[_description.joints.size()-1],0));
-
-    _description.joints.push_back(joint_description(GRIPPER, 0, 0, 0, 0, 0, 1));
-    _state.joints.push_back(joint_state(_description.joints[_description.joints.size()-1],0));
+    for (int i = 0; i < _description.joints.size(); i++) {
+        _state.joints.push_back(joint_state(_description.joints[i], _description.joints[i].dh_safe));
+    }
 
 }
 
@@ -134,9 +118,14 @@ ManipulatorState SimulatedManipulator::state() {
 
 int main(int argc, char** argv) {
 
-    SharedClient client = echolib::connect();
+    if (argc < 2) {
+        cerr << "Missing manipulator description file path." << endl;
+        return -1;
+    }
 
-    shared_ptr<SimulatedManipulator> manipulator = shared_ptr<SimulatedManipulator>(new SimulatedManipulator());
+    shared_ptr<SimulatedManipulator> manipulator = shared_ptr<SimulatedManipulator>(new SimulatedManipulator(string(argv[1])));
+
+    SharedClient client = echolib::connect();
 
     ManipulatorManager manager(client, manipulator);
 

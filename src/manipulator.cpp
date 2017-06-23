@@ -5,11 +5,21 @@
 #include <cmath>
 
 #include "manipulator.h"
+#include <yaml-cpp/yaml.h>
 
 using namespace std;
 
 #define RADIAN_TO_DEGREE(X) ((X * 180) / M_PI )
 #define DEGREE_TO_RADIAN(X) ((X / 180) * M_PI )
+
+ManipulatorException::ManipulatorException(char const* const message) throw()
+    : std::runtime_error(message) {
+
+}
+
+char const * ManipulatorException::what() const throw() {
+    return exception::what();
+}
 
 string manipulator_state_string(ManipulatorStateType status) {
 
@@ -34,6 +44,77 @@ string joint_type_string(JointType type) {
     }
 
     return "unknown";
+}
+
+bool parse_joint (const YAML::Node& node, JointDescription& joint) {
+    string type = node["type"].as<string>();
+    if (type == "rotation") {
+        joint.type = ROTATION;
+        joint.dh_alpha = DEGREE_TO_RADIAN(node["dh"]["alpha"].as<float>());
+        joint.dh_d = node["dh"]["d"].as<float>();
+        joint.dh_a = node["dh"]["a"].as<float>();
+        joint.dh_min = DEGREE_TO_RADIAN(node["min"].as<float>());
+        joint.dh_max = DEGREE_TO_RADIAN(node["max"].as<float>());
+        joint.dh_safe = DEGREE_TO_RADIAN(node["safe"].as<float>());
+
+        joint.dh_theta = joint.dh_safe;
+        return true;
+    }
+    if (type == "translation") {
+        joint.type = TRANSLATION;
+        joint.dh_theta = DEGREE_TO_RADIAN(node["dh"]["theta"].as<float>());
+        joint.dh_alpha = DEGREE_TO_RADIAN(node["dh"]["alpha"].as<float>());
+        joint.dh_a = node["dh"]["a"].as<float>();
+        joint.dh_min = node["min"].as<float>();
+        joint.dh_max = node["max"].as<float>();
+        joint.dh_safe = node["safe"].as<float>();
+
+        joint.dh_d = joint.dh_safe;
+        return true;
+    }
+    if (type == "fixed") {
+        joint.type = FIXED;
+        joint.dh_theta = DEGREE_TO_RADIAN(node["dh"]["theta"].as<float>());
+        joint.dh_alpha = DEGREE_TO_RADIAN(node["dh"]["alpha"].as<float>());
+        joint.dh_d = node["dh"]["d"].as<float>();
+        joint.dh_a = node["dh"]["a"].as<float>();
+        joint.dh_min = 0;
+        joint.dh_max = 0;
+        joint.dh_safe = 0;
+        return true;
+    }
+    if (type == "gripper") {
+        joint.type = GRIPPER;
+        joint.dh_theta = 0;
+        joint.dh_alpha = 0;
+        joint.dh_d = 0;
+        joint.dh_a = 0;
+        joint.dh_min = node["min"].as<float>();
+        joint.dh_max = node["max"].as<float>();
+        joint.dh_safe = 0;
+        return true;
+    }
+    return false;
+}
+
+
+bool parse_description(const string& filename, ManipulatorDescription& manipulator) {
+
+    YAML::Node doc = YAML::LoadFile(filename);
+
+    manipulator.name = doc["name"].as<string>();
+    manipulator.version = doc["version"].as<float>();
+
+    const YAML::Node& joints = doc["joints"];
+    manipulator.joints.clear();
+
+    for (int i = 0; i < joints.size(); i++) {
+        JointDescription d;
+        parse_joint(joints[i], d);
+        manipulator.joints.push_back(d);
+    }
+
+    return true;
 }
 
 JointDescription joint_description(JointType type, float dh_theta, float dh_alpha, float dh_d, float dh_a, float min, float max) {
@@ -142,13 +223,13 @@ ManipulatorManager::~ManipulatorManager() {
 void ManipulatorManager::flush() {
 
     plan.reset();
-/*
-    ManipulatorState state = manipulator->state();
+    /*
+        ManipulatorState state = manipulator->state();
 
-    for (size_t i = 0; i < manipulator->size(); i++) {
-        manipulator->move(i, state.joints[i].position, 1);
-    }
-*/
+        for (size_t i = 0; i < manipulator->size(); i++) {
+            manipulator->move(i, state.joints[i].position, 1);
+        }
+    */
 }
 
 void ManipulatorManager::push(shared_ptr<Plan> t) {
@@ -219,15 +300,6 @@ void ManipulatorManager::step(bool force) {
 
     if (!plan) return;
 
-    if (plan->segments.size() < 1) {
-        PlanState state;
-        state.identifier = plan->identifier;
-        state.type = COMPLETED;
-        planstate_publisher->send(state);
-        plan.reset();
-        return;
-    }
-
     bool idle = true;
     bool goal = true;
 
@@ -241,6 +313,15 @@ void ManipulatorManager::step(bool force) {
 
     if (goal || force) {
 
+        if (plan->segments.size() < 1) {
+            PlanState state;
+            state.identifier = plan->identifier;
+            state.type = COMPLETED;
+            planstate_publisher->send(state);
+            plan.reset();
+            return;
+        }
+
         for (size_t i = 0; i < manipulator->size(); i++) {
             manipulator->move(i, plan->segments[0].joints[i].goal, plan->segments[0].joints[i].speed);
         }
@@ -250,4 +331,3 @@ void ManipulatorManager::step(bool force) {
 
 }
 
-    

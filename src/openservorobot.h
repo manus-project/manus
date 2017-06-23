@@ -13,25 +13,20 @@
 typedef struct sv_info
 {
   int servo_id;
+  int joint_id;
   int AD_min;
   int AD_max;
   int AD_center;
-  float faktor;
+  float factor;
 }servo_info;
 
 
 class OpenServoRobot : public Manipulator, public IOBase
-//, private OpenServo
 {
 public:
   //OpenServoRobot(string path_to_i2c_port, string path_to_robot_description_file);
-  OpenServoRobot(string path_to_i2c_port);
+  OpenServoRobot(string path_to_i2c_port, const string& modelfile, const string& calibfile);
   ~OpenServoRobot();
-
-  // dodano
-  virtual int connectTo(string path_to_i2c_port);
-  virtual int loadRobotDescription(string path_to_file);
-  //virtual int init(); // ?
 
   virtual int lock(int joint = -1);
   virtual int release(int joint = -1);
@@ -49,6 +44,9 @@ public:
 	virtual void disconnect();
 
 private:
+
+  virtual int connectTo(string path_to_i2c_port);
+  virtual int loadDescription(const string& modelfile, const string& calibfile);
 
   enum ActionType {MOVE, UPDATE_JOINTS};
   struct buff_data
@@ -74,30 +72,27 @@ private:
   ManipulatorState _state;
   std::vector<float> min_pos;
   std::vector<float> max_pos;
-  std::vector<servo_info> servo;
+  std::vector<servo_info> servos;
   std::vector<int> joint_to_adr;
   int read_rate;
 
   OpenServo open_servo;
 
-  static void* startRutine(void* arg)
+  static void* startRoutine(void* arg)
   {
     OpenServoRobot* ops = reinterpret_cast<OpenServoRobot*>(arg);
-    ops->threadRutine();
+    ops->threadRoutine();
   }
-  static void* startRutineReq(void* arg)
+  static void* startRoutineReq(void* arg)
   {
     OpenServoRobot* ops = reinterpret_cast<OpenServoRobot*>(arg);
-    ops->threadRutineReq();
+    ops->threadRoutineReq();
   }
-  void threadRutine();
-  void threadRutineReq();
+  void threadRoutine();
+  void threadRoutineReq();
 
   void sendMove(int joint, float speed, float position);
   void updateJoints();
-  servo_info servo_description(int id, int AD_min, int AD_max, int AD_center, float faktor);
-  float scale_servo_to_joint(servo_info si, float ad_pos);
-  float scale_joint_to_servo(sv tmp_sv, servo_info si, float pos);
   int joint_to_motor(int joint);
   int motor_to_joint(int m);
 

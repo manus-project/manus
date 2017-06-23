@@ -17,6 +17,7 @@ structure JointDescription {
 	float dh_a;
 	float dh_min;
 	float dh_max;
+	float dh_safe;
 }
 
 structure JointState {

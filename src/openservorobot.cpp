@@ -6,6 +6,8 @@
 #include <openservo.h>
 #include "openservorobot.h"
 
+#include <yaml-cpp/yaml.h>
+
 // le začasno, za debagiranje!
 void printServoRegisters(sv* servo)
 {
@@ -49,7 +51,7 @@ void OpenServoRobot::printServos()
   int num = open_servo.scanPort(adrs);
   cout << "\t- found " << num << " devicess\n";
   cout << "\t- adress:";
-  for (int q=0; q<num; q++)
+  for (int q = 0; q < num; q++)
   {
     cout << " " << (unsigned int)adrs[q];
   }
@@ -59,7 +61,7 @@ void OpenServoRobot::printServos()
   num = open_servo.scanPortAutoAddServo();
   cout << "\t- added " << num << " servos\n";
   cout << "\t- vector size: " << open_servo.getNumOfServos() << endl;
-  for (int q=0, w = open_servo.getNumOfServos(); q<w; q++)
+  for (int q = 0, w = open_servo.getNumOfServos(); q < w; q++)
   {
     cout << "* SERVO: " << q << ", adr " << (unsigned int)adrs[q] << endl;
     sv tmp_sv = open_servo.getServo((unsigned int)adrs[q]);
@@ -70,26 +72,38 @@ void OpenServoRobot::printServos()
 
 }
 
-OpenServoRobot::OpenServoRobot(string path_to_i2c_port)
+float scale_servo_to_joint(servo_info si, float ad_pos)
 {
-  cout << "** Open servo robot: constructor\n";
+  float pos_deg = (ad_pos - si.AD_center) * si.factor;
+  return round(pos_deg * 100.0) / 100.0;
+}
+
+float scale_joint_to_servo(sv tmp_sv, servo_info si, float pos)
+{
+  float pos_ad = (pos / si.factor) + si.AD_center;
+  return pos_ad;
+}
+
+
+OpenServoRobot::OpenServoRobot(string path_to_i2c_port, const string& modelfile, const string& calibfile)
+{
   read_rate = 30;
   _state.state = UNKNOWN;
   _description.name = "i2c Robot Manipulator";
   _description.version = 0.2f;
 
+  loadDescription(modelfile, calibfile);
+
   if (connectTo(path_to_i2c_port))
     _state.state = ACTIVE;
 
   int num = open_servo.scanPortAutoAddServo();
-  cout << "   num. of servos is " << num << endl;
 
-  //printServos();
+  if (num < servos.size())
+    throw ManipulatorException("Not enough motors detected.");
 
-  loadRobotDescription("lalalend");
-
-  pthread_create(&thread1, 0, startRutine, this);
-  pthread_create(&thread_req, 0, startRutineReq, this);
+  pthread_create(&thread1, 0, startRoutine, this);
+  pthread_create(&thread_req, 0, startRoutineReq, this);
 }
 
 OpenServoRobot::~OpenServoRobot()
@@ -111,116 +125,110 @@ int OpenServoRobot::connectTo(string path_to_i2c_port)
   open_servo.openPort(path_to_i2c_port);
 }
 
-servo_info OpenServoRobot::servo_description(int id, int AD_min, int AD_max, int AD_center, float faktor)
-{
-  servo_info tmp;
-  tmp.servo_id = id;
-  tmp.AD_min = AD_min;
-  tmp.AD_max = AD_max;
-  tmp.AD_center = AD_center;
-  tmp.faktor = faktor;
-  return tmp;
+bool parse_calibration(const string& filename, vector<servo_info>& servos) {
+
+  YAML::Node doc = YAML::LoadFile(filename);
+  servos.clear();
+
+  for (int i = 0; i < doc.size(); i++) {
+    servo_info d;
+
+    d.servo_id = doc[i]["id"].as<int>();
+    d.joint_id = -1;
+    d.AD_min = doc[i]["min"].as<int>();
+    d.AD_max = doc[i]["max"].as<int>();
+    d.AD_center = doc[i]["center"].as<int>();
+    d.factor = doc[i]["factor"].as<float>();
+
+    servos.push_back(d);
+  }
+
+  return true;
 }
 
-int OpenServoRobot::loadRobotDescription(string path_to_file)
-{
-  int fixed_joint_id = 4;
-  // basic joint data and information ... HARDCODED!
-  _state.joints.resize(7);
-  for (int i = 0; i < 7; i++) {
-		_state.joints[i].type = IDLE;
-	}
+int OpenServoRobot::loadDescription(const string& modelfile, const string& calibfile) {
 
-  joint_to_adr.push_back(17);
-  joint_to_adr.push_back(18);
-  joint_to_adr.push_back(19);
-  joint_to_adr.push_back(20);
-  //joint_to_adr.push_back(0);
-  joint_to_adr.push_back(21);
-  joint_to_adr.push_back(22);
+  if (!parse_description(modelfile, _description)) {
+    throw ManipulatorException("Unable to parse manipulator model description");
+  }
 
-  // ti podatki se morajo prebrati iz datoteke in preveriti če se min in max ujemajo s servotom
-  //servo_description(int id, int AD_min, int AD_max, int AD_center, float faktor) (faktor in rad.)
-  servo.push_back(servo_description(0, 164, 3920, 2264, 0.0009380807));
-  servo.push_back(servo_description(1, 540, 3920,  880, 0.0009349769));
-  servo.push_back(servo_description(2, 184, 3906, 2836, 0.0009304994));
-  servo.push_back(servo_description(3, 16, 3732, 1836, 0.0008597145));
-  //servo.push_back(servo_description(4, 0, 0, 0, 0));
-  servo.push_back(servo_description(5,  16, 4076, 2196, 0.0008597145));
-  servo.push_back(servo_description(6,  480, 2164,  940, 0.0008597145));
+  if (!parse_calibration(calibfile, servos)) {
+    throw ManipulatorException("Unable to parse manipulator calibration description");
+  }
 
+  _state.joints.resize(_description.joints.size());
+  int j = 0;
+  for (int i = 0; i < _description.joints.size(); i++) {
+    _state.joints[i].type = IDLE;
 
-	//_state.state = UNKNOWN;
+    if (_description.joints[i].type == FIXED)
+      continue;
 
-	min_pos.resize(7);
-	max_pos.resize(7);
-  _description.joints.resize(7);
+    if (j >= servos.size())
+      throw ManipulatorException("Not enough motors in calibration data.");
+
+    joint_to_adr.push_back(servos[j].servo_id);
+    servos[j].joint_id = i;
+    _description.joints[i].dh_min = scale_servo_to_joint(servos[j], servos[j].AD_min);
+    _description.joints[i].dh_max = scale_servo_to_joint(servos[j], servos[j].AD_max);
+
+    j++;
+  }
+
+  if (j != servos.size())
+    throw ManipulatorException("Unassigned motors remaining.");
+
+  min_pos.resize(_description.joints.size());
+  max_pos.resize(_description.joints.size());
 
   //JointDescription joint_description(JointType type, float dh_theta, float dh_alpha, float dh_d, float dh_a, float min, float max)
   // min in max se (lahko) pri rokah razlikujeta
   // Joint 0, min: -1.69, max: 1.73
-  //cout << "** Joint 0, min: " << scale_servo_to_joint(servo[0], servo[0].AD_min) << ", max: " << scale_servo_to_joint(servo[0], servo[0].AD_max) << endl;
-	_description.joints[0] = joint_description(ROTATION,    0, 90, 111,   0, scale_servo_to_joint(servo[0], servo[0].AD_min), scale_servo_to_joint(servo[0], servo[0].AD_max));
-	_description.joints[1] = joint_description(ROTATION,   140,  0,  0, 108, scale_servo_to_joint(servo[1], servo[1].AD_min), scale_servo_to_joint(servo[1], servo[1].AD_max));
-	_description.joints[2] = joint_description(ROTATION,   -80, 	0,  0, 112,scale_servo_to_joint(servo[2], servo[2].AD_min), scale_servo_to_joint(servo[2], servo[2].AD_max));
-	_description.joints[3] = joint_description(ROTATION,    -50, 	0,  0,  20,scale_servo_to_joint(servo[3], servo[3].AD_min), scale_servo_to_joint(servo[3], servo[3].AD_max));
-	_description.joints[4] = joint_description(FIXED,       90, 90,  0,   0, 0, 0);
-	_description.joints[5] = joint_description(ROTATION,    0,  0,  0,  0,   scale_servo_to_joint(servo[4], servo[4].AD_min), scale_servo_to_joint(servo[4], servo[4].AD_max));
-	_description.joints[6] = joint_description(GRIPPER,     0,  0,  50,  0,  scale_servo_to_joint(servo[5], servo[5].AD_min), scale_servo_to_joint(servo[5], servo[5].AD_max));
-
+  //cout << "** Joint 0, min: " << scale_servo_to_joint(servos[0], servos[0].AD_min) << ", max: " << scale_servo_to_joint(servos[0], servos[0].AD_max) << endl;
   return 1;
 }
 
 int OpenServoRobot::lock(int joint)
 {
-	//return enableMotors(joint);
+  //return enableMotors(joint);
   return 1;
 }
 
 int OpenServoRobot::release(int joint)
 {
-	//return disableMotors(joint);
+  //return disableMotors(joint);
   return 1;
 }
 
 int OpenServoRobot::rest() {
-	//if ( _internal.connection.connected == 0 ) return 0;
-	return false;
+  //if ( _internal.connection.connected == 0 ) return 0;
+  return false;
 }
-
-/*
-int OpenServoRobot::init()
-{
-
-}
-*/
 
 int OpenServoRobot::get_file_descriptor()
 {
-	return -1;
+  return -1;
 }
 
 bool OpenServoRobot::handle_input()
 {
-	return true;
+  return true;
 }
 
 bool OpenServoRobot::handle_output()
 {
-	return true;
+  return true;
 }
 
 void OpenServoRobot::disconnect()
 {
-
-	cout << "Disconnect" << endl;
 
 }
 
 
 int OpenServoRobot::size() {
 
-	return _description.joints.size();
+  return _description.joints.size();
 
 }
 
@@ -258,7 +266,7 @@ void OpenServoRobot::sendMove(int joint, float speed, float position)
   sv tmp_sv = open_servo.getServo(joint_to_adr[tmp_mot]);
   if (&tmp_sv == NULL)
     return;
-  float pos = ::round(scale_joint_to_servo(tmp_sv, servo[tmp_mot], position));
+  float pos = ::round(scale_joint_to_servo(tmp_sv, servos[tmp_mot], position));
   // preveri, če je slučajno pos prevelik!!
 
   //cout << " send move joint " << joint << " motor: " << tmp_mot << " pos: " << (int)pos << endl;
@@ -268,98 +276,76 @@ void OpenServoRobot::sendMove(int joint, float speed, float position)
 
 ManipulatorDescription OpenServoRobot::describe()
 {
-	return _description;
+  return _description;
 }
 
 
 ManipulatorState OpenServoRobot::state()
 {
-  //cout << "1";
-  /*
-  bool izpis = false;
-  static int count = 0;
-  if ((++count % 500) == 0){
-    cout << "** state(): count = " << count << endl;
-    izpis = true;
-  }
-  */
   //posodobi podatke v _state in vrni
   // le ta del je kritičen pri branju v thredu
   int tmp_mot = -1;
   //  for(int q=0; q<_state.joints.size()+1; q++)
-  for(int q=0; q<_description.joints.size(); q++)
+  for (int q = 0; q < _description.joints.size(); q++)
   {
     tmp_mot = joint_to_motor(q);
-    if( tmp_mot < 0)
+    if ( tmp_mot < 0)
       continue;
     pthread_mutex_lock(&read_servo_mutex);
     sv tmp_sv = open_servo.getServo(joint_to_adr[tmp_mot]); // če tega servota ni, vrne null
     pthread_mutex_unlock(&read_servo_mutex);
     if (&tmp_sv != NULL)
     {
-      _state.joints[q].position = scale_servo_to_joint(servo[tmp_mot], (float)tmp_sv.position);
-      _state.joints[q].goal = scale_servo_to_joint(servo[tmp_mot], (float)tmp_sv.seek_position);
+      _state.joints[q].position = scale_servo_to_joint(servos[tmp_mot], (float)tmp_sv.position);
+      _state.joints[q].goal = scale_servo_to_joint(servos[tmp_mot], (float)tmp_sv.seek_position);
       _state.joints[q].speed = 1;
       /*
       if(izpis){
         cout << "** joint: " << q << ", motor: " << tmp_mot << endl;
         cout << "    position = " << _state.joints[q].position << ", ro: " << tmp_sv.position << endl;
         cout << "    goal = " << _state.joints[q].goal << ", ro: " << tmp_sv.seek_position << endl;
-        cout << "    goal = " << scale_servo_to_joint(servo[tmp_mot], (float)tmp_sv.seek_position) << endl;
+        cout << "    goal = " << scale_servo_to_joint(servos[tmp_mot], (float)tmp_sv.seek_position) << endl;
         cout << "    speed = " << _state.joints[q].speed << ", ro: " << tmp_sv.velocity << endl;
       }
       */
     }
 
   }
-	return _state;
-}
-
-float OpenServoRobot::scale_servo_to_joint(servo_info si, float ad_pos)
-{
-  float pos_deg = (ad_pos - si.AD_center) * si.faktor;
-  return round(pos_deg * 100.0) / 100.0;
-}
-
-float OpenServoRobot::scale_joint_to_servo(sv tmp_sv, servo_info si, float pos)
-{
-  float pos_ad = (pos/si.faktor) + si.AD_center;
-  return pos_ad;
+  return _state;
 }
 
 int OpenServoRobot::joint_to_motor(int j)
 {
-	if (j < 0 || j >= _description.joints.size()) return -1;
+  if (j < 0 || j >= _description.joints.size()) return -1;
 
-	if (_description.joints[j].type == FIXED) return -1;
+  if (_description.joints[j].type == FIXED) return -1;
 
-	int m = 0;
-	for (int i = 0; i < j; i++) {
-		if (_description.joints[i].type != FIXED)
-			m++;
-	}
+  int m = 0;
+  for (int i = 0; i < j; i++) {
+    if (_description.joints[i].type != FIXED)
+      m++;
+  }
 
-	return m;
+  return m;
 
 }
 
 int OpenServoRobot::motor_to_joint(int m)
 {
-	int mt = m;
-	int j = 0;
-	while (m > 0) {
-		j++; m--;
-		if (_description.joints[j].type == FIXED)
-			j++;
-	}
+  int mt = m;
+  int j = 0;
+  while (m > 0) {
+    j++; m--;
+    if (_description.joints[j].type == FIXED)
+      j++;
+  }
 
-	return j;
+  return j;
 
 }
 
-void OpenServoRobot::threadRutine()
+void OpenServoRobot::threadRoutine()
 {
-  cout << "** Thread rutine: IO openservo\n";
   sv* servo;
   int action_type;
   buff_data tmp_data;
@@ -367,36 +353,36 @@ void OpenServoRobot::threadRutine()
   bool end_loop = false;
 
   //while(!end_loop)
-  while(true)
+  while (true)
   {
     //cout << "** IO thread loop\n";
     pthread_mutex_lock(&q_mutex);
     bool empty = q_out.empty();
     pthread_mutex_unlock(&q_mutex);
 
-    while(!empty)
+    while (!empty)
     {
       pthread_mutex_lock(&q_mutex);
       action_type = q_out.front().action_type;
       pthread_mutex_unlock(&q_mutex);
-      switch(action_type)
+      switch (action_type)
       {
-        case MOVE:
-          pthread_mutex_lock(&q_mutex);
-          tmp_data = q_out.front();
-          q_out.pop();
-          pthread_mutex_unlock(&q_mutex);
-          //cout << "** Thread IO, MOVE joint: " << tmp_data.joint << endl;
-          sendMove(tmp_data.joint, tmp_data.speed, tmp_data.position);
+      case MOVE:
+        pthread_mutex_lock(&q_mutex);
+        tmp_data = q_out.front();
+        q_out.pop();
+        pthread_mutex_unlock(&q_mutex);
+        //cout << "** Thread IO, MOVE joint: " << tmp_data.joint << endl;
+        sendMove(tmp_data.joint, tmp_data.speed, tmp_data.position);
         break;
-        case UPDATE_JOINTS:
-          pthread_mutex_lock(&q_mutex);
-          q_out.pop();
-          pthread_mutex_unlock(&q_mutex);
+      case UPDATE_JOINTS:
+        pthread_mutex_lock(&q_mutex);
+        q_out.pop();
+        pthread_mutex_unlock(&q_mutex);
 
-          pthread_mutex_lock(&read_servo_mutex);
-          open_servo.updateBasicValuesAllServo();
-          pthread_mutex_unlock(&read_servo_mutex);
+        pthread_mutex_lock(&read_servo_mutex);
+        open_servo.updateBasicValuesAllServo();
+        pthread_mutex_unlock(&read_servo_mutex);
         break;
       }
 
@@ -406,7 +392,7 @@ void OpenServoRobot::threadRutine()
     }
 
     // varneje bi blo prej še poslati/počakati oz. sprazniti vrsto
-    if(end_loop)
+    if (end_loop)
       break;
     //cout << "** IO thread loop -> sleep\n";
     // go to sleep
@@ -430,16 +416,15 @@ void OpenServoRobot::threadRutine()
   pthread_exit(NULL);
 }
 
-void OpenServoRobot::threadRutineReq()
+void OpenServoRobot::threadRoutineReq()
 {
-  cout << "** Thread rutine: Requset\n";
   chrono::steady_clock::time_point begin;
-  chrono::microseconds interval_micro(1000000/read_rate);
+  chrono::microseconds interval_micro(1000000 / read_rate);
   //cout << "request, micro: " << chrono::duration_cast<chrono::microseconds>(interval_micro).count() << "us" << endl;
   bool end_loop = false;
   //auto zamik = chrono::duration_cast<chrono::microseconds>(begin - chrono::steady_clock::now()).count();
   begin = chrono::steady_clock::now();
-  while(true)
+  while (true)
   {
     //cout << " Req. thread loop -> request\n";
     updateJoints();
@@ -447,7 +432,7 @@ void OpenServoRobot::threadRutineReq()
     pthread_mutex_lock(&sleep_mutex);
     end_loop = end_thread;
     pthread_mutex_unlock(&sleep_mutex);
-    if(end_loop)
+    if (end_loop)
       break;
     //cout << " Req. thread loop -> sleep\n";
     begin += interval_micro;
@@ -480,17 +465,20 @@ void OpenServoRobot::updateJoints()
 //----------------------------------------------------------------------
 int main(int argc, char** argv) {
 
-	SharedClient client = echolib::connect();
+  if (argc < 2) {
+    cerr << "Missing manipulator description and calibration file paths." << endl;
+    return -1;
+  }
 
-	shared_ptr<OpenServoRobot> manipulator = shared_ptr<OpenServoRobot>(new OpenServoRobot("/dev/i2c-1"));
+  shared_ptr<OpenServoRobot> manipulator = shared_ptr<OpenServoRobot>(new OpenServoRobot("/dev/i2c-1", string(argv[1]), string(argv[2])));
 
-	//echolib::default_loop()->add_handler(manipulator);
+  SharedClient client = echolib::connect();
+  //echolib::default_loop()->add_handler(manipulator);
+  ManipulatorManager manager(client, manipulator);
 
-	ManipulatorManager manager(client, manipulator);
+  while (echolib::wait(50)) {
+    manager.update();
+  }
 
-	while (echolib::wait(50)) {
-		manager.update();
-	}
-
-	exit(0);
+  exit(0);
 }
