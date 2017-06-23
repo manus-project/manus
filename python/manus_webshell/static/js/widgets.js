@@ -97,6 +97,11 @@ $.manus.widgets = {
             var relative_position = (value - parameters.min) / (parameters.max - parameters.min);
             var relative_goal = (value_goal - parameters.min) / (parameters.max - parameters.min);
 
+            if (relative_position < 0) relative_position = 0;
+            if (relative_position > 1) relative_position = 1;
+            if (relative_goal < 0) relative_goal = 0;
+            if (relative_goal > 1) relative_goal = 1;
+
             switch (parameters.type.toLowerCase()) {
             case "translation": {
                 status.attr('title', value.toFixed(2) + "mm");
