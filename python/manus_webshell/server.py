@@ -297,11 +297,8 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
     def on_planner_state(self, manipulator, state):
         pass
 
-    def on_app_started(self, app):
-        self.distribute_message({"channel": "apps", "action" : "started", "identifier" : app.id})
-
-    def on_app_stopped(self, app):
-        self.distribute_message({"channel": "apps", "action" : "stopped", "identifier" : app.id})
+    def on_app_active(self, app_id):
+        self.distribute_message({"channel": "apps", "action" : "activated", "identifier" : app_id})
 
 def main():
     logging_level = logging.DEBUG

@@ -218,13 +218,16 @@ function appsList() {
 
     });
 
-    PubSub.subscribe("apps.started", function(msg, identifier) {
+    PubSub.subscribe("apps.activated", function(msg, identifier) {
 
-        $(list.listContainer).children("#app-" + identifier + " .glyphicon-play").removeClass("glyphicon-play").addClass("glyphicon-stop");
+        $(list.listContainer).children(".glyphicon-stop").removeClass("glyphicon-stop").addClass("glyphicon-play");
+
+        $(list.listContainer).children("#app-" + identifier).removeClass("glyphicon-play").addClass("glyphicon-stop");
 
     });
 
-    PubSub.subscribe("apps.stopped", function(msg, identifier) {
+}
+
 
         $(list.listContainer).children("#app-" + identifier + " .glyphicon-stop").removeClass("glyphicon-stop").addClass("glyphicon-play");
 
@@ -360,11 +363,9 @@ $(function() {
             
         } else if (msg.channel == "apps") {
 
-            if (msg.action == "started") {
-                PubSub.publish("apps.started", msg.identifier);
-            } else if (msg.action == "stopped") {
-                PubSub.publish("apps.stopped", msg.identifier);
-            }
+            if (msg.action == "activated") {
+                PubSub.publish("apps.activated", msg.identifier);
+            } 
 
         }
 

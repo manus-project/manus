@@ -143,19 +143,19 @@ def application_launcher(autorun=None):
             terminate = active_application
             active_application = None
             terminate.stop()
-            event = AppEvent()
-            event.type = AppEventType.STOP
-            event.app = terminate.message_data()
-            announce.send(event)
 
         if not identifier:
+            event = AppEvent()
+            event.type = AppEventType.ACTIVE
+            event.app = AppData()
+            announce.send(event)
             return
 
         active_application = starting_application
         active_application.run()
         print "Starting application %s (%s)" % (active_application.name, identifier)
         event = AppEvent()
-        event.type = AppEventType.START
+        event.type = AppEventType.ACTIVE
         event.app = active_application.message_data()
         announce.send(event)
 
@@ -194,8 +194,8 @@ def application_launcher(autorun=None):
         if not active_application is None:
             if not active_application.alive():
                 event = AppEvent()
-                event.type = AppEventType.STOP
-                event.app = active_application.message_data()
+                event.type = AppEventType.ACTIVE
+                event.app = AppData()
                 announce.send(event)
                 active_application = None
     except KeyboardInterrupt:

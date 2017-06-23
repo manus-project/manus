@@ -110,7 +110,7 @@ class Manipulator(object):
         self.move_waiting = identifier
         while True:
             self.workspace.loop.wait(10)
-            if not self.move_waiting:
+            if self.move_waiting is None:
                 return self.move_result
 
 

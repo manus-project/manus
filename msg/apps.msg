@@ -1,7 +1,7 @@
 
 namespace manus.apps;
 
-enumerate AppEventType {STOP, START}
+enumerate AppEventType {ACTIVE}
 enumerate AppCommandType {EXECUTE, TERMINATE, RESCAN}
 
 structure AppData {
