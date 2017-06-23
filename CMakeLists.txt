@@ -39,6 +39,9 @@ ADD_EXECUTABLE(manus_openservo_manipulator src/manipulator.cpp src/openservorobo
 TARGET_LINK_LIBRARIES(manus_openservo_manipulator ${echolib_LIBRARIES} ${OpenServo_LIBRARIES} ${YAML_CPP_LIBRARIES})
 add_dependencies(manus_openservo_manipulator manus_messages)
 
+ADD_EXECUTABLE(manus_openservo_calibration src/calibration.cpp)
+TARGET_LINK_LIBRARIES(manus_openservo_calibration ${OpenServo_LIBRARIES} ${YAML_CPP_LIBRARIES})
+
 find_path(EIGEN3_INCLUDE_DIR NAMES signature_of_eigen3_matrix_library PATHS ${CMAKE_INSTALL_PREFIX}/include PATH_SUFFIXES eigen3 eigen)
 FIND_PACKAGE(orocos_kdl REQUIRED)
 ADD_EXECUTABLE(manus_planner src/planner.cpp src/voxelgrid.cpp)
@@ -47,7 +50,7 @@ TARGET_LINK_LIBRARIES(manus_planner ${echolib_LIBRARIES} ${orocos_kdl_LIBRARIES}
 
 ADD_SUBDIRECTORY(python)
 
-install(TARGETS manus_simulator_manipulator manus_openservo_manipulator manus_planner DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS manus_simulator_manipulator manus_openservo_manipulator manus_openservo_calibration manus_planner DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY
     ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/manus
