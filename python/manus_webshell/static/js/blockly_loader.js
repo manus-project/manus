@@ -176,6 +176,12 @@ function runCode() {
     // Also generate xml
     var xml = Blockly.Xml.workspaceToDom(workspace);
     var xml_text = Blockly.Xml.domToText(xml);
+    // Validate xml code
+    err = error_in_xml_code(xml);
+    if (err){
+        alert(err);
+        return;
+    }
     callwebapi("/api/code/submit", 
         {
             "code": code,
@@ -252,4 +258,58 @@ function onBlockDelete(event){
             workspace.createVariable("detection_color");
         }
     }
+}
+
+function error_in_xml_code(xml){
+    if (detection_var_used_before_detection(xml)){
+        return "Detection variable is used before check for detection.";
+    }
+    return false; // Code is ok
+}
+
+function treverse_xml(depth, xml, element_callback){
+    if (!element_callback){
+        console.error("element_callback function not set");
+        return;
+    }
+    if (depth > 300) {
+        console.error("Recursion limit reached. Something must have gone wrong while traversing xml tree.");
+        return;
+    }
+    var c = xml.firstChild;
+    while (c) {
+        // Call element_callback
+        should_continue = element_callback(c);
+        if (!should_continue)
+            return false;
+        // Continue treversing
+        if (c.hasChildNodes())
+            if (!treverse_xml(depth+1, c, element_callback))
+                return false;
+        c = c.nextSibling;
+    }
+    return true;
+}
+
+function detection_var_used_before_detection(xml){
+    var used_before_detection = false;
+    treverse_xml(0, xml, function(element){
+        if (element.getAttribute("type") == "variables_get" &&(
+            element.textContent == "detection_x" ||
+            element.textContent == "detection_y" ||
+            element.textContent == "detection_z" ||
+            element.textContent == "detection_color"
+        )){
+            // mark block in workspace
+            workspace.getBlockById(element.getAttribute("id")).select();
+            // set used_before_detection to true so we can return error
+            used_before_detection = true;
+            return false; // we can stop treversing
+        }else if (element.getAttribute("type") == "manus_any_block_detector" ||
+                element.getAttribute("type" == "manus_colored_block_detector")){
+            return false; // we can stop treversing
+        }
+        return true; // continue treversing
+    });
+    return used_before_detection;
 }
