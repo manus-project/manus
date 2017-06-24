@@ -45,9 +45,9 @@ Blockly.Python['manus_position_vector'] = function(block) {
 };
 
 Blockly.Python['manus_position_vector_var'] = function(block) {
-  var value_x = Blockly.Python.valueToCode(block, 'X', Blockly.Python.ORDER_ATOMIC);
-  var value_y = Blockly.Python.valueToCode(block, 'Y', Blockly.Python.ORDER_ATOMIC);
-  var value_z = Blockly.Python.valueToCode(block, 'Z', Blockly.Python.ORDER_ATOMIC);
+  var value_x = Blockly.Python.valueToCode(block, 'X', Blockly.Python.ORDER_ATOMIC) || "0";
+  var value_y = Blockly.Python.valueToCode(block, 'Y', Blockly.Python.ORDER_ATOMIC) || "0";
+  var value_z = Blockly.Python.valueToCode(block, 'Z', Blockly.Python.ORDER_ATOMIC) || "0";
   // TODO: Assemble Python into code variable.
   var code = value_x+', '+value_y+', '+value_z;
   // TODO: Change ORDER_NONE to the correct strength.
@@ -55,19 +55,19 @@ Blockly.Python['manus_position_vector_var'] = function(block) {
 };
 
 Blockly.Python['manus_move_arm'] = function(block) {
-  var value_coordinates = Blockly.Python.valueToCode(block, 'coordinates', Blockly.Python.ORDER_ATOMIC);
+  var value_coordinates = Blockly.Python.valueToCode(block, 'coordinates', Blockly.Python.ORDER_ATOMIC) || "(0,0,0)";
   // TODO: Assemble Python into code variable.
   var code = 'manus_move_arm_to_coordinates('+value_coordinates+')\n';
   return code;
 };
 
 Blockly.Python['manus_wait'] = function(block) {
-  var value_wait_val = Blockly.Python.valueToCode(block, 'wait_val', Blockly.Python.ORDER_ATOMIC);
+  var value_wait_val = Blockly.Python.valueToCode(block, 'wait_val', Blockly.Python.ORDER_ATOMIC) || "0";
   // TODO: Assemble Python into code variable.
   var code = 'manus_wait('+value_wait_val+')\n';
   return code;
 };
-
+/*
 Blockly.Python['manus_any_block_detector'] = function(block) {
   // TODO: Assemble Python into code variable.
   var code = 'manus_any_block_detected()';
@@ -82,7 +82,7 @@ Blockly.Python['manus_colored_block_detector'] = function(block) {
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_NONE];
 };
-
+*/
 Blockly.Python['manus_detected_blocks_array'] = function(block) {
   // TODO: Assemble Python into code variable.
   var code = 'manus_detect_blocks()';

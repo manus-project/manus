@@ -48,7 +48,7 @@ def manus_move_arm_to_coordinates(p):
     angle = 0.0
     # Move arm
     workspace.manipulator.trajectory([
-        manus.MoveTo((p[0], p[1], p[2]), (0.0, 0.0, angle), 0.0)
+        manus.MoveTo((p[0], p[1], p[2]), (0.0, 0.0, angle), 0)
     ])
 
 def manus_any_block_detected():

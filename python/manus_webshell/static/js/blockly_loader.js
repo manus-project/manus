@@ -82,21 +82,15 @@ $(document).ready(function(){
           <block type="colour_rgb"></block> \
           <block type="colour_blend"></block> \
         </category> \
-        <category name="Manus" colour="0"> \
-          <category name="Move arm" colour="0"> \
+        <category name="Robot Arm" colour="0"> \
             <block type="manus_move_joint"></block> \
             <block type="manus_move_arm"></block> \
             <block type="manus_position_vector"></block> \
             <block type="manus_position_vector_var"></block> \
-          </category> \
-          <category name="Detection" colour="0"> \
-            <block type="manus_any_block_detector"></block> \
-            <block type="manus_colored_block_detector"></block> \
             <block type="manus_detected_blocks_array"></block> \
             <block type="manus_detect_and_store_blocks"></block> \
-          </category> \
-          <block type="manus_wait"></block> \
-          <block type="manus_retrieve_component"></block> \
+            <block type="manus_wait"></block> \
+            <block type="manus_retrieve_component"></block> \
         </category> \
         <sep></sep> \
         <category name="Variables" colour="330" custom="VARIABLE"></category> \
