@@ -14,7 +14,8 @@ $(document).ready(function(){
         <button class="btn btn-primary" onclick="saveCode()">Save</button> \
         <button class="btn btn-primary" onclick="loadCode()">Load</button> \
       </p> \
-      <div id="blockly-workspace" style="height: 480px; width: 600px;"></div> \
+      <div id="blockly-area" style="width:100%; height:600px;"></div> \
+      <div id="blockly-workspace" style="position: absolute"></div> \
       <xml id="toolbox" style="display: none"> \
         <category name="Logic" colour="210"> \
           <block type="controls_if"></block> \
@@ -129,31 +130,39 @@ $(document).ready(function(){
         </block> \
       </xml>');
 
-    workspace = Blockly.inject('blockly-workspace',
-      {grid:
-         {spacing: 25,
-          length: 3,
-          colour: '#ccc',
-          snap: true},
-       media: 'blockly/media/',
-       toolbox: document.getElementById('toolbox'),
-       zoom: {controls: true, wheel: true}
-      });
+    var blocklyArea = document.getElementById('blockly-area');
+    var blocklyDiv = document.getElementById('blockly-workspace');
+    workspace = Blockly.inject('blockly-workspace',{
+        grid:{
+            spacing: 25,
+            length: 3,
+            colour: '#ccc',
+            snap: true
+        },
+        media: 'blockly/media/',
+        toolbox: document.getElementById('toolbox'),
+        zoom: {controls: true, wheel: true}
+    });
 
-    // Register shown callback to resize the workspace (othervise it remains hidden until window resize)
+    // Register & call on resize function
+    var onresize = function(e) {
+        blocklyDiv.style.left = blocklyArea.offsetLeft + 'px';
+        blocklyDiv.style.top = blocklyArea.offsetTop  + 'px';
+        blocklyDiv.style.width = blocklyArea.offsetWidth + 'px';
+        blocklyDiv.style.height = blocklyArea.offsetHeight + 'px';
+    };
+    window.addEventListener('resize', onresize, false);
+    onresize();
+    Blockly.svgResize(workspace);
+
+    // Register on show callback
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        if (workspace)
-          Blockly.svgResize(workspace);
-    })
-    // Register on create and delete callbacks
-    function onEvent(event) {
-        if (event.type == Blockly.Events.CHANGE &&
-            event.element == 'comment' &&
-            !event.oldValue && event.newValue) {
-            alert('Congratulations on creating your first comment!')
-            workspace.removeChangeListener(onFirstComment);
+        if (workspace){
+            onresize();
+            Blockly.svgResize(workspace);
         }
-}
+    })
+
     workspace.addChangeListener(function(event){
         if (event.type == Blockly.Events.CREATE)
             onBlockCreate(event);
