@@ -96,6 +96,7 @@ try:
     workspace.wait(1000)
     print "Starting Blockly code execution"
 {{code_container}}
+    print "Blockly code execution Finished!"
 
 except KeyboardInterrupt:
     pass
