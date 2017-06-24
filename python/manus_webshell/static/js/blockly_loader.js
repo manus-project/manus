@@ -11,6 +11,8 @@ $(document).ready(function(){
       <p> \
         <button class="btn btn-primary" onclick="showCode()">Show Python</button> \
         <button class="btn btn-primary" onclick="runCode()">Run Python</button> \
+        <button class="btn btn-primary" onclick="saveCode()">Save</button> \
+        <button class="btn btn-primary" onclick="loadCode()">Load</button> \
       </p> \
       <div id="blockly-workspace" style="height: 480px; width: 600px;"></div> \
       <xml id="toolbox" style="display: none"> \
@@ -202,6 +204,35 @@ function runCode() {
     );
 }
 
+function saveCode(){
+     // Generate xml
+    var xml = Blockly.Xml.workspaceToDom(workspace);
+    var xml_text = Blockly.Xml.domToText(xml);
+    // Store to client storage
+    if (typeof(Storage) !== "undefined") {
+        localStorage.setItem('saved_code', xml_text);
+    } else {
+        alert("Client storage not supported by browser");
+        console.error("Client storage not supported by browser");
+    }
+}
+
+function loadCode(){
+    // Retrieve code from client storage
+    if (typeof(Storage) !== "undefined") {
+        var xml_text = localStorage.getItem('saved_code');
+        // Clear & Load xml into workspace
+        if (xml_text && xml_text.length > 0) {
+            var xml_dom = Blockly.Xml.textToDom(xml_text);
+            workspace.clear(); // Don't forget to call clear before load. Othervie it will just add more elements to workspace.
+            Blockly.Xml.domToWorkspace(xml_dom, workspace);
+        }
+    } else {
+        alert("Client storage not supported by browser");
+        console.error("Client storage not supported by browser");
+    }
+}
+
 function callwebapi(url, reqdata_raw, ok_func, err_func) {
     var reqdata = JSON.stringify(reqdata_raw, null);
 
@@ -258,9 +289,6 @@ function onBlockDelete(event){
 }
 
 function error_in_xml_code(xml){
-    if (detection_var_used_before_detection(xml)){
-        return "Detection variable is used before check for detection.";
-    }
     return false; // Code is ok
 }
 
@@ -286,29 +314,4 @@ function treverse_xml(depth, xml, element_callback){
         c = c.nextSibling;
     }
     return true;
-}
-
-function detection_var_used_before_detection(xml){
-    var used_before_detection = false;
-    treverse_xml(0, xml, function(element){
-        if (!element || !element.getAttribute || typeof element.getAttribute !== "function")
-            return true;
-        if (element.getAttribute("type") == "variables_get" &&(
-            element.textContent == "detection_x" ||
-            element.textContent == "detection_y" ||
-            element.textContent == "detection_z" ||
-            element.textContent == "detection_color"
-        )){
-            // mark block in workspace
-            workspace.getBlockById(element.getAttribute("id")).select();
-            // set used_before_detection to true so we can return error
-            used_before_detection = true;
-            return false; // we can stop treversing
-        }else if (element.getAttribute("type") == "manus_any_block_detector" ||
-                element.getAttribute("type" == "manus_colored_block_detector")){
-            return false; // we can stop treversing
-        }
-        return true; // continue treversing
-    });
-    return used_before_detection;
 }
