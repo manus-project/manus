@@ -3,10 +3,32 @@
 import numpy as np
 import scipy.spatial.distance
 import cv2
-import sys
+import sys, os
 import math
 from numpy.linalg import inv
 
+has_yaml = False
+try:
+    import yaml
+
+    # A yaml constructor is for loading from a yaml node.
+    # This is taken from: http://stackoverflow.com/a/15942429
+    def opencv_matrix_constructor(loader, node):
+        mapping = loader.construct_mapping(node, deep=True)
+        mat = np.array(mapping["data"])
+        mat.resize(mapping["rows"], mapping["cols"])
+        return mat
+    yaml.add_constructor(u"tag:yaml.org,2002:opencv-matrix", opencv_matrix_constructor)
+
+    # A yaml representer is for dumping structs into a yaml node.
+    # So for an opencv_matrix type (to be compatible with c++'s FileStorage) we save the rows, cols, type and flattened-data
+    def opencv_matrix_representer(dumper, mat):
+        mapping = {'rows': mat.shape[0], 'cols': mat.shape[1], 'dt': 'd', 'data': mat.reshape(-1).tolist()}
+        return dumper.represent_mapping(u"tag:yaml.org,2002:opencv-matrix", mapping)
+    yaml.add_representer(np.ndarray, opencv_matrix_representer)
+    has_yaml = True
+finally:
+    pass
 
 def block_color_name(block):
 
@@ -42,13 +64,22 @@ class SavedCamera(object):
     def __init__(self, prefix):
         from scipy.io import loadmat
 
-        c = loadmat(prefix + '.mat')
         self.image = cv2.imread(prefix + '.jpg')
-        self.intrinsics = c['camera'][0][0][1].astype('float32')
-        self.distortion = c['camera'][0][0][2].astype('float32')
-        self.rotation = c['view'][0][0][1].astype('float32')
-        self.translation = c['view'][0][0][2].astype('float32')
-        self.homography = c['view'][0][0][0].astype('float32')
+        if os.path.isfile(prefix + '.mat'):
+            c = loadmat(prefix + '.mat')
+            self.intrinsics = c['camera'][0][0][1].astype('float32')
+            self.distortion = c['camera'][0][0][2].astype('float32')
+            self.rotation = c['view'][0][0][1].astype('float32')
+            self.translation = c['view'][0][0][2].astype('float32')
+            self.homography = c['view'][0][0][0].astype('float32')
+        else:
+            with open(prefix + '.yaml', 'r') as f:
+                c = yaml.load(f)
+                self.intrinsics = c['intrinsics'].astype('float32')
+                self.distortion = c['distortion'].astype('float32')
+                self.rotation = c['rotation'].astype('float32')
+                self.translation = c['translation'].astype('float32')
+                self.homography = c['homography'].astype('float32')
 
     def get_image(self):
         return self.image
@@ -73,6 +104,18 @@ class SavedCamera(object):
 
     def get_height(self):
         return self.image.shape[0]
+
+    @staticmethod
+    def save_camera(path, camera):
+        if not has_yaml:
+            return
+        cv2.imwrite(os.path.join(path,"image.jpg"), camera.get_image())
+        with open(os.path.join(path, 'image.yaml'), 'w') as f:
+            yaml.dump({"rotation": camera.get_rotation(),
+                 "translation": camera.get_translation(),
+                 "distortion": camera.get_distortion(),
+                 "intrinsics": camera.get_intrinsics(),
+                 "homography": camera.get_homography()}, f)
 
 
 class BlockDetector(object):
@@ -126,7 +169,6 @@ class BlockDetector(object):
 
         detector = cv2.SimpleBlobDetector(params)
         image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-
         candidates = detector.detect(image)
 
         if not self.bounds is None:
@@ -136,7 +178,6 @@ class BlockDetector(object):
             points = np.array([[p[0, 0] / p[0, 2], p[0, 1] / p[0, 2]]
                                for p in projected.T], dtype='float32')
             candidates = [c for c in candidates if cv2.pointPolygonTest(points, c.pt, False) >= 0]
-
         M = np.zeros(image.shape[0:2])
 
         for i, c in enumerate(candidates):
@@ -179,10 +220,8 @@ class BlockDetector(object):
             x2 = int(min(M.shape[1], c.pt[0] + interest_area))
             y1 = int(max(0, c.pt[1] - interest_area))
             y2 = int(min(M.shape[0], c.pt[1] + interest_area))
-
             C = M[y1:y2, x1:x2]
             H = np.zeros((y2-y1, x2-x1), dtype='uint8')
-
             angles = np.linspace(0, math.pi/2, 20)
             for a in angles:
                 T = np.matrix([[math.cos(a), -math.sin(a), 0, P[0]], [math.sin(a),
@@ -194,8 +233,7 @@ class BlockDetector(object):
                 H.fill(0)
                 cv2.fillConvexPoly(H, np.array(
                     [[p[0, 0]-x1+1, p[0, 1]-y1+1] for p in hull], dtype='int32'), 1)
-                scores.append(np.sum(C[H > 0]) / np.sum(H))
-
+                scores.append(float(np.sum(C[H > 0])) / float(np.sum(H)))
             angles2 = np.linspace(0, math.pi/2, 90)
             scores2 = cv2.GaussianBlur(
                 np.interp(angles2, angles, scores), (5, 1), 3)

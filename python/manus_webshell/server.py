@@ -299,8 +299,8 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
     def on_planner_state(self, manipulator, state):
         pass
 
-    def on_app_active(self, app_id):
-        self.distribute_message({"channel": "apps", "action" : "activated", "identifier" : app_id})
+    def on_app_active(self, app):
+        self.distribute_message({"channel": "apps", "action" : "activated", "identifier" : app.id})
 
 class CodeSubmitonHandler(JsonHandler):
 
@@ -311,14 +311,11 @@ class CodeSubmitonHandler(JsonHandler):
     def get(self):
         self.response = {
             "status" : "OK",
-            "note" : "You really should use POST :D"
+            "note" : "You really should use POST"
         }
         self.write_json()
 
     def post(self):
-        print "POST handler reporting for duty"
-        print os.getcwd()
-        print self.request.arguments
         self.response = {
             "status" : "OK",
         }
@@ -328,7 +325,6 @@ class CodeSubmitonHandler(JsonHandler):
             generator.generate_app_with_code(self.request.arguments[u"code"], True)
             self._apps.run("/tmp/generated_app.app")
         except Exception as e:
-            print "code generation failed: "+e.message
             self.response = {
                 "status" : "Error",
                 "description" : e.message

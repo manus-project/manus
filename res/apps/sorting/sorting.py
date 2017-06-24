@@ -5,6 +5,7 @@ import scipy.spatial.distance
 import cv2
 import sys
 from random import shuffle
+import traceback
 
 from math import *
 
@@ -55,6 +56,7 @@ def evaluate_block(workspace, blocks, active, groups):
     ]
 
     workspace.manipulator.trajectory(trajectory)
+    print "Done"
 
     return True
 
@@ -78,7 +80,8 @@ try:
         for i, block in enumerate(blocks):
             if evaluate_block(workspace, blocks, i, groups):
                 break
-
 except KeyboardInterrupt:
     pass
+except Exception:
+    print traceback.format_exc()
 

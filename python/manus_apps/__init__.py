@@ -35,6 +35,9 @@ class AppsManager(object):
 
     def _announce(self, msg):
         if msg.type == AppEventType.ACTIVE:
-            self._active = msg.app.identifier
+            if len(msg.app.id) == 0:
+                self._active = None
+            else:
+                self._active = msg.app
             for s in self._listeners:
-                s.on_app_active(msg.app.identifier)
+                s.on_app_active(msg.app)
