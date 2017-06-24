@@ -87,6 +87,7 @@ $(document).ready(function(){
         </category> \
         <category name="Robot Arm" colour="0"> \
             <block type="manus_move_joint"></block> \
+            <block type="manus_open_close_gripper"></block> \
             <block type="manus_move_arm"></block> \
             <block type="manus_position_vector"></block> \
             <block type="manus_position_vector_var"></block> \

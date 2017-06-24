@@ -105,3 +105,10 @@ Blockly.Python['manus_retrieve_component'] = function(block) {
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_NONE];
 };
+
+Blockly.Python['manus_open_close_gripper'] = function(block) {
+  var dropdown_open_close_option = block.getFieldValue('open_close_option');
+  // TODO: Assemble Python into code variable.
+  var code = 'manus_cotrol_gripper("'+dropdown_open_close_option+'")\n';
+  return code;
+};

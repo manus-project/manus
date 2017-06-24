@@ -35,6 +35,12 @@ def manus_move_joint(joint, angle):
     # Move joint
     workspace.manipulator.joint(joint, angle)
 
+def manus_cotrol_gripper(cmd):
+    print "manus_cotrol_gripper('%s')" % cmd
+    if (cmd == "open"):
+        workspace.manipulator.joint(6, 0)
+    elif (cmd == "close"):  
+        workspace.manipulator.joint(6, 0.8)
 
 def manus_wait(milisecs):
     print "manus_wait("+str(milisecs)+")"
@@ -72,12 +78,8 @@ def manus_block_with_color_detected(color):
     return True # Dont't forget to return something
 
 def manus_detect_blocks():
-
-    return [
-        Block([100, 100, 100], [0, 0, 0], 20, [0, 0, 0]),
-        Block([200, 0, 100], [0, 0, 0], 20, [0, 0, 0]),
-        Block([100, -100, 100], [0, 0, 0], 20, [0, 0, 0])
-    ] # dont't forget to return for manus_detect_and_store_blocks block
+    print "manus_detect_blocks()"
+    return workspace.detect_blocks() # dont't forget to return for manus_detect_and_store_blocks block
 
 def manus_retrieve_component_from_block(comp, block):
     if comp == "x":

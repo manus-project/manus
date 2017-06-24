@@ -30,7 +30,7 @@ Blockly.Blocks['manus_move_joint'] = {
   init: function() {
     this.appendDummyInput()
         .appendField("Move joint ")
-        .appendField(new Blockly.FieldDropdown([["1","0"], ["2","1"], ["3","2"], ["4","3"], ["6","5"], ["7 - Gripper","6"]]), "joint_id");
+        .appendField(new Blockly.FieldDropdown([["1","0"], ["2","1"], ["3","2"], ["4","3"], ["5","5"]]), "joint_id");
     this.appendDummyInput()
         .appendField(" to position ")
         .appendField(new Blockly.FieldAngle(90), "joint_angle");
@@ -167,10 +167,23 @@ Blockly.Blocks['manus_retrieve_component'] = {
         .appendField("Get")
         .appendField(new Blockly.FieldDropdown([["x","x"], ["y","y"], ["z","z"], ["color","color"]]), "component_dropdown")
         .appendField("from")
-        .appendField(new Blockly.FieldVariable("block"), "SELECTED_BLOCK_FOR_COMPONENT_ACCESS");
+        .appendField(new Blockly.FieldVariable(null), "SELECTED_BLOCK_FOR_COMPONENT_ACCESS");
     this.setOutput(true, null);
     this.setColour(0);
     this.setTooltip('Retrieves selected component from selected block.');
+    this.setHelpUrl('');
+  }
+};
+
+Blockly.Blocks['manus_open_close_gripper'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("Gripper")
+        .appendField(new Blockly.FieldDropdown([["open","open"], ["close","close"]]), "open_close_option");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(0);
+    this.setTooltip('Open or close gripper');
     this.setHelpUrl('');
   }
 };
