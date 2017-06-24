@@ -164,14 +164,16 @@ $(document).ready(function(){
     })
 
     workspace.addChangeListener(function(event){
-        if (event.type == Blockly.Events.CREATE)
-            onBlockCreate(event);
-        else if (event.type == Blockly.Events.DELETE)
-            onBlockDelete(event);
+        if (event.type == Blockly.Events.CREATE || 
+            event.type == Blockly.Events.DELETE || 
+            event.type == Blockly.Events.CHANGE || 
+            event.type == Blockly.Events.MOVE 
+        ){
+            saveCode();
+        }   
     });
 
 });
-
 function showCode() {
     // Generate Python code and display it.
     var code = Blockly.Python.workspaceToCode(workspace);
@@ -266,35 +268,6 @@ function callwebapi(url, reqdata_raw, ok_func, err_func) {
           }
         }
     });
-}
-
-
-
-var detector_count = 0;
-function onBlockCreate(event){
-    var block_type = event.xml.getAttribute("type");
-    if (block_type == "manus_any_block_detector" || block_type == "manus_colored_block_detector"){
-        if (detector_count == 0){
-            workspace.createVariable("detection_x");
-            workspace.createVariable("detection_y");
-            workspace.createVariable("detection_z");
-            workspace.createVariable("detection_color");
-        }
-        detector_count++;
-    }
-}
-
-function onBlockDelete(event){
-    var block_type = event.oldXml.getAttribute("type");
-    if (block_type == "manus_any_block_detector" || block_type == "manus_colored_block_detector"){
-        detector_count--;
-        if (detector_count == 0){
-            workspace.deleteVariable("detection_x");
-            workspace.deleteVariable("detection_y");
-            workspace.deleteVariable("detection_z");
-            workspace.createVariable("detection_color");
-        }
-    }
 }
 
 function error_in_xml_code(xml){
