@@ -11,6 +11,7 @@ import uuid
 import logging
 import logging.handlers
 import os.path
+import os
 from bsddb3 import db  
 
 import tornado.httpserver
@@ -25,6 +26,7 @@ import echolib
 import echocv
 import echocv.tornado
 
+from .code_generator import CodeGenerator
 from .utilities import synchronize, RedirectHandler, DevelopmentStaticFileHandler, JsonHandler, NumpyEncoder
 import manus_webshell.static
 
@@ -300,6 +302,41 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
     def on_app_active(self, app_id):
         self.distribute_message({"channel": "apps", "action" : "activated", "identifier" : app_id})
 
+class CodeSubmitonHandler(JsonHandler):
+
+    def __init__(self, application, request, apps):
+        super(CodeSubmitonHandler, self).__init__(application, request)
+        self._apps = apps
+
+    def get(self):
+        self.response = {
+            "status" : "OK",
+            "note" : "You really should use POST :D"
+        }
+        self.write_json()
+
+    def post(self):
+        print "POST handler reporting for duty"
+        print os.getcwd()
+        print self.request.arguments
+        self.response = {
+            "status" : "OK",
+        }
+        try:
+            current_dir = os.path.dirname(os.path.realpath(__file__))
+            generator = CodeGenerator(os.path.join(current_dir, "code_template.tpl"), "/tmp")
+            generator.generate_app_with_code(self.request.arguments[u"code"], True)
+            self._apps.run("/tmp/generated_app.app")
+        except Exception as e:
+            print "code generation failed: "+e.message
+            self.response = {
+                "status" : "Error",
+                "description" : e.message
+            }
+       
+        self.write_json()
+
+
 def main():
     logging_level = logging.DEBUG
 
@@ -350,6 +387,7 @@ def main():
 
         #handlers.append((r'/api/markers', MarkersStorageHandler))
         apps = AppsManager(client)
+        handlers.append((r'/api/code/submit', CodeSubmitonHandler, {"apps" : apps}))
         handlers.append((r'/api/apps', AppsHandler, {"apps" : apps}))
         handlers.append((r'/api/storage', StorageHandler, {"storage" : storage}))
         handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators, "apps": apps}))

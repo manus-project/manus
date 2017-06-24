@@ -103,7 +103,7 @@ class Manipulator(object):
         return self.wait_for(self.identifier)
 
     def joint(self, joint, goal):
-        self.handle.move_joint(self, joint, goal, identifier=self.identifier)
+        self.handle.move_joint(joint, goal, identifier=self.identifier)
         return self.wait_for(self.identifier)
 
     def wait_for(self, identifier):
