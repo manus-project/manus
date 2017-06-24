@@ -81,7 +81,6 @@ class Manipulator(object):
         pass
 
     def on_planner_state(self, manipulator, state):
-        print state.type
         if state.identifier == self.move_waiting:
             if state.type == PlanStateType.COMPLETED:
                 self.move_result = True
@@ -109,7 +108,6 @@ class Manipulator(object):
 
     def wait_for(self, identifier):
         self.move_waiting = identifier
-        print "wait for %s" % identifier
         while True:
             self.workspace.loop.wait(10)
             if self.move_waiting is None:
