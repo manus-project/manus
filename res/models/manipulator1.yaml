@@ -4,7 +4,7 @@ joints:
   - type: "rotation"
     dh:
       alpha: 90
-      d: 111
+      d: 100
       a: 0
     min: -180
     max: 180
@@ -51,3 +51,4 @@ joints:
   - type: "gripper"
     min: 0
     max: 1
+    grip: 70
