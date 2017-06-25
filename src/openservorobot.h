@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <queue>
 
 #include "manipulator.h"
 
@@ -18,7 +19,7 @@ typedef struct sv_info
   int AD_max;
   int AD_center;
   float factor;
-}servo_info;
+} servo_info;
 
 
 class OpenServoRobot : public Manipulator, public IOBase
@@ -57,6 +58,13 @@ private:
     float position;
   };
 
+  struct servo_data
+  {
+    int address;
+    std::deque<int> position_median;
+    std::deque<int> goal_median;
+  };
+
   // thread
   pthread_t thread1, thread_req;
   bool non_blocking;
@@ -68,12 +76,11 @@ private:
   bool end_thread;
   std::queue<buff_data> q_out;
 
+  std::vector<servo_data> runtime_data; 
+
   ManipulatorDescription _description;
   ManipulatorState _state;
-  std::vector<float> min_pos;
-  std::vector<float> max_pos;
   std::vector<servo_info> servos;
-  std::vector<int> joint_to_adr;
   int read_rate;
 
   OpenServo open_servo;

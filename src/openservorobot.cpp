@@ -167,7 +167,8 @@ int OpenServoRobot::loadDescription(const string& modelfile, const string& calib
     if (j >= servos.size())
       throw ManipulatorException("Not enough motors in calibration data.");
 
-    joint_to_adr.push_back(servos[j].servo_id);
+    runtime_data.resize(runtime_data.size()+1);
+    runtime_data[runtime_data.size()-1].address = servos[j].servo_id;
     servos[j].joint_id = i;
     _description.joints[i].dh_min = scale_servo_to_joint(servos[j], servos[j].AD_min);
     _description.joints[i].dh_max = scale_servo_to_joint(servos[j], servos[j].AD_max);
@@ -177,9 +178,6 @@ int OpenServoRobot::loadDescription(const string& modelfile, const string& calib
 
   if (j != servos.size())
     throw ManipulatorException("Unassigned motors remaining.");
-
-  min_pos.resize(_description.joints.size());
-  max_pos.resize(_description.joints.size());
 
   //JointDescription joint_description(JointType type, float dh_theta, float dh_alpha, float dh_d, float dh_a, float min, float max)
   // min in max se (lahko) pri rokah razlikujeta
@@ -263,14 +261,14 @@ void OpenServoRobot::sendMove(int joint, float speed, float position)
   int tmp_mot = joint_to_motor(joint);
   if (tmp_mot < 0)
     return;
-  sv tmp_sv = open_servo.getServo(joint_to_adr[tmp_mot]);
+  sv tmp_sv = open_servo.getServo(runtime_data[tmp_mot].address);
   if (&tmp_sv == NULL)
     return;
   float pos = ::round(scale_joint_to_servo(tmp_sv, servos[tmp_mot], position));
   // preveri, če je slučajno pos prevelik!!
 
   //cout << " send move joint " << joint << " motor: " << tmp_mot << " pos: " << (int)pos << endl;
-  open_servo.setSeekPossition(joint_to_adr[tmp_mot], (int)pos);
+  open_servo.setSeekPossition(runtime_data[tmp_mot].address, (int)pos);
 
 }
 
@@ -279,6 +277,7 @@ ManipulatorDescription OpenServoRobot::describe()
   return _description;
 }
 
+#define MEDIAN_WINDOW 10
 
 ManipulatorState OpenServoRobot::state()
 {
@@ -292,22 +291,32 @@ ManipulatorState OpenServoRobot::state()
     if ( tmp_mot < 0)
       continue;
     pthread_mutex_lock(&read_servo_mutex);
-    sv tmp_sv = open_servo.getServo(joint_to_adr[tmp_mot]); // če tega servota ni, vrne null
+    sv tmp_sv = open_servo.getServo(runtime_data[tmp_mot].address); // če tega servota ni, vrne null
     pthread_mutex_unlock(&read_servo_mutex);
     if (&tmp_sv != NULL)
     {
-      _state.joints[q].position = scale_servo_to_joint(servos[tmp_mot], (float)tmp_sv.position);
-      _state.joints[q].goal = scale_servo_to_joint(servos[tmp_mot], (float)tmp_sv.seek_position);
+
+      runtime_data[tmp_mot].position_median.push_back(tmp_sv.position);
+      runtime_data[tmp_mot].goal_median.push_back(tmp_sv.seek_position);
+
+      if (runtime_data[tmp_mot].position_median.size() > MEDIAN_WINDOW)
+        runtime_data[tmp_mot].position_median.pop_front();
+
+      if (runtime_data[tmp_mot].goal_median.size() > MEDIAN_WINDOW)
+        runtime_data[tmp_mot].goal_median.pop_front();
+
+      vector<int> sorted_position(runtime_data[tmp_mot].position_median.begin(), runtime_data[tmp_mot].position_median.end());
+      vector<int> sorted_goal(runtime_data[tmp_mot].goal_median.begin(), runtime_data[tmp_mot].goal_median.end());
+
+      std::nth_element(sorted_position.begin(), sorted_position.begin() + sorted_position.size()/2, sorted_position.end());
+      float position = sorted_position[sorted_position.size()/2];
+
+      std::nth_element(sorted_goal.begin(), sorted_goal.begin() + sorted_goal.size()/2, sorted_goal.end());
+      float goal = sorted_goal[sorted_goal.size()/2];
+
+      _state.joints[q].position = scale_servo_to_joint(servos[tmp_mot], position);
+      _state.joints[q].goal = scale_servo_to_joint(servos[tmp_mot], goal);
       _state.joints[q].speed = 1;
-      /*
-      if(izpis){
-        cout << "** joint: " << q << ", motor: " << tmp_mot << endl;
-        cout << "    position = " << _state.joints[q].position << ", ro: " << tmp_sv.position << endl;
-        cout << "    goal = " << _state.joints[q].goal << ", ro: " << tmp_sv.seek_position << endl;
-        cout << "    goal = " << scale_servo_to_joint(servos[tmp_mot], (float)tmp_sv.seek_position) << endl;
-        cout << "    speed = " << _state.joints[q].speed << ", ro: " << tmp_sv.velocity << endl;
-      }
-      */
     }
 
   }
