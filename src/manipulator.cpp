@@ -87,7 +87,7 @@ bool parse_joint (const YAML::Node& node, JointDescription& joint) {
         joint.type = GRIPPER;
         joint.dh_theta = 0;
         joint.dh_alpha = 0;
-        joint.dh_d = 0;
+        joint.dh_d = node["grip"].as<float>();
         joint.dh_a = 0;
         joint.dh_min = node["min"].as<float>();
         joint.dh_max = node["max"].as<float>();
@@ -179,7 +179,7 @@ double convertIncoming(double value, const JointInfo& info) {
 }*/
 
 bool close_enough(float a, float b) {
-    return std::fabs(a - b) < 0.15;
+    return std::fabs(a - b) < 0.05;
 }
 
 inline float normalizeAngle(float val, const float min, const float max) {
@@ -252,8 +252,8 @@ void ManipulatorManager::push(shared_ptr<Plan> t) {
             if (goal < description.joints[j].dh_min ||
                     t->segments[s].joints[j].goal > description.joints[j].dh_max) {
                 if (description.joints[j].type != FIXED) {
-                    cout << "Wrong joint " << j << " goal " << goal << " out of range " << description.joints[j].dh_min << " to " << description.joints[j].dh_max << endl;
-                    return;
+                    cout << "Warning: rong joint " << j << " goal " << goal << " out of range " << description.joints[j].dh_min << " to " << description.joints[j].dh_max << ". Truncating." << endl;
+                    goal = max(description.joints[j].dh_min, max(description.joints[j].dh_max, goal));
                 } else {
                     goal = description.joints[j].dh_min;
                 }
@@ -308,7 +308,6 @@ void ManipulatorManager::step(bool force) {
     for (size_t i = 0; i < manipulator->size(); i++) {
         idle &= state.joints[i].type == IDLE;
         goal &= close_enough(state.joints[i].position, state.joints[i].goal);
-        //cout << i << ": " << idle << " " << goal << " - " << state.joints[i].position << " "  << state.joints[i].goal << endl;
     }
 
     if (goal || force) {
