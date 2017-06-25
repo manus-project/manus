@@ -47,6 +47,7 @@ FIND_PACKAGE(orocos_kdl REQUIRED)
 ADD_EXECUTABLE(manus_planner src/planner.cpp src/voxelgrid.cpp)
 TARGET_INCLUDE_DIRECTORIES(manus_planner PUBLIC ${orocos_kdl_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(manus_planner ${echolib_LIBRARIES} ${orocos_kdl_LIBRARIES})
+add_dependencies(manus_planner manus_messages)
 
 ADD_SUBDIRECTORY(python)
 
