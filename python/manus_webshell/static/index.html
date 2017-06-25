@@ -4,21 +4,24 @@
     <title>Manus - your personal robotics laboratory</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
-    <link href="css/manus.css" rel="stylesheet" media="screen">   
-    <script src="js/jquery.js"></script>  
-    <script src="js/bootstrap.min.js"></script>  
-    <script src="js/glmatrix.min.js"></script> 
+    <link href="css/manus.css" rel="stylesheet" media="screen">
+    <script src="js/jquery.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/glmatrix.min.js"></script>
     <script src="js/phoria.min.js"></script>
-    <script src="js/list.min.js"></script>    
+    <script src="js/list.min.js"></script>
     <script src="js/pubsub.js"></script>
     <script src="js/debug.js"></script>
     <script src="js/widgets.js"></script>
     <script src="js/world.js"></script>
-    <script src="js/manus.js"></script>  
+    <script src="js/manus.js"></script>
 
     <!-- Blockly includes -->
-    <script src="blockly/blockly_compressed.js"></script>
-    <script src="blockly/generators/python.js"></script>
+    <script src="js/blockly_compressed.js"></script>
+    <script src="js/python_compressed.js"></script>
+    <script src="js/blocks_compressed.js"></script>
+	<script src="js/blockly-messages.js"></script>
+    <!--script src="blockly/generators/python.js"></script>
     <script src="blockly/generators/python/logic.js"></script>
     <script src="blockly/generators/python/loops.js"></script>
     <script src="blockly/generators/python/math.js"></script>
@@ -26,10 +29,11 @@
     <script src="blockly/generators/python/lists.js"></script>
     <script src="blockly/generators/python/colour.js"></script>
     <script src="blockly/generators/python/variables.js"></script>
-    <script src="blockly/generators/python/procedures.js"></script>
-    <script src="blockly/generators/python/manus.js"></script>
+    <script src="blockly/generators/python/procedures.js"></script-->
+    <script src="js/blockly-python-manus.js"></script>
+    <script src="js/blockly-blocks-manus.js"></script>
 
-    <script src="blockly/msg/messages.js"></script>
+    <!--script src="blockly/msg/messages.js"></script>
     <script src="blockly/blocks/logic.js"></script>
     <script src="blockly/blocks/loops.js"></script>
     <script src="blockly/blocks/math.js"></script>
@@ -38,7 +42,7 @@
     <script src="blockly/blocks/colour.js"></script>
     <script src="blockly/blocks/variables.js"></script>
     <script src="blockly/blocks/procedures.js"></script>
-    <script src="blockly/blocks/manus.js"></script>
+    <script src="blockly/blocks/manus.js"></script-->
 
     <!-- Blockly tab -->
     <script src="js/blockly_loader.js"></script>
@@ -66,12 +70,12 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <span class="navbar-brand">Manus</span>  
+        <span class="navbar-brand">Manus</span>
         <ul class="nav navbar-nav nav-collapse" id="menu">
           <li id="menu-control"><a href="#control" data-toggle="tab"> <i class="glyphicon glyphicon-dashboard"> </i> Control</a></li>
           <li id="menu-program"><a href="#program" data-toggle="tab"> <i class="glyphicon glyphicon-pencil"> </i> Program</a></li>
           <li id="menu-apps"><a href="#apps" data-toggle="tab"> <i class="glyphicon glyphicon-cog"> </i> Apps</a></li>
-          <li id="menu-settings"><a href="#settings" data-toggle="tab"> <i class="glyphicon glyphicon-wrench"> </i> Settings</a></li>        
+          <li id="menu-settings"><a href="#settings" data-toggle="tab"> <i class="glyphicon glyphicon-wrench"> </i> Settings</a></li>
           <li id="menu-about"><a href="#about" data-toggle="tab"> <i class="glyphicon glyphicon-info-sign"> </i> About</a></li>
         </ul>
       </div>
@@ -115,7 +119,7 @@
               <h1><span id="appname">Manus</span></h1>
               <p>Version: <span id="appversion">unknown</span></p>
               <p>Manipulator: <span id="manipulator">unknown</span></p>
-              <p>Manus is a modular manipulation robotics platform for educational purposes. The project consists of open-source software components as well as open hardware designs. The project was started to support a course on robotics and computer vision. 
+              <p>Manus is a modular manipulation robotics platform for educational purposes. The project consists of open-source software components as well as open hardware designs. The project was started to support a course on robotics and computer vision.
 
               <br />This webshell enables access to a robotic manipulator and a web camera. </p>
               <p><a class="btn btn-primary btn-lg" href="https://github.com/lukacu/manus" role="button">Github</a></p>
@@ -124,7 +128,7 @@
 
         </div>
         <div class="tab-content col-xs-12 col-sm-4 col-md-5 col-lg-6" id="view"><div id="viewer"></div></div>
-   </div> 
+   </div>
 
   </body>
 </html>
