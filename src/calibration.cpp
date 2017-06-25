@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <termios.h>
+
 #include <iostream>
 #include <fstream>
 #include <sys/select.h>
@@ -17,6 +21,7 @@ typedef struct motor_calibration {
 	int id;
 	int position;
 	int delta;
+    vector<int> measurements;
 } motor_calibration;
 
 bool compare (const motor_calibration& i, const motor_calibration& j) { return (i.id < j.id); }
@@ -27,17 +32,24 @@ int wait_key() {
     fd_set readSet;
     FD_ZERO(&readSet);
     FD_SET(STDIN_FILENO, &readSet);
-    struct timeval tv = {0, 10};
+    struct timeval tv = {0, 25};
     if (select(STDIN_FILENO+1, &readSet, NULL, NULL, &tv) < 0) perror("select");
 
     if (!FD_ISSET(STDIN_FILENO, &readSet)) return -1;
+    unsigned char c;
+    c = getchar();
 
-    char c;
-    cin >> c;
     return c;
 }
 
+void print_motor(const motor_calibration& motor) {
+	cout << "ID: " << motor.id << " Addr: " << motor.addr << " Pos: "
+		<< motor.position << " Min:" << motor.min << " Max:" << motor.max << endl;
+}
+
 int update_state(OpenServo& os, vector<motor_calibration>& motors) {
+
+	os.updateServoValuesAllServo();
 
 	for (int i = 0; i < motors.size(); i++) {
 
@@ -46,13 +58,26 @@ int update_state(OpenServo& os, vector<motor_calibration>& motors) {
 
 		sv status = os.getServo(motors[i].addr);
 
-		motors[i].min = std::min(motors[i].min, status.position);
-		motors[i].max = std::max(motors[i].max, status.position);
+		motors[i].measurements.push_back(status.position);
 
-		motors[i].delta += abs(motors[i].position - status.position);
+		if (motors[i].measurements.size() > 20) {
 
-		motors[i].position = status.position;
-		motors[i].center = status.position;
+			std::nth_element(motors[i].measurements.begin(), motors[i].measurements.begin() + motors[i].measurements.size()/2, motors[i].measurements.end());
+            int position = motors[i].measurements[motors[i].measurements.size()/2];
+
+			motors[i].min = std::min(motors[i].min, position);
+			motors[i].max = std::max(motors[i].max, position);
+
+			motors[i].delta += abs(motors[i].position - position);
+
+			motors[i].position = position;
+			motors[i].center = position;
+
+			print_motor(motors[i]);
+
+			motors[i].measurements.clear();
+
+		}
 	}
 
 }
@@ -60,7 +85,8 @@ int update_state(OpenServo& os, vector<motor_calibration>& motors) {
 int main(int argc, char** argv) {
 
 	OpenServo os;
-	if (!os.openPort(argv[1])) {
+	struct termios old_tio, new_tio;
+	if (argc < 2 || !os.openPort(argv[1])) {
 		cout << "Unable to connect to i2c bus" << endl;
 		return -1;
 	}
@@ -83,6 +109,15 @@ int main(int argc, char** argv) {
 		motors[i].id = -1;
 	}
 
+    /* get the terminal settings for stdin */
+    tcgetattr(STDIN_FILENO,&old_tio);
+    /* we want to keep the old setting to restore them a the end */
+    new_tio = old_tio;
+    /* disable canonical mode (buffered i/o) and local echo */
+    new_tio.c_lflag &=(~ICANON & ~ECHO);
+    /* set the new settings immediately */
+    tcsetattr(STDIN_FILENO,TCSANOW,&new_tio);
+
 	int m = 0;
 	while (m < n) {
 		cout << "Please move motor " << m << " to both extreme positions and then to center position and press any key." << endl;
@@ -95,11 +130,14 @@ int main(int argc, char** argv) {
 		int max_delta = 0;
 
 		for (int i = 0; i < n; i++) {
+			int delta = motors[i].delta;
+			motors[i].delta = 0;
+
 			if (motors[i].id > -1)
 				continue;
 
-			if (motors[i].delta > max_delta) {
-				max_delta = motors[i].delta;
+			if (delta > max_delta) {
+				max_delta = delta;
 				candidate = i;
 			}
 		}
@@ -108,7 +146,10 @@ int main(int argc, char** argv) {
 		m++;
 	}
 
-	std::sort(motors.begin(), motors.end(), compare); 
+    /* restore the former settings */
+    tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);
+
+	std::sort(motors.begin(), motors.end(), compare);
 
 	YAML::Node sequence;  // starts out as null
 
