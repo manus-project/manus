@@ -25,3 +25,24 @@ setup(name='Manus Webshell',
     requires=['manus' 'tornado', 'echolib', 'echocv']
 )
 
+setup(name='Manus Apps',
+	version='${PACKAGE_VERSION}',
+	description='Manus App launcher',
+	author='Luka Cehovin',
+	author_email='luka.cehovin@gmail.com',
+	url='https://github.com/vicoslab/manus/',
+	packages=['manus_apps'],
+    requires=['manus', 'echolib', 'echocv']
+)
+
+setup(name='Manus Starter',
+	version='${PACKAGE_VERSION}',
+	description='Manus environment starter',
+	author='Luka Cehovin',
+	author_email='luka.cehovin@gmail.com',
+	url='https://github.com/vicoslab/manus/',
+	packages=['manus_starter'],
+    requires=['manus']
+)
+
+
