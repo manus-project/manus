@@ -22,7 +22,7 @@
         "directory" : "${MANUS_ROOT}/share/manus/",
         "depends" : ["echo"],
         "wait" : 0.1,
-		"environment" : {"LIMIT_FPS" : "7"},
+		"environment" : {"LIMIT_FPS" : "5"},
         "remap" : {
             "camera" : "camera0.image",
             "intrinsics" : "camera0.parameters"
