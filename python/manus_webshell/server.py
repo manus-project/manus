@@ -310,7 +310,8 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
     def on_app_active(self, app):
         if app is None:
             self.distribute_message({"channel": "apps", "action" : "deactivated" })
-        self.distribute_message({"channel": "apps", "action" : "activated", "identifier" : app.id})
+        else:
+            self.distribute_message({"channel": "apps", "action" : "activated", "identifier" : app.id})
 
 class CodeSubmitonHandler(JsonHandler):
 

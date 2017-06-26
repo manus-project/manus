@@ -2,7 +2,7 @@
 "description" : "Manus Simulator stack",
 "log" : "/var/log/manus/",
 "user" : "manus",
-"group" : "manus",
+"group" : ["manus", "video", "i2c"],
 "environment" : {
 	"MANUS_ROOT" : "/usr",
 	"ECHOLIB_SOCKET" : "/tmp/echo.sock"

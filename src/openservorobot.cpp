@@ -176,6 +176,8 @@ int OpenServoRobot::loadDescription(const string& modelfile, const string& calib
     j++;
   }
 
+  cout << "Joints: " << _description.joints.size() << " Motors: " << runtime_data.size() << endl;
+
   if (j != servos.size())
     throw ManipulatorException("Unassigned motors remaining.");
 
@@ -277,7 +279,7 @@ ManipulatorDescription OpenServoRobot::describe()
   return _description;
 }
 
-#define MEDIAN_WINDOW 10
+#define MEDIAN_WINDOW 20
 
 ManipulatorState OpenServoRobot::state()
 {
@@ -479,13 +481,17 @@ int main(int argc, char** argv) {
     return -1;
   }
 
+  cout << "Starting OpenServo manipulator" << endl;
+
   shared_ptr<OpenServoRobot> manipulator = shared_ptr<OpenServoRobot>(new OpenServoRobot("/dev/i2c-1", string(argv[1]), string(argv[2])));
 
   SharedClient client = echolib::connect();
-  //echolib::default_loop()->add_handler(manipulator);
   ManipulatorManager manager(client, manipulator);
 
+  cout << "Init OK" << endl;
+
   while (echolib::wait(50)) {
+  
     manager.update();
   }
 

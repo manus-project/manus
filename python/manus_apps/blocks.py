@@ -27,7 +27,7 @@ try:
         return dumper.represent_mapping(u"tag:yaml.org,2002:opencv-matrix", mapping)
     yaml.add_representer(np.ndarray, opencv_matrix_representer)
     has_yaml = True
-finally:
+except ImportError:
     pass
 
 def block_color_name(block):
