@@ -132,6 +132,14 @@
     color: red;
 }
 
+.list-tools .tool {
+    display: inline-block;
+    padding: 5px;
+    margin: 3px;
+    border: 1px solid #464545;
+    border-radius: 4px;
+}
+
 .list-group-item.pose-item {
     cursor: pointer;
 }
@@ -152,4 +160,21 @@
 
 .list-group-item.apps-item.expanded .description {
     display: block;
+}
+
+.toolbar {
+    margin-bottom: 20px;
+}
+
+.toolbar.right {
+    float: right;
+    text-align: right;
+}
+
+#blockly-workspace .blocklyToolboxDiv {
+    background-color: #222;
+}
+
+#blockly-workspace .blocklyTreeRow:hover:not(.blocklyTreeSelected) {
+    background-color: #444;
 }

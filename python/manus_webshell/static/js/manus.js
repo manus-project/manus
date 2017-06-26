@@ -180,18 +180,18 @@ function appsList() {
 
         var tools = $('<div />').addClass('list-tools').prependTo(container);
 
-        tools.append($('<i />').addClass('glyphicon glyphicon-play').click(function() {
+        tools.append($('<i />').addClass('tool glyphicon glyphicon-play').click(function() {
             if ($(this).hasClass('glyphicon-play')) {
 
                 $.ajax('/api/apps?run=' + item.values().identifier).done(function(data) {});
 
             } else {
 
-                $.ajax('/api/apps?stop=' + item.values().identifier).done(function(data) {});
+                $.ajax('/api/apps?run=').done(function(data) {});
 
             }
             return false;
-        }));
+        }).tooltip({title: "Run/Stop", delay: 1}));
 
     }
 
@@ -201,12 +201,6 @@ function appsList() {
         valueNames : ["name", "version", "description"],
         item: "<a class='list-group-item'><div class='name'></div><div class='version'></div><pre class='description'></pre></a>"
     }, []);
-
-    $.ajax('/api/apps').done(function(data) {
-        items = [];
-        for (var key in data) { items.push(data[key]); }
-        list.add(items);
-    });
 
     var index = 0;
 
@@ -218,13 +212,22 @@ function appsList() {
 
     });
 
-    PubSub.subscribe("apps.activated", function(msg, identifier) {
-
-        $(list.listContainer).children(".glyphicon-stop").removeClass("glyphicon-stop").addClass("glyphicon-play");
-
-        $(list.listContainer).children("#app-" + identifier).removeClass("glyphicon-play").addClass("glyphicon-stop");
-
+    $.ajax('/api/apps').done(function(data) {
+        items = [];
+        for (var key in data.list) { items.push(data.list[key]); }
+        list.add(items);
+        changeActive(data.active);
     });
+
+    var changeActive = function(identifier) {
+
+        $(list.listContainer).find("i.glyphicon-stop").removeClass("glyphicon-stop").addClass("glyphicon-play");
+        if (identifier)
+            $("#app-" + identifier + " i.tool").removeClass("glyphicon-play").addClass("glyphicon-stop");
+
+    }
+
+    PubSub.subscribe("apps.active", function(msg, identifier) {changeActive(identifier)});
 
 }
 
@@ -304,22 +307,6 @@ $(function() {
 
     }).fail(function () {});
 
-    $.manus.widgets.buttons({
-        free: {
-            text: "World",
-            callback: function(e) {
-                viewer.view(null);
-            }
-        },
-        camera: {
-            text: "Camera",
-            callback: function(e) {
-                if (cameraView) viewer.view(cameraView);
-            }
-        }
-    }).addClass('tools').appendTo($('#viewer'));
-
-
     /* Manipulator stuff */
 
     $.ajax('/api/manipulator/describe').done(function(data) {
@@ -346,7 +333,25 @@ $(function() {
             PubSub.publish("manipulator.update", data);
         });
 
-    }).fail(function () { });
+        $.manus.widgets.buttons({
+            free: {
+                text: "World",
+                callback: function(e) {
+                    viewer.view(null);
+                }
+            },
+            camera: {
+                text: "Camera",
+                callback: function(e) {
+                    if (cameraView) viewer.view(cameraView);
+                }
+            }
+        }).addClass('toolbar').prependTo($('#viewer'));
+
+
+    }).fail(function () {
+
+    });
 
     posesList();
 
@@ -359,6 +364,20 @@ $(function() {
     new_uri += "//" + loc.host;
     var socket = new WebSocket(new_uri + "/api/websocket");
 
+    function waitForConnection() {
+
+        $.ajax('/api/info').done(function(data) {
+
+            location.reload();    
+
+        }).fail(function () {
+
+            setTimeout(waitForConnection, 1000);
+
+        });
+
+    }
+
     socket.onopen = function(event) {
         console.log("open");
         hideOverlay();
@@ -366,10 +385,12 @@ $(function() {
 
     socket.onerror = function(event) {
         showOverlay("Connection lost", "Unable to communicate with the system.");
+        waitForConnection();
     }
 
     socket.onclose = function(event) {
         showOverlay("Connection lost", "Unable to communicate with the system.");
+        waitForConnection();
     }
 
     socket.onmessage = function (event) {
@@ -390,7 +411,11 @@ $(function() {
         } else if (msg.channel == "apps") {
 
             if (msg.action == "activated") {
-                PubSub.publish("apps.activated", msg.identifier);
+                PubSub.publish("apps.active", msg.identifier);
+            } 
+
+            if (msg.action == "deactivated") {
+                PubSub.publish("apps.active", undefined);
             } 
 
         }

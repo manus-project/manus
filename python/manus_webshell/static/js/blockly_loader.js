@@ -1,22 +1,23 @@
 var workspace;
 
-$(document).ready(function(){
-    var $blockly_container = $( "#blockly-container" );
-    if ($blockly_container.length == 0) {
+$(function(){
+    var blockly_container = $( "#blockly-container" );
+    if (blockly_container.length == 0) {
         console.error("Missing blockly container!");
         return;
     } 
 
-    $blockly_container.append('\
-      <p> \
+    blockly_container.append('\
+      <div class="toolbar right"> \
         <button class="btn btn-primary" onclick="showCode()">Show Python</button> \
-        <button class="btn btn-primary" onclick="runCode()">Run Python</button> \
         <button class="btn btn-primary" onclick="saveCode()">Save</button> \
         <button class="btn btn-primary" onclick="loadCode()">Load</button> \
-      </p> \
+      </div> \
+      <div class="toolbar left"> \
+      </div> \
       <div id="blockly-area" style="width:100%; height:600px;"></div> \
       <div id="blockly-workspace" style="position: absolute"></div> \
-      <xml id="toolbox" style="display: none"> \
+      <xml id="blockly-toolbox" style="display: none"> \
         <category name="Logic" colour="210"> \
           <block type="controls_if"></block> \
           <block type="controls_ifelse"></block> \
@@ -85,7 +86,7 @@ $(document).ready(function(){
           <block type="colour_rgb"></block> \
           <block type="colour_blend"></block> \
         </category> \
-        <category name="Robot Arm" colour="0"> \
+        <category name="Robot" colour="0"> \
             <block type="manus_move_joint"></block> \
             <block type="manus_open_close_gripper"></block> \
             <block type="manus_move_arm"></block> \
@@ -141,7 +142,7 @@ $(document).ready(function(){
             snap: true
         },
         media: 'blockly/media/',
-        toolbox: document.getElementById('toolbox'),
+        toolbox: document.getElementById('blockly-toolbox'),
         zoom: {controls: true, wheel: true}
     });
 
@@ -174,47 +175,74 @@ $(document).ready(function(){
         }   
     });
 
+    var blockly_app = null;
+
+    var run_blockly_app = function() {
+              // Generate code
+        var code = Blockly.Python.workspaceToCode(workspace);
+        // Also generate xml
+        var xml = Blockly.Xml.workspaceToDom(workspace);
+        var xml_text = Blockly.Xml.domToText(xml);
+        // Validate xml code
+        err = error_in_xml_code(xml);
+        if (err){
+            alert(err);
+            return;
+        }
+        callwebapi("/api/code/submit", 
+            {
+                "code": code,
+                "xml_code": xml_text,
+            },
+            function(data) {
+                if (!('status' in data)){
+                    console.error("status field missing from respons data");
+                }
+                if (data.status != "OK"){
+                    alert("Code execution failed. " + data.status + ": " + data.description);
+                } else {
+                  blockly_app = data.identifier;
+                }
+            },
+            function(){
+                alert("code submition FAILED!");
+            }
+        );
+    }
+
+    var run_button = $.manus.widgets.fancybutton({
+      callback : function() {  
+          run_blockly_app();
+
+      }, icon: "play", tooltip: "Run"
+    });
+
+    var stop_button = $.manus.widgets.fancybutton({
+      callback : function() {  
+          $.ajax('/api/apps?run=').done(function(data) {});
+      }, icon: "stop", tooltip: "Stop"
+    }).hide();
+
+    $("#blockly-container .toolbar.left").append(run_button).append(stop_button);
+
+    PubSub.subscribe("apps.active", function(msg, identifier) {
+      if (identifier == blockly_app) {
+        run_button.hide(); stop_button.show();
+      } else if (!identifier) {
+        stop_button.hide(); run_button.show();
+      }
+    });
+
+
 });
+
+
 function showCode() {
     // Generate Python code and display it.
     var code = Blockly.Python.workspaceToCode(workspace);
     alert(code);
 }
 
-function runCode() {
-    // Generate code
-    var code = Blockly.Python.workspaceToCode(workspace);
-    // Also generate xml
-    var xml = Blockly.Xml.workspaceToDom(workspace);
-    var xml_text = Blockly.Xml.domToText(xml);
-    // Validate xml code
-    err = error_in_xml_code(xml);
-    if (err){
-        alert(err);
-        return;
-    }
-    callwebapi("/api/code/submit", 
-        {
-            "code": code,
-            "xml_code": xml_text,
-        },
-        function(data) {
-            console.log("code submition successful!");
-            if (!('status' in data)){
-                console.error("status field missing from respons data");
-            }
-            if (data.status != "OK"){
-                if (!('description' in data)){
-                    console.error("description field missing from non-OK response data");
-                }
-                alert("Code execution failed. "+data.status+": "+data.description);
-            }
-        },
-        function(){
-            alert("code submition FAILED!");
-        }
-    );
-}
 
 function saveCode(){
      // Generate xml

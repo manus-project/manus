@@ -33,7 +33,7 @@ import manus_webshell.static
 
 from manus.manipulator import JointType
 import manus
-from manus_apps import AppsManager
+from manus_apps import AppsManager, app_identifier
 
 __author__ = 'lukacu'
 
@@ -206,27 +206,33 @@ class AppsHandler(JsonHandler):
         self._apps = apps
 
     def get(self):
-        run = self.request.arguments.get("run", "")
-        if len(run) > 0:
+        run = self.request.arguments.get("run", None)
+        if not run is None:
             self._apps.run(run[0])
             self.response = {"result" : "ok"}
             self.write_json()
-        self.response = self._apps.list()
+        active = self._apps.active()
+        self.response = {"list" : self._apps.list()}
+        if not active is None:
+            self.response["active"] = active.id
         self.write_json()
 
     def check_etag_header(self):
         return False
 
 class StorageHandler(tornado.web.RequestHandler):
+    keys = []
+
     def __init__(self, application, request, storage):
         super(StorageHandler, self).__init__(application, request)
         self._storage = storage
+        StorageHandler.keys = set(storage.keys())
 
     def get(self):
-        key = self.request.arguments.get("key", "")[0].strip()
+        key = self.request.arguments.get("key", [""])[0].strip()
         if not key:
-            self.set_status(401)
-            self.finish('Illegal request')
+            self.set_header('Content-Type', 'application/json')
+            self.finish(json.dumps(list(StorageHandler.keys)))
             return
         raw = self._storage.get(key, "")
         try:
@@ -238,7 +244,7 @@ class StorageHandler(tornado.web.RequestHandler):
         self.finish(data)
 
     def post(self):
-        key = self.request.arguments.get("key", "")[0].strip()
+        key = self.request.arguments.get("key", [""])[0].strip()
         if not key:
             self.set_status(401)
             self.finish('Illegal request')
@@ -249,6 +255,7 @@ class StorageHandler(tornado.web.RequestHandler):
             ctype = self.request.headers.get('Content-Type')
         data = "%s;%s" % (ctype, self.request.body)
         self._storage.put(key, data)
+        StorageHandler.keys.add(key)
         self.finish()
         ApiWebSocket.distribute_message({"channel": "storage", "action" : "update", "key" : key, "content" : "ctype"})
 
@@ -301,6 +308,8 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
         pass
 
     def on_app_active(self, app):
+        if app is None:
+            self.distribute_message({"channel": "apps", "action" : "deactivated" })
         self.distribute_message({"channel": "apps", "action" : "activated", "identifier" : app.id})
 
 class CodeSubmitonHandler(JsonHandler):
@@ -325,6 +334,7 @@ class CodeSubmitonHandler(JsonHandler):
             generator = CodeGenerator(os.path.join(current_dir, "code_template.tpl"), "/tmp")
             generator.generate_app_with_code(self.request.arguments[u"code"], True)
             self._apps.run("/tmp/generated_app.app")
+            self.response["identifier"] = app_identifier("/tmp/generated_app.app")
         except Exception as e:
             self.response = {
                 "status" : "Error",

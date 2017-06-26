@@ -427,7 +427,7 @@ $.manus.world = {
                 case "gripper": {
 
                     var segmentMesh = Phoria.Util.generateCuboid({"scalex" : 10,
-                             "scaley" : 10, "scalez" : 10, "offsetx" : 0,
+                             "scaley" : 30, "scalez" : d, "offsetx" : 0,
                              "offsety" : 0, "offsetz": 10});
 
                     var segment = Phoria.Entity.create({

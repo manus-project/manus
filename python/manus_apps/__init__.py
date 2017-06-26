@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 import sys
-
+import os
+import hashlib
 import echolib
 from manus.apps import AppCommandType, AppEventType, AppListingSubscriber, AppEventSubscriber, AppCommandPublisher, AppCommand
+
+def app_identifier(appfile):
+    absfile = os.path.abspath(appfile)
+    digest = hashlib.md5()
+    digest.update(absfile)
+    return digest.hexdigest()
 
 class AppsManager(object):
 
@@ -12,7 +19,7 @@ class AppsManager(object):
         self._control = AppCommandPublisher(client, "apps.control")
         self._apps = {}
         self._listeners = []
-        self._active = ""
+        self._active = None
 
     def listen(self, listener):
         self._listeners.append(listener)
@@ -23,12 +30,14 @@ class AppsManager(object):
     def list(self):
         return self._apps
 
+    def active(self):
+        return self._active
+
     def run(self, id):
-        if len(id) > 0:
-            msg = AppCommand()
-            msg.type = AppCommandType.EXECUTE
-            msg.arguments.append(id)
-            self._control.send(msg)
+        msg = AppCommand()
+        msg.type = AppCommandType.EXECUTE
+        msg.arguments.append(id)
+        self._control.send(msg)
 
     def _list(self, msg):
         self._apps = {v.id: {'identifier': v.id, 'name': v.name, 'version': v.version, 'description' : v.description} for v in msg.apps if v.listed}
@@ -40,4 +49,4 @@ class AppsManager(object):
             else:
                 self._active = msg.app
             for s in self._listeners:
-                s.on_app_active(msg.app)
+                s.on_app_active(self._active)

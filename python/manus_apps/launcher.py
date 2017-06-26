@@ -1,14 +1,15 @@
 import sys
 import os
 import json
-import hashlib
 import shlex
 import signal
 import traceback
 
 import echolib
 
-from manus.apps import AppCommandType, AppEventType, AppListingPublisher, AppEventPublisher, AppCommandSubscriber, AppEvent, AppData, AppListing
+from manus.apps import AppCommandType, AppEventType, AppListingPublisher, AppEventPublisher, AppCommandSubscriber, AppEvent, AppData, AppListing, AppLogPublisher, AppLog
+
+from manus_apps import app_identifier
 
 __author__ = 'lukacu'
 
@@ -21,17 +22,14 @@ def terminate_process(proc_pid):
 class Application(object):
 
     def __init__(self, appfile, listed=True):
-        absfile = os.path.abspath(appfile)
         try:
-            with open(appfile) as f:
+            with open(os.path.abspath(appfile)) as f:
                 content = f.readlines()
-            digest = hashlib.md5()
-            digest.update(appfile)
-            self.identifier = digest.hexdigest()
+            self.identifier = app_identifier(appfile)
             self.name = content[0].strip()
             self.version = int(content[1].strip())
             self.script = content[2].strip()
-            self.path = os.path.dirname(absfile)
+            self.path = os.path.dirname(os.path.abspath(appfile))
             if len(content) > 3:
                 self.description = "".join(content[3:])
             else:
@@ -58,6 +56,7 @@ class Application(object):
         environment["APPLICATION_ID"] = self.identifier
         environment["APPLICATION_NAME"] = self.name
         environment["APPLICATION_PATH"] = self.path
+        #stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         command = os.path.expandvars(command)
         self.process = subprocess.Popen(shlex.split(command), stdin=subprocess.PIPE,
              stdout=sys.stdout, stderr=subprocess.STDOUT, env=environment,
@@ -122,11 +121,11 @@ def application_launcher(autorun=None):
     global active_application
     active_application = None
 
-    def start_application(identifier):
+    def start_application(identifier = None):
         global active_application
         starting_application = None
 
-        if identifier and not applications.has_key(identifier):
+        if not identifier is None and not applications.has_key(identifier):
             if identifier.endswith(".app") and os.path.isfile(identifier):
                 try:
                     starting_application = Application(identifier, listed=False)
@@ -136,7 +135,7 @@ def application_launcher(autorun=None):
             else:
                 print "Application does not exist"
                 return
-        else:
+        elif not identifier is None:
             starting_application = applications[identifier]
 
         if active_application:
@@ -144,7 +143,7 @@ def application_launcher(autorun=None):
             active_application = None
             terminate.stop()
 
-        if not identifier:
+        if starting_application is None:
             event = AppEvent()
             event.type = AppEventType.ACTIVE
             event.app = AppData()
@@ -162,7 +161,8 @@ def application_launcher(autorun=None):
     def control_callback(command):
         try:
             if command.type == AppCommandType.EXECUTE:
-                start_application(command.arguments[0])
+                appid = command.arguments[0] if len(command.arguments) > 0 and len(command.arguments[0]) > 0 else None
+                start_application(appid)
         except Exception, e:
             print traceback.format_exc()
 
@@ -181,6 +181,7 @@ def application_launcher(autorun=None):
     control = AppCommandSubscriber(client, "apps.control", control_callback)
     announce = AppEventPublisher(client, "apps.announce")
     listing = AppListingPublisher(client, "apps.list")
+    logging = AppLogPublisher(client, "apps.log")
 
     if autorun:
         start_application(find_by_name(applications, autorun))
@@ -193,6 +194,7 @@ def application_launcher(autorun=None):
                 message.apps.append(app.message_data())
             listing.send(message)
         if not active_application is None:
+
             if not active_application.alive():
                 event = AppEvent()
                 event.type = AppEventType.ACTIVE

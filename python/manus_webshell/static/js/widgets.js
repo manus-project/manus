@@ -36,13 +36,26 @@ $.manus.widgets = {
         return container;
     },
 
+    fancybutton: function(options) {
+
+        if (options["icon"]) {
+            var button = $('<a/>').addClass('btn btn-primary').attr({'role': 'button', 'autocomplete': 'off'});
+            if (options["text"]) button.text(options['text']);
+            button.prepend($('<i/>').addClass('glyphicon glyphicon-' + options["icon"]));
+            button.click(options['callback']);
+            if (options["tooltip"]) button.tooltip({text: (options['text']), delay: 1});
+            return button;
+        }
+
+        var button = $('<a/>').addClass('btn btn-primary').attr({'role': 'button', 'name': key, 'autocomplete': 'off'}).text(options['text']);
+        button.click(options['callback']);
+
+        return button;
+    },
+
     jointWidget: function(parent, manipulator, id, name, parameters) {
 
         var value = 0;
- 
-        if (parameters.type.toLowerCase() == "fixed") {
-
-        }
 
         var status;
         var information = $('<div class="information">').append($('<span class="title">').text(name)).append($('<span class="type">').text("Type: " + parameters.type));

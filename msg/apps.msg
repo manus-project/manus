@@ -26,3 +26,8 @@ message AppCommand {
 	AppCommandType type;
 	string[] arguments;
 }
+
+message AppLog {
+	string id;
+	string log;
+}
