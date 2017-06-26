@@ -12,6 +12,7 @@ import logging
 import logging.handlers
 import os.path
 import os
+import signal
 from bsddb3 import db  
 
 import tornado.httpserver
@@ -332,8 +333,12 @@ class CodeSubmitonHandler(JsonHandler):
        
         self.write_json()
 
+def on_shutdown():
+    tornado.ioloop.IOLoop.instance().stop()
+    print "Stopping gracefully"
 
 def main():
+
     logging_level = logging.DEBUG
 
     logger = logging.getLogger("manus")
@@ -398,12 +403,22 @@ def main():
 
         tornado_loop = tornado.ioloop.IOLoop.instance()
 
+        signal.signal(signal.SIGINT, lambda sig, frame: tornado_loop.add_callback_from_signal(on_shutdown))
+        signal.signal(signal.SIGTERM, lambda sig, frame: tornado_loop.add_callback_from_signal(on_shutdown))
+
         def on_disconnect(client):
             tornado_loop.stop()
 
         echocv.tornado.install_client(tornado_loop, client, on_disconnect)
 
         logger.info("Starting %s webshell" % manus.NAME)
+
+        def flush_database():
+            # Flush every 5 seconds
+            storage.sync()
+            tornado_loop.add_timeout(time.time() + 5, flush_database)
+
+        flush_database()
 
         try:
             tornado_loop.start()
