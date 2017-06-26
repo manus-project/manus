@@ -170,6 +170,7 @@ def application_launcher(autorun=None):
         print "Stopping application"
         if active_application:
             active_application.stop()
+        sys.exit(0)
 
     signal.signal(signal.SIGTERM, shutdown_handler)
 
