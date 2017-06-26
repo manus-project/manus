@@ -329,8 +329,12 @@ $(function() {
 
         $('#manipulator').text(data.name + " (version: " + data.version.toFixed(2) + ")");
 
+        var id = 1;
         for (var v in data["joints"]) {
-            joints[v] = $.manus.widgets.jointWidget(container, "manipulator", v, data["joints"][v]);
+            if (data["joints"][v].type.toLowerCase() == "fixed")
+                continue;
+            joints[v] = $.manus.widgets.jointWidget(container, "manipulator", v, "Joint " + id, data["joints"][v]);
+            id = id + 1;
         }
 
         $.manus.world.manipulator(viewer, "manipulator", data["joints"]);

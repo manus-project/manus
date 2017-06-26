@@ -36,13 +36,16 @@ $.manus.widgets = {
         return container;
     },
 
-    jointWidget: function(parent, manipulator, id, parameters) {
+    jointWidget: function(parent, manipulator, id, name, parameters) {
 
         var value = 0;
-        var name = parseInt(id) + 1;
+ 
+        if (parameters.type.toLowerCase() == "fixed") {
+
+        }
 
         var status;
-        var information = $('<div class="information">').append($('<span class="title">').text("Joint " + (name))).append($('<span class="type">').text("Type: " + parameters.type));
+        var information = $('<div class="information">').append($('<span class="title">').text(name)).append($('<span class="type">').text("Type: " + parameters.type));
 
         var container = $('<div class="joint">').append(information);
 
