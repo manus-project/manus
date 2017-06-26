@@ -278,6 +278,7 @@ void ManipulatorManager::push(shared_ptr<Plan> t) {
 void ManipulatorManager::update() {
 
     if (manipulator->state().state != UNKNOWN && !description_publisher) {
+        cout << "Manipulator ready" << endl;
         ManipulatorDescription description = manipulator->describe();
         description_publisher = make_shared<StaticPublisher<ManipulatorDescription> >(client, "description", description);
     }
@@ -312,7 +313,7 @@ void ManipulatorManager::step(bool force) {
 
     if (goal || force) {
 
-        if (plan->segments.size() < 1) {
+        if (plan->segments.size() == 0) {
             PlanState state;
             state.identifier = plan->identifier;
             state.type = COMPLETED;
