@@ -174,6 +174,9 @@ int main(int argc, char** argv) {
 	cout << "Writing data to motors" << endl;
 	for (int i = 0; i < motors.size(); i++) {
 
+		motors[i].max = min(motors[i].max, 4096 - 16);
+		motors[i].min = max(motors[i].min, 16);
+
 		cout << "Writing data to motor " << i << endl;
 		os.writeEnable(motors[i].addr);
 		os.setMaxSeek(motors[i].addr, motors[i].max);
@@ -192,28 +195,23 @@ int main(int argc, char** argv) {
 		cout << "Motor " << motors[i].addr << " min: " << s.minseek << " max: " << s.maxseek << endl;
 
 	}
+    /* restore the former settings */
+    tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);
 
-	if (argc < 3) {
+	std::sort(motors.begin(), motors.end(), compare);
 
-	    /* restore the former settings */
-	    tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);
+	YAML::Node sequence;  // starts out as null
 
-		std::sort(motors.begin(), motors.end(), compare);
-
-		YAML::Node sequence;  // starts out as null
-
-		for (int i = 0; i < n; i++) {
-			YAML::Node motor;
-			motor["id"] = motors[i].addr;
-			motor["min"] = motors[i].min;
-			motor["max"] = motors[i].max;
-			motor["center"] = motors[i].center;
-			motor["factor"] = hardcoded_factors[i];
-			sequence.push_back(motor);
-		}
-
-		std::ofstream fout("calibration.yaml");
-		fout << sequence;
-
+	for (int i = 0; i < n; i++) {
+		YAML::Node motor;
+		motor["id"] = motors[i].addr;
+		motor["min"] = motors[i].min;
+		motor["max"] = motors[i].max;
+		motor["center"] = motors[i].center;
+		motor["factor"] = hardcoded_factors[i];
+		sequence.push_back(motor);
 	}
+
+	cout << sequence << endl;
+
 }
