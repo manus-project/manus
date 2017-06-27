@@ -122,8 +122,6 @@ class Context(object):
                     self.announce.send(event)
                     self.active_application = None
 
-
-
 class Application(echolib.IOBase):
 
     def __init__(self, context, appfile, listed=True):
@@ -189,7 +187,6 @@ class Application(echolib.IOBase):
         if not self.process:
             return
         self.process.kill()
-        self.context.loop.remove_handler(self)
         self.process = None
 
     def message_data(self):
@@ -228,6 +225,7 @@ class Application(echolib.IOBase):
             return -1
 
     def disconnect(self):
+        print "Disconnect"
         self.kill()
         #self.context.loop.remove_handler(self)
 
