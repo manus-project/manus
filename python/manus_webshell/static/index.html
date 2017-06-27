@@ -49,7 +49,7 @@
   </head>
   <body>
 
-    <div id="overlay" class="modal fade" tabindex="-1" role="dialog">
+    <div id="block-overlay" class="modal fade" tabindex="-1" role="dialog">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
@@ -61,6 +61,20 @@
         </div>
       </div>
     </div>
+
+    <div id="dialog-overlay" class="modal fade" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title">Modal title</h4>
+          </div>
+          <div class="modal-body">
+            Test
+          </div>
+        </div>
+      </div>
+    </div>
+
 
     <!-- Static navbar -->
     <div class="navbar navbar-default">
@@ -93,7 +107,10 @@
           </div>
 
           <div class="tab-pane" id="program">
-              <div id="blockly-container"></div>
+              <div class="toolbar right"></div>
+              <div class="toolbar left"></div>
+              <div id="blockly"></div>
+              <div id="console"></div>
           </div>
 
           <div class="tab-pane" id="apps">

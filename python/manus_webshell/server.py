@@ -253,15 +253,19 @@ class StorageHandler(tornado.web.RequestHandler):
             ctype, _ = self.request.headers.get('Content-Type').split(";", 1)
         except ValueError:
             ctype = self.request.headers.get('Content-Type')
-        data = "%s;%s" % (ctype, self.request.body)
-        self._storage.put(key, data)
-        StorageHandler.keys.add(key)
+        if len(self.request.body) == 0:
+            self._storage.delete(key)
+            StorageHandler.keys.remove(key)
+            ApiWebSocket.distribute_message({"channel": "storage", "action" : "delete", "key" : key})
+        else:
+            data = "%s;%s" % (ctype, self.request.body)
+            self._storage.put(key, data)
+            StorageHandler.keys.add(key)
+            ApiWebSocket.distribute_message({"channel": "storage", "action" : "update", "key" : key, "content" : ctype})
         self.finish()
-        ApiWebSocket.distribute_message({"channel": "storage", "action" : "update", "key" : key, "content" : "ctype"})
-
+        
     def check_etag_header(self):
         return False
-
 
 class ApiWebSocket(tornado.websocket.WebSocketHandler):
     connections = []
@@ -312,6 +316,10 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
             self.distribute_message({"channel": "apps", "action" : "deactivated" })
         else:
             self.distribute_message({"channel": "apps", "action" : "activated", "identifier" : app.id})
+
+    def on_app_log(self, identifier, lines):
+        self.distribute_message({"channel": "apps", "action" : "log", "identifier": identifier, "lines" : lines})
+
 
 class CodeSubmitonHandler(JsonHandler):
 

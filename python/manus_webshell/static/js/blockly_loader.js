@@ -1,23 +1,30 @@
 var workspace;
 
 $(function(){
-    var blockly_container = $( "#blockly-container" );
+    var blockly_container = $( "#blockly" );
     if (blockly_container.length == 0) {
         console.error("Missing blockly container!");
         return;
     } 
 
     blockly_container.append('\
-      <div class="toolbar right"> \
-        <button class="btn btn-primary" onclick="showCode()">Show Python</button> \
-        <button class="btn btn-primary" onclick="saveCode()">Save</button> \
-        <button class="btn btn-primary" onclick="loadCode()">Load</button> \
-      </div> \
-      <div class="toolbar left"> \
-      </div> \
       <div id="blockly-area" style="width:100%; height:600px;"></div> \
       <div id="blockly-workspace" style="position: absolute"></div> \
       <xml id="blockly-toolbox" style="display: none"> \
+        <category name="Math" colour="230"> \
+          <block type="math_number"></block> \
+          <block type="math_arithmetic"></block> \
+          <block type="math_single"></block> \
+          <block type="math_trig"></block> \
+          <block type="math_constant"></block> \
+          <block type="math_number_property"></block> \
+          <block type="math_round"></block> \
+          <block type="math_on_list"></block> \
+          <block type="math_modulo"></block> \
+          <block type="math_constrain"></block> \
+          <block type="math_random_int"></block> \
+          <block type="math_random_float"></block> \
+        </category> \
         <category name="Logic" colour="210"> \
           <block type="controls_if"></block> \
           <block type="controls_ifelse"></block> \
@@ -34,20 +41,6 @@ $(function(){
           <block type="controls_for"></block> \
           <block type="controls_forEach"></block> \
           <block type="controls_flow_statements"></block> \
-        </category> \
-        <category name="Math" colour="230"> \
-          <block type="math_number"></block> \
-          <block type="math_arithmetic"></block> \
-          <block type="math_single"></block> \
-          <block type="math_trig"></block> \
-          <block type="math_constant"></block> \
-          <block type="math_number_property"></block> \
-          <block type="math_round"></block> \
-          <block type="math_on_list"></block> \
-          <block type="math_modulo"></block> \
-          <block type="math_constrain"></block> \
-          <block type="math_random_int"></block> \
-          <block type="math_random_float"></block> \
         </category> \
         <category name="Text" colour="160"> \
           <block type="text"></block> \
@@ -79,12 +72,6 @@ $(function(){
           <block type="lists_sort"></block> \
           <block type="lists_split"></block> \
           <block type="lists_reverse"></block> \
-        </category> \
-        <category name="Colour" colour="20"> \
-          <block type="colour_picker"></block> \
-          <block type="colour_random"></block> \
-          <block type="colour_rgb"></block> \
-          <block type="colour_blend"></block> \
         </category> \
         <category name="Robot" colour="0"> \
             <block type="manus_move_joint"></block> \
@@ -170,7 +157,7 @@ $(function(){
             event.type == Blockly.Events.DELETE || 
             event.type == Blockly.Events.CHANGE || 
             event.type == Blockly.Events.MOVE 
-        ){
+        ) {
             saveCode();
         }   
     });
@@ -210,10 +197,26 @@ $(function(){
         );
     }
 
+/*
+        <button class="btn btn-primary" onclick="showCode()">Show Python</button> \
+        <button class="btn btn-primary" onclick="saveCode()">Save</button> \
+        <button class="btn btn-primary" onclick="loadCode()">Load</button> \
+*/
+
+    var logconsole = $("#console");
+    logconsole.click(function() {
+
+      if ($(this).hasClass("terminated")) {
+        showBlockly();
+        $(this).removeClass("terminated");
+      }
+
+    });
     var run_button = $.manus.widgets.fancybutton({
       callback : function() {  
           run_blockly_app();
 
+          logconsole.empty();
       }, icon: "play", tooltip: "Run"
     });
 
@@ -223,16 +226,50 @@ $(function(){
       }, icon: "stop", tooltip: "Stop"
     }).hide();
 
-    $("#blockly-container .toolbar.left").append(run_button).append(stop_button);
+    var load_button = $.manus.widgets.fancybutton({
+      callback : function() {  
+          loadCode();
+      }, icon: "open", tooltip: "Load"
+    });
+
+    var save_button = $.manus.widgets.fancybutton({
+      callback : function() {  
+          saveCode();
+      }, icon: "save", tooltip: "Save"
+    });
+
+    function showBlockly() {
+      $("#console").hide();
+      $("#blockly").show();
+    }
+
+    function showConsole() {
+      $("#blockly").hide();
+      $("#console").show();
+    }    
+
+    showBlockly();
+
+    $("#program .toolbar.left").append(run_button).append(stop_button);
+    $("#program .toolbar.right").append(save_button).append(load_button);
 
     PubSub.subscribe("apps.active", function(msg, identifier) {
       if (identifier == blockly_app) {
         run_button.hide(); stop_button.show();
+        showConsole();
       } else if (!identifier) {
         stop_button.hide(); run_button.show();
+        $("#console").addClass("terminated");
       }
     });
 
+    PubSub.subscribe("apps.log", function(msg, data) {
+      if (data.identifier == blockly_app) {
+        for (i in data.lines) {
+          logconsole.append(data.lines[i]);
+        }
+      }
+    });
 
 });
 
@@ -252,7 +289,6 @@ function saveCode(){
     if (typeof(Storage) !== "undefined") {
         localStorage.setItem('saved_code', xml_text);
     } else {
-        alert("Client storage not supported by browser");
         console.error("Client storage not supported by browser");
     }
 }
@@ -268,7 +304,6 @@ function loadCode(){
             Blockly.Xml.domToWorkspace(xml_dom, workspace);
         }
     } else {
-        alert("Client storage not supported by browser");
         console.error("Client storage not supported by browser");
     }
 }

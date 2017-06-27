@@ -24,7 +24,7 @@ function posesList() {
 
         });
 
-        tools.append($('<i />').addClass('glyphicon glyphicon-pencil').click(function() {
+        tools.append($('<i />').addClass('tool glyphicon glyphicon-pencil').click(function() {
 
             if (container.hasClass('editable'))
                 return;
@@ -67,7 +67,7 @@ function posesList() {
             return false;
         }));
 
-        tools.append($('<i />').addClass('glyphicon glyphicon-trash').click(function() {
+        tools.append($('<i />').addClass('tool glyphicon glyphicon-trash').click(function() {
             list.remove("identifier", item.values().identifier);
             return false;
         }));
@@ -233,14 +233,26 @@ function appsList() {
 
 function showOverlay(title, message) {
 
-    $('#overlay .modal-title').text(title);
-    $('#overlay .modal-body').text(message);
+    $('#block-overlay .modal-title').text(title);
+    $('#block-overlay .modal-body').text(message);
 
-    $('#overlay').modal('show');
+    $('#block-overlay').modal('show');
 }
 
 function hideOverlay() {
-    $('#overlay').modal('hide');
+    $('#block-overlay').modal('hide');
+}
+
+function showDialog(title, message) {
+
+    $('#block-overlay .modal-title').text(title);
+    $('#block-overlay .modal-body').text(message);
+
+    $('#block-overlay').modal('show');
+}
+
+function hideDialog() {
+    $('#block-overlay').modal('hide');
 }
 
 $(function() {
@@ -251,7 +263,8 @@ $(function() {
     var manipulator;
 	var markers;
 
-    $('#overlay').modal({backdrop: 'static', keyboard : false, show: false});
+    $('#block-overlay').modal({backdrop: 'static', keyboard : false, show: false});
+    $('#dialog-overlay').modal({backdrop: 'static', keyboard : false, show: false});
 
     showOverlay("Loading ...", "Please wait, the interface is loading.");
 
@@ -288,7 +301,6 @@ $(function() {
     viewer = $.manus.world.viewer({});
     $('#viewer').append(viewer.wrapper);
     $.manus.world.grid(viewer, vec3.fromValues(80, 0, 0));
-    var cameraView = null;
 
     var updateViewer = function() {
         viewer.resize($('#viewer').width(), $('#viewer').width() * 0.75);
@@ -304,6 +316,21 @@ $(function() {
         $.ajax('/api/camera/position').done(function(data) {
             PubSub.publish("camera.update", data);
         });
+
+        $.manus.widgets.buttons({
+            free: {
+                text: "World",
+                callback: function(e) {
+                    viewer.view(null);
+                }
+            },
+            camera: {
+                text: "Camera",
+                callback: function(e) {
+                    if (cameraView) viewer.view(cameraView);
+                }
+            }
+        }).addClass('toolbar').prependTo($('#viewer'));
 
     }).fail(function () {});
 
@@ -332,22 +359,6 @@ $(function() {
         $.ajax('/api/manipulator/state').done(function(data) {
             PubSub.publish("manipulator.update", data);
         });
-
-        $.manus.widgets.buttons({
-            free: {
-                text: "World",
-                callback: function(e) {
-                    viewer.view(null);
-                }
-            },
-            camera: {
-                text: "Camera",
-                callback: function(e) {
-                    if (cameraView) viewer.view(cameraView);
-                }
-            }
-        }).addClass('toolbar').prependTo($('#viewer'));
-
 
     }).fail(function () {
 
@@ -406,16 +417,20 @@ $(function() {
             
         } else if (msg.channel == "storage") {
 
-            PubSub.publish("storage.update", msg.key);
-            
+            if (msg.action == "update") {
+                PubSub.publish("storage.update", msg.key);
+            } else if (msg.action == "delete") {
+                PubSub.publish("storage.delete", msg.key);
+            }
+
         } else if (msg.channel == "apps") {
 
             if (msg.action == "activated") {
                 PubSub.publish("apps.active", msg.identifier);
-            } 
-
-            if (msg.action == "deactivated") {
+            } else if (msg.action == "deactivated") {
                 PubSub.publish("apps.active", undefined);
+            } else if (msg.action == "log") {
+                PubSub.publish("apps.log", {identifier: msg.identifier, lines: msg.lines});
             } 
 
         }

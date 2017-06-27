@@ -4,10 +4,12 @@ import json
 import shlex
 import signal
 import traceback
-
+import fcntl
 import echolib
 
-from manus.apps import AppCommandType, AppEventType, AppListingPublisher, AppEventPublisher, AppCommandSubscriber, AppEvent, AppData, AppListing, AppLogPublisher, AppLog
+from manus.apps import AppCommandType, AppEventType, AppListingPublisher, AppEventPublisher, \
+                       AppCommandSubscriber, AppEvent, AppData, AppListing, AppLogPublisher, AppLog, \
+                       AppCommand
 
 from manus_apps import app_identifier
 
@@ -19,9 +21,113 @@ def terminate_process(proc_pid):
         proc.terminate()
     process.terminate()
 
-class Application(object):
+class Context(object):
+    def __init__(self):
+        self.active_application = None
+        self.applications = {}
+        self.loop = echolib.IOLoop()
 
-    def __init__(self, appfile, listed=True):
+        self.client = echolib.Client()
+        self.loop.add_handler(self.client)
+
+        self.control = AppCommandSubscriber(self.client, "apps.control", lambda x: self.control_callback(x))
+        self.announce = AppEventPublisher(self.client, "apps.announce")
+        self.listing = AppListingPublisher(self.client, "apps.list")
+        self.logging = AppLogPublisher(self.client, "apps.logging")
+
+    def control_callback(self, command):
+        try:
+            if command.type == AppCommandType.EXECUTE:
+                appid = command.arguments[0] if len(command.arguments) > 0 and len(command.arguments[0]) > 0 else None
+                self.start_application(appid)
+        except Exception, e:
+            print traceback.format_exc()
+
+    def start_application(self, identifier = None):
+        starting_application = None
+
+        if not identifier is None and not self.applications.has_key(identifier):
+            starting_application = self.find_by_name(identifier)
+            if not starting_application is None:
+                pass
+            if identifier.endswith(".app") and os.path.isfile(identifier):
+                try:
+                    starting_application = Application(self, identifier, listed=False)
+                except Exception, e:
+                    print traceback.format_exc()
+                    return
+            else:
+                print "Application does not exist"
+                return
+        elif not identifier is None:
+            starting_application = self.applications[identifier]
+
+        if self.active_application:
+            terminate = self.active_application
+            self.active_application = None
+            terminate.stop()
+
+        if starting_application is None:
+            event = AppEvent()
+            event.type = AppEventType.ACTIVE
+            event.app = AppData()
+            self.announce.send(event)
+            return
+
+        self.active_application = starting_application
+        self.active_application.run()
+        print "Starting application %s (%s)" % (self.active_application.name, identifier)
+        event = AppEvent()
+        event.type = AppEventType.ACTIVE
+        event.app = self.active_application.message_data()
+        self.announce.send(event)
+
+    def scan_applications(self, pathlist):
+        for path in pathlist:
+            for dirpath, dirnames, filenames in os.walk(path):
+                for filename in filenames[:]:
+                    if not filename.endswith(".app"):
+                        continue
+                    try:
+                        app = Application(self, os.path.join(dirpath, filename))
+                        self.applications[app.identifier] = app
+                    except Exception, e:
+                        print traceback.format_exc()
+                        continue
+        print "Loaded %d applications" % len(self.applications)
+
+    def find_by_name(self, name):
+        for identifier, app in self.applications.items():
+            if app.name == name:
+                return identifier
+        return None
+
+    def run(self):
+        broadcast = 1
+        while self.loop.wait(100):
+            broadcast = broadcast - 1
+            if broadcast == 0:
+                # Announce list every second
+                message = AppListing()
+                for identifier, app in self.applications.items():
+                    message.apps.append(app.message_data())
+                self.listing.send(message)
+                broadcast = 10
+            if not self.active_application is None:
+                if not self.active_application.alive():
+                    print "Application stopped"
+                    event = AppEvent()
+                    event.type = AppEventType.ACTIVE
+                    event.app = AppData()
+                    self.announce.send(event)
+                    self.active_application = None
+
+
+
+class Application(echolib.IOBase):
+
+    def __init__(self, context, appfile, listed=True):
+        super(Application, self).__init__()
         try:
             with open(os.path.abspath(appfile)) as f:
                 content = f.readlines()
@@ -36,6 +142,7 @@ class Application(object):
                 self.description = ""
             self.dir = os.path.dirname(appfile)
             self.listed = listed
+            self.context = context
         except ValueError, e:
             raise Exception("Unable to read app file %s" % appfile)
 
@@ -56,11 +163,16 @@ class Application(object):
         environment["APPLICATION_ID"] = self.identifier
         environment["APPLICATION_NAME"] = self.name
         environment["APPLICATION_PATH"] = self.path
-        #stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         command = os.path.expandvars(command)
         self.process = subprocess.Popen(shlex.split(command), stdin=subprocess.PIPE,
-             stdout=sys.stdout, stderr=subprocess.STDOUT, env=environment,
+             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=environment,
              shell=False, bufsize=1, cwd=self.dir)
+        fd = self.process.stdout.fileno()
+        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        print "Add handler"
+        self.context.loop.add_handler(self)
+
 
     def alive(self):
         if not self.process:
@@ -77,6 +189,7 @@ class Application(object):
         if not self.process:
             return
         self.process.kill()
+        self.context.loop.remove_handler(self)
         self.process = None
 
     def message_data(self):
@@ -89,118 +202,56 @@ class Application(object):
         d.listed = self.listed
         return d
 
-def scan_applications(pathlist):
-    applications = {}
-    for path in pathlist:
-        for dirpath, dirnames, filenames in os.walk(path):
-            for filename in filenames[:]:
-                if not filename.endswith(".app"):
-                    continue
-                try:
-                    app = Application(os.path.join(dirpath, filename))
-                    applications[app.identifier] = app
-                except Exception, e:
-                    print traceback.format_exc()
-                    continue
-    return applications
+    def handle_input(self):
+        lines = []
+        while True:
+            try:
+                line = self.process.stdout.readline()
+                sys.stdout.write(line)
+                lines.append(line)
+            except Exception, e: 
+                break
+        if len(lines) > 0:
+            message = AppLog()
+            message.id = self.identifier
+            message.lines = lines
+            self.context.logging.send(message)
+        return self.alive()
 
-def find_by_name(applications, name):
-    for identifier, app in applications.items():
-        if app.name == name:
-            return identifier
-    return None
+    def handle_output(self):
+        return True
 
-def application_launcher(autorun=None):
+    def fd(self):
+        if self.alive():
+            return self.process.stdout.fileno()
+        else:
+            return -1
+
+    def disconnect(self):
+        self.kill()
+        #self.context.loop.remove_handler(self)
+
+
+def application_launcher():
 
     app_path = os.environ.get("APPS_PATH", "")
+    autorun = os.environ.get("APPS_RUN", None)
 
-    print "Scanning for applications"
-    applications = scan_applications(app_path.split(os.pathsep))
-    print "Loaded %d applications" % len(applications)
+    context = Context()
 
-    global active_application
-    active_application = None
-
-    def start_application(identifier = None):
-        global active_application
-        starting_application = None
-
-        if not identifier is None and not applications.has_key(identifier):
-            if identifier.endswith(".app") and os.path.isfile(identifier):
-                try:
-                    starting_application = Application(identifier, listed=False)
-                except Exception, e:
-                    print traceback.format_exc()
-                    return
-            else:
-                print "Application does not exist"
-                return
-        elif not identifier is None:
-            starting_application = applications[identifier]
-
-        if active_application:
-            terminate = active_application
-            active_application = None
-            terminate.stop()
-
-        if starting_application is None:
-            event = AppEvent()
-            event.type = AppEventType.ACTIVE
-            event.app = AppData()
-            announce.send(event)
-            return
-
-        active_application = starting_application
-        active_application.run()
-        print "Starting application %s (%s)" % (active_application.name, identifier)
-        event = AppEvent()
-        event.type = AppEventType.ACTIVE
-        event.app = active_application.message_data()
-        announce.send(event)
-
-    def control_callback(command):
-        try:
-            if command.type == AppCommandType.EXECUTE:
-                appid = command.arguments[0] if len(command.arguments) > 0 and len(command.arguments[0]) > 0 else None
-                start_application(appid)
-        except Exception, e:
-            print traceback.format_exc()
+    context.scan_applications(app_path.split(os.pathsep))
 
     def shutdown_handler(signum, frame):
-        print "Stopping application"
-        if active_application:
-            active_application.stop()
+        context.start_application(None)
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, shutdown_handler)
 
-    loop = echolib.IOLoop()
-    client = echolib.Client()
-    loop.add_handler(client)
-
-    control = AppCommandSubscriber(client, "apps.control", control_callback)
-    announce = AppEventPublisher(client, "apps.announce")
-    listing = AppListingPublisher(client, "apps.list")
-    logging = AppLogPublisher(client, "apps.log")
-
-    if autorun:
-        start_application(find_by_name(applications, autorun))
+    if not autorun is None:
+        context.start_application(context.find_by_name(autorun))
 
     try:
-        while loop.wait(1000):
-            # Announce list every second
-            message = AppListing()
-            for identifier, app in applications.items():
-                message.apps.append(app.message_data())
-            listing.send(message)
-        if not active_application is None:
-
-            if not active_application.alive():
-                event = AppEvent()
-                event.type = AppEventType.ACTIVE
-                event.app = AppData()
-                announce.send(event)
-                active_application = None
+        context.run()
     except KeyboardInterrupt:
         pass
     finally:
@@ -208,3 +259,17 @@ def application_launcher(autorun=None):
 
     shutdown_handler(0, None)
 
+def start_app(app):
+
+    from manus.apps import AppCommandType, AppCommandPublisher, AppCommand
+    loop = echolib.IOLoop()
+    client = echolib.Client()
+    loop.add_handler(client)
+
+    control = AppCommandPublisher(client, "apps.control")
+    loop.wait(100)
+    message = AppCommand()
+    message.type = AppCommandType.EXECUTE
+    message.arguments.append(app)
+    control.send(message)
+    loop.wait(100)

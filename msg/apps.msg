@@ -29,5 +29,5 @@ message AppCommand {
 
 message AppLog {
 	string id;
-	string log;
+	string[] lines;
 }

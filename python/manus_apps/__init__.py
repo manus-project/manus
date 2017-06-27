@@ -3,7 +3,8 @@ import sys
 import os
 import hashlib
 import echolib
-from manus.apps import AppCommandType, AppEventType, AppListingSubscriber, AppEventSubscriber, AppCommandPublisher, AppCommand
+from manus.apps import AppCommandType, AppEventType, AppListingSubscriber, AppEventSubscriber, \
+                     AppCommandPublisher, AppCommand, AppLogSubscriber
 
 def app_identifier(appfile):
     absfile = os.path.abspath(appfile)
@@ -14,9 +15,10 @@ def app_identifier(appfile):
 class AppsManager(object):
 
     def __init__(self, client):
-        self._listsub = AppListingSubscriber(client, "apps.list", lambda x: self._list(x))
-        self._annsub = AppEventSubscriber(client, "apps.announce", lambda x: self._announce(x))
+        self._listsub = AppListingSubscriber(client, "apps.list", lambda x: self.on_list(x))
+        self._annsub = AppEventSubscriber(client, "apps.announce", lambda x: self.on_announce(x))
         self._control = AppCommandPublisher(client, "apps.control")
+        self._logging = AppLogSubscriber(client, "apps.logging", lambda x: self.on_logging(x))
         self._apps = {}
         self._listeners = []
         self._active = None
@@ -39,10 +41,16 @@ class AppsManager(object):
         msg.arguments.append(id)
         self._control.send(msg)
 
-    def _list(self, msg):
+    def on_list(self, msg):
         self._apps = {v.id: {'identifier': v.id, 'name': v.name, 'version': v.version, 'description' : v.description} for v in msg.apps if v.listed}
 
-    def _announce(self, msg):
+    def on_logging(self, msg):
+        if self._active is None or self._active.id != msg.id:
+            return
+        for s in self._listeners:
+            s.on_app_log(msg.id, msg.lines)
+
+    def on_announce(self, msg):
         if msg.type == AppEventType.ACTIVE:
             if len(msg.app.id) == 0:
                 self._active = None
