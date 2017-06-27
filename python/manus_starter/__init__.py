@@ -19,7 +19,6 @@ LOCAL_MANIPULATOR = os.getenv('MANUS_MANIPULATOR', '/dev/i2c-1')
 
 kill_now = False
 
-
 def exit_gracefully(signum, frame):
     global kill_now
     kill_now = True

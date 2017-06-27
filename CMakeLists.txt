@@ -23,7 +23,11 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/manipulator
                 --cpp-outdir ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/
                 ${CMAKE_SOURCE_DIR}/msg/manipulator.msg
                 ${CMAKE_SOURCE_DIR}/msg/apps.msg
-                DEPENDS ${CMAKE_SOURCE_DIR}/msg/manipulator.msg ${CMAKE_SOURCE_DIR}/msg/apps.msg
+                ${CMAKE_SOURCE_DIR}/msg/privileged.msg
+                DEPENDS 
+                ${CMAKE_SOURCE_DIR}/msg/manipulator.msg 
+                ${CMAKE_SOURCE_DIR}/msg/apps.msg
+                ${CMAKE_SOURCE_DIR}/msg/privileged.msg
                 COMMENT "Processing message descriptions")
 
 FIND_PACKAGE(echolib REQUIRED)
