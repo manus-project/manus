@@ -151,6 +151,10 @@ int main(int argc, char** argv) {
 			m++;
 		}
 
+	    /* restore the former settings */
+	    tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);
+
+
 	} else {
 
 	  YAML::Node doc = YAML::LoadFile(argv[2]);
@@ -195,8 +199,6 @@ int main(int argc, char** argv) {
 		cout << "Motor " << motors[i].addr << " min: " << s.minseek << " max: " << s.maxseek << endl;
 
 	}
-    /* restore the former settings */
-    tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);
 
 	std::sort(motors.begin(), motors.end(), compare);
 
