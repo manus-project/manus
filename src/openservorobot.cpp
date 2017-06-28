@@ -173,6 +173,19 @@ int OpenServoRobot::loadDescription(const string& modelfile, const string& calib
     _description.joints[i].dh_min = scale_servo_to_joint(servos[j], servos[j].AD_min);
     _description.joints[i].dh_max = scale_servo_to_joint(servos[j], servos[j].AD_max);
 
+    cout <<  "Verifying min-max data." << endl;
+    sv s = open_servo.getServo(servos[j].servo_id);
+
+    if (s.minseek != servos[j].AD_min || s.maxseek != servos[j].AD_max) {
+
+      cout << "Detected incorrect parameters, writing min-max data to motor " << i << endl;
+      open_servo.writeEnable(servos[j].servo_id);
+      open_servo.setMaxSeek(servos[j].servo_id, servos[j].AD_max);
+      open_servo.setMinSeek(servos[j].servo_id, servos[j].AD_min);
+      open_servo.writeDisable(servos[j].servo_id);
+      open_servo.registerSave(servos[j].servo_id);
+    }
+
     j++;
   }
 

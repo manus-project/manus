@@ -20,32 +20,12 @@
     <script src="js/blockly_compressed.js"></script>
     <script src="js/python_compressed.js"></script>
     <script src="js/blocks_compressed.js"></script>
-	<script src="js/blockly-messages.js"></script>
-    <!--script src="blockly/generators/python.js"></script>
-    <script src="blockly/generators/python/logic.js"></script>
-    <script src="blockly/generators/python/loops.js"></script>
-    <script src="blockly/generators/python/math.js"></script>
-    <script src="blockly/generators/python/text.js"></script>
-    <script src="blockly/generators/python/lists.js"></script>
-    <script src="blockly/generators/python/colour.js"></script>
-    <script src="blockly/generators/python/variables.js"></script>
-    <script src="blockly/generators/python/procedures.js"></script-->
+  	<script src="js/blockly-messages.js"></script>
+
     <script src="js/blockly-python-manus.js"></script>
     <script src="js/blockly-blocks-manus.js"></script>
 
-    <!--script src="blockly/msg/messages.js"></script>
-    <script src="blockly/blocks/logic.js"></script>
-    <script src="blockly/blocks/loops.js"></script>
-    <script src="blockly/blocks/math.js"></script>
-    <script src="blockly/blocks/text.js"></script>
-    <script src="blockly/blocks/lists.js"></script>
-    <script src="blockly/blocks/colour.js"></script>
-    <script src="blockly/blocks/variables.js"></script>
-    <script src="blockly/blocks/procedures.js"></script>
-    <script src="blockly/blocks/manus.js"></script-->
-
-    <!-- Blockly tab -->
-    <script src="js/blockly_loader.js"></script>
+    <script src="js/program.js"></script>
   </head>
   <body>
 
@@ -62,15 +42,14 @@
       </div>
     </div>
 
-    <div id="dialog-overlay" class="modal fade" tabindex="-1" role="dialog">
+    <div id="block-dialog" class="modal fade" tabindex="-1" role="dialog">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h4 class="modal-title">Modal title</h4>
+            <h4 class="modal-title"></h4>
           </div>
-          <div class="modal-body">
-            Test
-          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer"></div>
         </div>
       </div>
     </div>
@@ -107,10 +86,18 @@
           </div>
 
           <div class="tab-pane" id="program">
-              <div class="toolbar right"></div>
-              <div class="toolbar left"></div>
-              <div id="blockly"></div>
-              <div id="console"></div>
+              <div class="toolbar storage"></div>
+              <div class="toolbar runtime"></div>
+              <div id="blockly" class="program-panel">
+                <div id="blockly-area"></div>
+                <div id="blockly-workspace"></div>
+              </div>
+              <div id="console" class="program-panel"></div>
+              <div id="programs" class="program-panel">
+                <h3 class="title"></h3>
+                <div class="list list-group"></div>
+                <div class="toolbar"></div>
+              </div>
           </div>
 
           <div class="tab-pane" id="apps">

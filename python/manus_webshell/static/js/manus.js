@@ -3,6 +3,94 @@ function uniqueIdentifier() {
   return Math.round(new Date().getTime() + (Math.random() * 100));
 }
 
+RemoteStorage = {
+    get : function(key, callback) {
+        $.ajax('/api/storage?key=' + key).done(function(data) {
+            callback(key, data);
+        });
+
+    },
+    list: function(callback) {
+        $.ajax('/api/storage').done(function(data) {
+            callback(data);
+        });
+    },
+    set: function(key, value) {
+        $.ajax({
+            'type': 'POST',
+            'url': '/api/storage?key=' + key,
+            'contentType': 'application/json',
+            'data': JSON.stringify(value),
+            'dataType': 'json'
+        });
+    },
+    delete(key) {
+        $.ajax({
+            'type': 'POST',
+            'url': '/api/storage?key=' + key,
+            'contentType': 'application/json',
+            'data': '',
+            'dataType': 'json'
+        });
+    }
+};
+
+Interface = {
+
+    init: function() {
+        $('#block-overlay').modal({backdrop: 'static', keyboard : false, show: false});
+        $('#block-dialog').modal({backdrop: 'static', keyboard : true, show: false});
+    },
+
+    overlay: function (title, message) {
+
+        if (title === undefined) {
+            $('#block-overlay').modal('hide');
+
+        } else {
+            $('#block-overlay .modal-title').text(title);
+            $('#block-overlay .modal-body').text(message);
+
+            $('#block-overlay').modal('show');
+        }
+
+    },
+
+    confirmation: function (title, message, callback) {
+
+        $('#block-dialog .modal-title').text(title);
+        $('#block-dialog .modal-body').text(message);
+        $('#block-dialog .modal-footer').empty();
+
+        $('#block-dialog .modal-footer').append($("<button/>")
+            .addClass("btn btn-default").text("Cancel")
+            .click(function() { $('#block-dialog').modal('hide'); }));
+
+        $('#block-dialog .modal-footer').append($("<button/>")
+            .addClass("btn btn-primary").text("Confirm")
+            .click(function() { 
+                callback();
+                $('#block-dialog').modal('hide');
+            }));
+
+        $('#block-dialog').modal('show');
+    },
+
+    notification: function (title, message) {
+
+        $('#block-dialog .modal-title').text(title);
+        $('#block-dialog .modal-body').text(message);
+        $('#block-dialog .modal-footer').empty();
+
+        $('#block-dialog .modal-footer').append($("<button/>")
+            .addClass("btn btn-default").text("Close")
+            .click(function() { $('#block-dialog').modal('hide'); }));
+
+        $('#block-dialog').modal('show');
+    }
+
+};
+
 function posesList() {
 
     var augmentItem = function(item) {
@@ -82,9 +170,10 @@ function posesList() {
         item: "<a class='list-group-item'><div class='name'></div></a>"
     }, []);
 
-    $.ajax('/api/storage?key=poses').done(function(data) {
+    RemoteStorage.get("poses", function(key, data) {
 
         updating = true;
+        list.clear();
         list.add(data);
         updating = false;
         
@@ -101,7 +190,7 @@ function posesList() {
         if (key != "poses") 
             return;
 
-        $.ajax('/api/storage?key=poses').done(function(data) {
+        RemoteStorage.get("poses", function(key, data) {
 
             updating = true;
             list.clear();
@@ -130,30 +219,21 @@ function posesList() {
 
         if (updating) return;
 
-        $.ajax({
-            'type': 'POST',
-            'url': '/api/storage?key=poses',
-            'contentType': 'application/json',
-            'data': JSON.stringify(data),
-            'dataType': 'json'
-        });
+        RemoteStorage.set("poses", data);
 
     });
 
-    $("#poseslist").append($.manus.widgets.buttons({
-        add : {
-            text: "Save pose",
-            callback: function() {
-                if (!currentPose) return;
-                index++;
-                list.add([{
-                    identifier : uniqueIdentifier(),
-                    name : "New pose " + index,
-                    pose: currentPose
-                }]);
-            } 
-        }
-
+    $("#poseslist").append($.manus.widgets.fancybutton({
+        icon: "plus", tooltip: "Add current pose",
+        callback: function() {
+            if (!currentPose) return;
+            index++;
+            list.add([{
+                identifier : uniqueIdentifier(),
+                name : "New pose " + index,
+                pose: currentPose
+            }]);
+        } 
     }));
 
 }
@@ -231,30 +311,6 @@ function appsList() {
 
 }
 
-function showOverlay(title, message) {
-
-    $('#block-overlay .modal-title').text(title);
-    $('#block-overlay .modal-body').text(message);
-
-    $('#block-overlay').modal('show');
-}
-
-function hideOverlay() {
-    $('#block-overlay').modal('hide');
-}
-
-function showDialog(title, message) {
-
-    $('#block-overlay .modal-title').text(title);
-    $('#block-overlay .modal-body').text(message);
-
-    $('#block-overlay').modal('show');
-}
-
-function hideDialog() {
-    $('#block-overlay').modal('hide');
-}
-
 $(function() {
 
     var joints = [];
@@ -263,10 +319,8 @@ $(function() {
     var manipulator;
 	var markers;
 
-    $('#block-overlay').modal({backdrop: 'static', keyboard : false, show: false});
-    $('#dialog-overlay').modal({backdrop: 'static', keyboard : false, show: false});
-
-    showOverlay("Loading ...", "Please wait, the interface is loading.");
+    Interface.init();
+    Interface.overlay("Loading ...", "Please wait, the interface is loading.");
 
     function queryMarkerStatus() {
 
@@ -389,18 +443,25 @@ $(function() {
 
     }
 
+    var reconnect = true;
+
+    $(window).on('beforeunload', function(){
+          reconnect = false;
+    });
+
     socket.onopen = function(event) {
-        console.log("open");
-        hideOverlay();
+        Interface.overlay();
     }
 
     socket.onerror = function(event) {
-        showOverlay("Connection lost", "Unable to communicate with the system.");
+        if (!reconnect) return;
+        Interface.overlay("Connection lost", "Unable to communicate with the system.");
         waitForConnection();
     }
 
     socket.onclose = function(event) {
-        showOverlay("Connection lost", "Unable to communicate with the system.");
+        if (!reconnect) return;
+        Interface.overlay("Connection lost", "Unable to communicate with the system.");
         waitForConnection();
     }
 

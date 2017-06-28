@@ -43,6 +43,19 @@ Blockly.Blocks['manus_move_joint'] = {
   }
 };
 
+Blockly.Blocks['manus_retrieve_joint'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("Get joint ")
+        .appendField(new Blockly.FieldDropdown([["1","0"], ["2","1"], ["3","2"], ["4","3"], ["5","5"]]), "joint_id")
+        .appendField(" position.");
+    this.setOutput(true, null);
+    this.setColour(0);
+    this.setTooltip('Retrieves position of a block.');
+    this.setHelpUrl('');
+  }
+};
+
 Blockly.Blocks['manus_position_vector'] = {
   init: function() {
     this.appendDummyInput()
@@ -161,16 +174,28 @@ Blockly.Blocks['manus_detect_and_store_blocks'] = {
   }
 };
 
-Blockly.Blocks['manus_retrieve_component'] = {
+Blockly.Blocks['manus_retrieve_color'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("Get color from")
+        .appendField(new Blockly.FieldVariable(null), "SELECTED_BLOCK_FOR_COMPONENT_ACCESS");
+    this.setOutput(true, null);
+    this.setColour(0);
+    this.setTooltip('Retrieves color of block.');
+    this.setHelpUrl('');
+  }
+};
+
+Blockly.Blocks['manus_retrieve_coordinate'] = {
   init: function() {
     this.appendDummyInput()
         .appendField("Get")
-        .appendField(new Blockly.FieldDropdown([["x","x"], ["y","y"], ["z","z"], ["color","color"]]), "component_dropdown")
+        .appendField(new Blockly.FieldDropdown([["x","x"], ["y","y"], ["z","z"]]), "coordinate_dropdown")
         .appendField("from")
         .appendField(new Blockly.FieldVariable(null), "SELECTED_BLOCK_FOR_COMPONENT_ACCESS");
     this.setOutput(true, null);
     this.setColour(0);
-    this.setTooltip('Retrieves selected component from selected block.');
+    this.setTooltip('Retrieves coordinate from point.');
     this.setHelpUrl('');
   }
 };
@@ -179,7 +204,7 @@ Blockly.Blocks['manus_open_close_gripper'] = {
   init: function() {
     this.appendDummyInput()
         .appendField("Gripper")
-        .appendField(new Blockly.FieldDropdown([["open","open"], ["close","close"]]), "open_close_option");
+        .appendField(new Blockly.FieldDropdown([["open","open"], ["half","half"], ["close","close"]]), "open_close_option");
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
     this.setColour(0);
@@ -187,3 +212,4 @@ Blockly.Blocks['manus_open_close_gripper'] = {
     this.setHelpUrl('');
   }
 };
+

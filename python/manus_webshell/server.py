@@ -13,7 +13,7 @@ import logging.handlers
 import os.path
 import os
 import signal
-from bsddb3 import db  
+from bsddb3 import db 
 
 import tornado.httpserver
 import tornado.ioloop
@@ -34,6 +34,8 @@ import manus_webshell.static
 from manus.manipulator import JointType
 import manus
 from manus_apps import AppsManager, app_identifier
+
+#from manus.markers import MarkersSubscriber
 
 __author__ = 'lukacu'
 
@@ -234,7 +236,12 @@ class StorageHandler(tornado.web.RequestHandler):
             self.set_header('Content-Type', 'application/json')
             self.finish(json.dumps(list(StorageHandler.keys)))
             return
-        raw = self._storage.get(key, "")
+        try:
+            raw = self._storage.get(key, "")
+        except db.DBNotFoundError:
+            self.set_status(404)
+            self.finish("Unknown key")
+            return;
         try:
             ctype, data = raw.split(";", 1)
         except ValueError:
@@ -254,13 +261,19 @@ class StorageHandler(tornado.web.RequestHandler):
         except ValueError:
             ctype = self.request.headers.get('Content-Type')
         if len(self.request.body) == 0:
-            self._storage.delete(key)
-            StorageHandler.keys.remove(key)
-            ApiWebSocket.distribute_message({"channel": "storage", "action" : "delete", "key" : key})
+            try:
+                print "Deleting %s" % key
+                self._storage.delete(key)
+                StorageHandler.keys.remove(key)
+                ApiWebSocket.distribute_message({"channel": "storage", "action" : "delete", "key" : key})
+            except db.DBNotFoundError:
+                self.finish('Unknown key')
+                return
         else:
             data = "%s;%s" % (ctype, self.request.body)
             self._storage.put(key, data)
             StorageHandler.keys.add(key)
+            print "Updating %s" % key
             ApiWebSocket.distribute_message({"channel": "storage", "action" : "update", "key" : key, "content" : ctype})
         self.finish()
         
@@ -296,6 +309,10 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
             m.unlisten(self)
         self.apps.unlisten(self)
 
+    def send_message(self, message):
+        message = json.dumps(message, cls=NumpyEncoder)
+        self.write_message(message)
+
     @staticmethod
     def distribute_message(message):
         message = json.dumps(message, cls=NumpyEncoder)
@@ -303,40 +320,40 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
             c.write_message(message)
 
     def push_camera_location(self, camera, location):
-        self.distribute_message({"channel": "camera", "action" : "update", "data" : CameraLocationHandler.encode_location(location)})
+        self.send_message({"channel": "camera", "action" : "update", "data" : CameraLocationHandler.encode_location(location)})
 
     def on_manipulator_state(self, manipulator, state):
-        self.distribute_message({"channel": "manipulator", "action" : "update", "data" : ManipulatorStateHandler.encode_state(state)})
+        self.send_message({"channel": "manipulator", "action" : "update", "data" : ManipulatorStateHandler.encode_state(state)})
 
     def on_planner_state(self, manipulator, state):
         pass
 
     def on_app_active(self, app):
         if app is None:
-            self.distribute_message({"channel": "apps", "action" : "deactivated" })
+            self.send_message({"channel": "apps", "action" : "deactivated" })
         else:
-            self.distribute_message({"channel": "apps", "action" : "activated", "identifier" : app.id})
+            self.send_message({"channel": "apps", "action" : "activated", "identifier" : app.id})
 
     def on_app_log(self, identifier, lines):
-        self.distribute_message({"channel": "apps", "action" : "log", "identifier": identifier, "lines" : lines})
+        self.send_message({"channel": "apps", "action" : "log", "identifier": identifier, "lines" : lines})
 
 
-class CodeSubmitonHandler(JsonHandler):
+class ProgramHandler(JsonHandler):
 
     def __init__(self, application, request, apps):
-        super(CodeSubmitonHandler, self).__init__(application, request)
+        super(ProgramHandler, self).__init__(application, request)
         self._apps = apps
 
     def get(self):
         self.response = {
-            "status" : "OK",
-            "note" : "You really should use POST"
+            "status" : "error",
+            "note" : "You should use POST request"
         }
         self.write_json()
 
     def post(self):
         self.response = {
-            "status" : "OK",
+            "status" : "ok",
         }
         try:
             current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -346,7 +363,7 @@ class CodeSubmitonHandler(JsonHandler):
             self.response["identifier"] = app_identifier("/tmp/generated_app.app")
         except Exception as e:
             self.response = {
-                "status" : "Error",
+                "status" : "error",
                 "description" : e.message
             }
        
@@ -407,13 +424,19 @@ def main():
 
         #handlers.append((r'/api/markers', MarkersStorageHandler))
         apps = AppsManager(client)
-        handlers.append((r'/api/code/submit', CodeSubmitonHandler, {"apps" : apps}))
+        handlers.append((r'/api/run', ProgramHandler, {"apps" : apps}))
         handlers.append((r'/api/apps', AppsHandler, {"apps" : apps}))
         handlers.append((r'/api/storage', StorageHandler, {"storage" : storage}))
         handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators, "apps": apps}))
         handlers.append((r'/api/info', ApplicationHandler))
         handlers.append((r'/', RedirectHandler, {'url' : '/index.html'}))
         handlers.append((r'/(.*)', DevelopmentStaticFileHandler, {'path': os.path.dirname(manus_webshell.static.__file__)}))
+
+#        def markers_callback(markers):
+#            data = {m.id : {"position": [m.position.x, m.position.y, m.position.z], "rotation": [m.rotation.x, m.rotation.y, m.rotation.z]} for m in markers}
+#            ApiWebSocket.distribute_message({"channel": "markers", "action" : "overwrite", "markers" : data})
+
+#        markers_subsriber = MarkersSubscriber(client, "markers", markers_callback)
 
         application = tornado.web.Application(handlers)
 

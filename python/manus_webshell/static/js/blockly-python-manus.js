@@ -34,6 +34,13 @@ Blockly.Python['manus_move_joint'] = function(block) {
   return code;
 };
 
+Blockly.Python['manus_retrieve_joint'] = function(block) {
+  var dropdown_joint_id = block.getFieldValue('joint_id');
+  // TODO: Assemble Python into code variable.
+  var code = 'manus_get_joint('+ dropdown_joint_id + ')\n';
+  return code;
+};
+
 Blockly.Python['manus_position_vector'] = function(block) {
   var number_x = block.getFieldValue('X');
   var number_y = block.getFieldValue('Y');
@@ -97,11 +104,19 @@ Blockly.Python['manus_detect_and_store_blocks'] = function(block) {
   return code;
 };
 
-Blockly.Python['manus_retrieve_component'] = function(block) {
-  var dropdown_component_dropdown = block.getFieldValue('component_dropdown');
+Blockly.Python['manus_retrieve_coordinate'] = function(block) {
+  var dropdown_component_dropdown = block.getFieldValue('coordinate_dropdown');
   var variable_selected_block_for_component_access = Blockly.Python.variableDB_.getName(block.getFieldValue('SELECTED_BLOCK_FOR_COMPONENT_ACCESS'), Blockly.Variables.NAME_TYPE);
   // TODO: Assemble Python into code variable.
-  var code = 'manus_retrieve_component_from_block("'+dropdown_component_dropdown+'", '+variable_selected_block_for_component_access+')';
+  var code = 'manus_retrieve_coordinate_from_point("'+dropdown_component_dropdown+'", '+variable_selected_block_for_component_access+')';
+  // TODO: Change ORDER_NONE to the correct strength.
+  return [code, Blockly.Python.ORDER_NONE];
+};
+
+Blockly.Python['manus_retrieve_color'] = function(block) {
+  var variable_selected_block_for_component_access = Blockly.Python.variableDB_.getName(block.getFieldValue('SELECTED_BLOCK_FOR_COMPONENT_ACCESS'), Blockly.Variables.NAME_TYPE);
+  // TODO: Assemble Python into code variable.
+  var code = 'manus_retrieve_color_from_block('+variable_selected_block_for_component_access+')';
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_NONE];
 };

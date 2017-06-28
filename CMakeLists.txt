@@ -24,10 +24,12 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/manipulator
                 ${CMAKE_SOURCE_DIR}/msg/manipulator.msg
                 ${CMAKE_SOURCE_DIR}/msg/apps.msg
                 ${CMAKE_SOURCE_DIR}/msg/privileged.msg
+                ${CMAKE_SOURCE_DIR}/msg/markers.msg
                 DEPENDS 
                 ${CMAKE_SOURCE_DIR}/msg/manipulator.msg 
                 ${CMAKE_SOURCE_DIR}/msg/apps.msg
                 ${CMAKE_SOURCE_DIR}/msg/privileged.msg
+                ${CMAKE_SOURCE_DIR}/msg/markers.msg
                 COMMENT "Processing message descriptions")
 
 FIND_PACKAGE(echolib REQUIRED)

@@ -35,10 +35,9 @@ def block_color_name(block):
     h, s, v = block.color
 
     color = 'unknown'
-
-    if v < 50:
+    if v < 70:
         color = 'black'
-    elif v > 0.8 and s < 0.2:
+    elif v > 210 and s < 40:
         color = 'white'
     elif s > 100 and (h < 25 or h > 225):
         color = 'red'
@@ -160,9 +159,8 @@ class BlockDetector(object):
         params = cv2.SimpleBlobDetector_Params()
         # Filter by Area.
         params.filterByColor = True
-        params.minArea = estimated_size * 0.95
-        params.maxArea = params.minArea * 2.1
-
+        params.minArea = estimated_size * 0.90
+        params.maxArea = params.minArea * 2.2
         # Filter by Convexity
         params.filterByConvexity = True
         params.minConvexity = 0.8
@@ -170,7 +168,6 @@ class BlockDetector(object):
         detector = cv2.SimpleBlobDetector(params)
         image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         candidates = detector.detect(image)
-
         if not self.bounds is None:
             projected = np.transpose(
                 np.matrix([[p[0], p[1], 1] for p in self.bounds]))

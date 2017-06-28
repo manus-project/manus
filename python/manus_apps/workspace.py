@@ -12,6 +12,8 @@ import random
 
 from manus_apps.blocks import BlockDetector
 
+#from manus.markers import Marker, Markers, MarkersPublisher, MarkerOperation
+
 class Camera(object):
 
     def __init__(self, workspace, name):
@@ -76,9 +78,10 @@ class Manipulator(object):
         self.move_result = None
         self.identifier = str(random.getrandbits(128))
         self.workspace = workspace
+        self.current_state = None
 
     def on_manipulator_state(self, manipulator, state):
-        pass
+        self.current_state = state
 
     def on_planner_state(self, manipulator, state):
         if state.identifier == self.move_waiting:
@@ -88,13 +91,17 @@ class Manipulator(object):
             if state.type == PlanStateType.FAILED:
                 self.move_result = False
                 self.move_waiting = None
+
+    def state(self):
+        return self.current_state
     
     def safe(self):
         self.handle.move_safe(self.identifier)
         return self.wait_for(self.identifier)
 
     def move(self, location, rotation):
-        trajectory = [manus.MoveTo(location, rotation, 0.0)]
+        gripper = self.current_state.joints[-1].goal
+        trajectory = [manus.MoveTo(location, rotation, gripper)]
         self.handle.trajectory(self.identifier, trajectory)
         return self.wait_for(self.identifier)
 
@@ -123,6 +130,7 @@ class Workspace(object):
         self.bounds = bounds
         self.camera = Camera(self, "camera0")
         self.manipulator = Manipulator(self, "manipulator0")
+#        self.markers_pub = MarkersPublisher(self.client, "markers")
 
     def detect_blocks(self, block_size=20):
         if not self.manipulator.safe():
@@ -131,6 +139,21 @@ class Workspace(object):
         detector = BlockDetector(block_size=block_size, bounds=self.bounds)
     
         blocks = detector.detect(self.camera)
+
+#        markers = Markers()
+#        markers.operation = MarkerOperation.OVERWRITE
+#        for i, b in enumerate(blocks):
+#            m = Marker()
+#            m.id = str(i)
+#            m.position.x = b.position[0]
+#            m.position.y = b.position[1]
+#            m.position.z = b.position[2]
+#            m.rotation.x = b.rotation[0]
+#            m.rotation.y = b.rotation[1]
+#            m.rotation.z = b.rotation[2]
+#            markers.markers.append(m)
+#        self.markers_pub.send(markers)
+
         return blocks
 
     def wait(self, duration=10):

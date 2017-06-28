@@ -106,7 +106,12 @@
     font-size: 200%;
 }
 
-#poselist .list {
+.list {
+    clear: both;
+}
+
+#programlist .list,
+#poseslist .list {
     max-height: 700px;
     overflow-y: auto;
 }
@@ -119,7 +124,8 @@
 .list-group-item .list-tools {
     display: none;
     float: right;
-    margin-top: -5px;
+    margin-top: -7px;
+    margin-right: -7px;
 }
 
 .list-group-item:hover .list-tools,
@@ -131,7 +137,6 @@
     font-size: 120%;
     margin-left: 5px;
 }
-
 
 .list-group-item.pose-item .list-tools i {
     font-size: 100%;
@@ -148,6 +153,10 @@
     margin: 3px;
     border: 1px solid #464545;
     border-radius: 4px;
+}
+
+.list-group-item.pose-item {
+    cursor: pointer;
 }
 
 .list-group-item.pose-item {
@@ -180,10 +189,23 @@
     margin: 0 3px;
 }
 
-.toolbar.right {
+.toolbar.storage {
     float: right;
     text-align: right;
     display: block;
+}
+
+#programs.loading .addnew {
+    display: none;
+}
+
+#blockly-area {
+    width:100%;
+    height:600px;
+}
+
+#blockly-workspace {
+    position: absolute;
 }
 
 #blockly-workspace .blocklyToolboxDiv {
@@ -193,6 +215,9 @@
 #blockly-workspace .blocklyTreeRow:hover:not(.blocklyTreeSelected) {
     background-color: #444;
 }
+
+
+
 
 #console {
     margin-top: 10px;

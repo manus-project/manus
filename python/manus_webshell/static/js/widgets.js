@@ -132,7 +132,7 @@ $.manus.widgets = {
                 break;
             }
             case "gripper": {
-                if (value < 0.5) {
+                if (value < 0.1) {
                     status.removeClass("btn-success").addClass("btn-danger");
                     status.text("Grip");
                 } else {
