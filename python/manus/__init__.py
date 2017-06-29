@@ -1,5 +1,5 @@
 
-import manus.manipulator as messages
+import manus.messages as messages
 
 NAME = 'Manus'
 VERSION = 'N/A'

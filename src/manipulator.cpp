@@ -24,11 +24,11 @@ char const * ManipulatorException::what() const throw() {
 string manipulator_state_string(ManipulatorStateType status) {
 
     switch (status) {
-    case UNKNOWN: return "unknown";
-    case CONNECTED: return "connected";
-    case PASSIVE: return "passive";
-    case ACTIVE: return "active";
-    case CALIBRATION: return "calibration";
+    case MANIPULATORSTATETYPE_UNKNOWN: return "unknown";
+    case MANIPULATORSTATETYPE_CONNECTED: return "connected";
+    case MANIPULATORSTATETYPE_PASSIVE: return "passive";
+    case MANIPULATORSTATETYPE_ACTIVE: return "active";
+    case MANIPULATORSTATETYPE_CALIBRATION: return "calibration";
     }
 
     return "unknown";
@@ -37,10 +37,10 @@ string manipulator_state_string(ManipulatorStateType status) {
 string joint_type_string(JointType type) {
 
     switch (type) {
-    case ROTATION: return "rotation";
-    case TRANSLATION: return "translation";
-    case FIXED: return "fixed";
-    case GRIPPER: return "gripper";
+    case JOINTTYPE_ROTATION: return "rotation";
+    case JOINTTYPE_TRANSLATION: return "translation";
+    case JOINTTYPE_FIXED: return "fixed";
+    case JOINTTYPE_GRIPPER: return "gripper";
     }
 
     return "unknown";
@@ -49,7 +49,7 @@ string joint_type_string(JointType type) {
 bool parse_joint (const YAML::Node& node, JointDescription& joint) {
     string type = node["type"].as<string>();
     if (type == "rotation") {
-        joint.type = ROTATION;
+        joint.type = JOINTTYPE_ROTATION;
         joint.dh_alpha = DEGREE_TO_RADIAN(node["dh"]["alpha"].as<float>());
         joint.dh_d = node["dh"]["d"].as<float>();
         joint.dh_a = node["dh"]["a"].as<float>();
@@ -61,7 +61,7 @@ bool parse_joint (const YAML::Node& node, JointDescription& joint) {
         return true;
     }
     if (type == "translation") {
-        joint.type = TRANSLATION;
+        joint.type = JOINTTYPE_TRANSLATION;
         joint.dh_theta = DEGREE_TO_RADIAN(node["dh"]["theta"].as<float>());
         joint.dh_alpha = DEGREE_TO_RADIAN(node["dh"]["alpha"].as<float>());
         joint.dh_a = node["dh"]["a"].as<float>();
@@ -73,7 +73,7 @@ bool parse_joint (const YAML::Node& node, JointDescription& joint) {
         return true;
     }
     if (type == "fixed") {
-        joint.type = FIXED;
+        joint.type = JOINTTYPE_FIXED;
         joint.dh_theta = DEGREE_TO_RADIAN(node["dh"]["theta"].as<float>());
         joint.dh_alpha = DEGREE_TO_RADIAN(node["dh"]["alpha"].as<float>());
         joint.dh_d = node["dh"]["d"].as<float>();
@@ -84,7 +84,7 @@ bool parse_joint (const YAML::Node& node, JointDescription& joint) {
         return true;
     }
     if (type == "gripper") {
-        joint.type = GRIPPER;
+        joint.type = JOINTTYPE_GRIPPER;
         joint.dh_theta = 0;
         joint.dh_alpha = 0;
         joint.dh_d = node["grip"].as<float>();
@@ -124,16 +124,16 @@ JointDescription joint_description(JointType type, float dh_theta, float dh_alph
     joint.dh_alpha = DEGREE_TO_RADIAN(dh_alpha);
     joint.dh_d = dh_d;
     joint.dh_a = dh_a;
-    joint.dh_min = type == JointType::ROTATION ? DEGREE_TO_RADIAN(min) : min;
-    joint.dh_max = type == JointType::ROTATION ? DEGREE_TO_RADIAN(max) : max;
+    joint.dh_min = type == JOINTTYPE_ROTATION ? DEGREE_TO_RADIAN(min) : min;
+    joint.dh_max = type == JOINTTYPE_ROTATION ? DEGREE_TO_RADIAN(max) : max;
     return joint;
 }
 
 JointState joint_state(const JointDescription& joint, float position, JointStateType type) {
     JointState state;
     state.type = type;
-    state.position = joint.type == JointType::ROTATION ? DEGREE_TO_RADIAN(position) : position;
-    state.goal = joint.type == JointType::ROTATION ? DEGREE_TO_RADIAN(position) : position;
+    state.position = joint.type == JOINTTYPE_ROTATION ? DEGREE_TO_RADIAN(position) : position;
+    state.goal = joint.type == JOINTTYPE_ROTATION ? DEGREE_TO_RADIAN(position) : position;
     return state;
 }
 /*
@@ -245,13 +245,13 @@ void ManipulatorManager::push(shared_ptr<Plan> t) {
         }
         for (size_t j = 0; j < manipulator->size(); j++) {
             float goal = t->segments[s].joints[j].goal;
-            if (description.joints[j].type == ROTATION) {
+            if (description.joints[j].type == JOINTTYPE_ROTATION) {
                 goal = normalizeAngle(goal, description.joints[j].dh_min, description.joints[j].dh_max);
             }
 
             if (goal < description.joints[j].dh_min ||
                     t->segments[s].joints[j].goal > description.joints[j].dh_max) {
-                if (description.joints[j].type != FIXED) {
+                if (description.joints[j].type != JOINTTYPE_FIXED) {
                     cout << "Warning: rong joint " << j << " goal " << goal << " out of range " << description.joints[j].dh_min << " to " << description.joints[j].dh_max << ". Truncating." << endl;
                     goal = max(description.joints[j].dh_min, max(description.joints[j].dh_max, goal));
                 } else {
@@ -266,7 +266,7 @@ void ManipulatorManager::push(shared_ptr<Plan> t) {
 
     PlanState state;
     state.identifier = t->identifier;
-    state.type = RUNNING;
+    state.type = PLANSTATETYPE_RUNNING;
     planstate_publisher->send(state);
 
     plan = t;
@@ -277,13 +277,13 @@ void ManipulatorManager::push(shared_ptr<Plan> t) {
 
 void ManipulatorManager::update() {
 
-    if (manipulator->state().state != UNKNOWN && !description_publisher) {
+    if (manipulator->state().state != MANIPULATORSTATETYPE_UNKNOWN && !description_publisher) {
         cout << "Manipulator ready" << endl;
         ManipulatorDescription description = manipulator->describe();
         description_publisher = make_shared<StaticPublisher<ManipulatorDescription> >(client, "description", description);
     }
 
-    if (manipulator->state().state != PASSIVE && manipulator->state().state != UNKNOWN) {
+    if (manipulator->state().state != MANIPULATORSTATETYPE_PASSIVE && manipulator->state().state != MANIPULATORSTATETYPE_UNKNOWN) {
         state_publisher->send(manipulator->state());
     }
 
@@ -307,7 +307,7 @@ void ManipulatorManager::step(bool force) {
     ManipulatorState state = manipulator->state();
 
     for (size_t i = 0; i < manipulator->size(); i++) {
-        idle &= state.joints[i].type == IDLE;
+        idle &= state.joints[i].type == JOINTSTATETYPE_IDLE;
         goal &= close_enough(state.joints[i].position, state.joints[i].goal);
     }
 
@@ -316,7 +316,7 @@ void ManipulatorManager::step(bool force) {
         if (plan->segments.size() == 0) {
             PlanState state;
             state.identifier = plan->identifier;
-            state.type = COMPLETED;
+            state.type = PLANSTATETYPE_COMPLETED;
             planstate_publisher->send(state);
             plan.reset();
             return;

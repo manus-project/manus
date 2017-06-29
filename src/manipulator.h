@@ -7,14 +7,14 @@
 
 using namespace std;
 
-#include <manus/manipulator.h>
+#include <manus/messages.h>
 
 #include <echolib/client.h>
 #include <echolib/helpers.h>
 #include <echolib/datatypes.h>
 
 using namespace echolib;
-using namespace manus::manipulator;
+using namespace manus::messages;
 
 class Manipulator {
 public:
@@ -47,7 +47,7 @@ string joint_type_string(JointType type);
 
 JointDescription joint_description(JointType type, float dh_theta, float dh_alpha, float dh_d, float dh_a, float min, float max);
 
-JointState joint_state(const JointDescription& joint, float position, JointStateType type = IDLE);
+JointState joint_state(const JointDescription& joint, float position, JointStateType type = JOINTSTATETYPE_IDLE);
 
 
 class ManipulatorManager {

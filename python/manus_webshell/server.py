@@ -31,11 +31,10 @@ from .code_generator import CodeGenerator
 from .utilities import synchronize, RedirectHandler, DevelopmentStaticFileHandler, JsonHandler, NumpyEncoder
 import manus_webshell.static
 
-from manus.manipulator import JointType
+from manus.messages import JointType, MarkersSubscriber
 import manus
 from manus_apps import AppsManager, app_identifier
-
-#from manus.markers import MarkersSubscriber
+#from manus_privileged import PrivilegedClient
 
 __author__ = 'lukacu'
 
@@ -222,6 +221,25 @@ class AppsHandler(JsonHandler):
     def check_etag_header(self):
         return False
 
+class PrivilegedHandler(JsonHandler):
+    def __init__(self, application, request):
+        super(PrivilegedHandler, self).__init__(application, request)
+
+    def get(self):
+        run = self.request.arguments.get("run", None)
+        if not run is None:
+            self._apps.run(run[0])
+            self.response = {"result" : "ok"}
+            self.write_json()
+        active = self._apps.active()
+        self.response = {"list" : self._apps.list()}
+        if not active is None:
+            self.response["active"] = active.id
+        self.write_json()
+
+    def check_etag_header(self):
+        return False
+
 class StorageHandler(tornado.web.RequestHandler):
     keys = []
 
@@ -273,7 +291,7 @@ class StorageHandler(tornado.web.RequestHandler):
             data = "%s;%s" % (ctype, self.request.body)
             self._storage.put(key, data)
             StorageHandler.keys.add(key)
-            print "Updating %s" % key
+            print "Updating %s, content length %d bytes" % (key, len(self.request.body))
             ApiWebSocket.distribute_message({"channel": "storage", "action" : "update", "key" : key, "content" : ctype})
         self.finish()
         
@@ -432,16 +450,17 @@ def main():
         handlers.append((r'/', RedirectHandler, {'url' : '/index.html'}))
         handlers.append((r'/(.*)', DevelopmentStaticFileHandler, {'path': os.path.dirname(manus_webshell.static.__file__)}))
 
-#        def markers_callback(markers):
-#            data = {m.id : {"position": [m.position.x, m.position.y, m.position.z], "rotation": [m.rotation.x, m.rotation.y, m.rotation.z]} for m in markers}
-#            ApiWebSocket.distribute_message({"channel": "markers", "action" : "overwrite", "markers" : data})
+        def markers_callback(markers):
+            data = {m.id : {"location": [m.location.x, m.location.y, m.location.z], "rotation": [m.rotation.x, m.rotation.y, m.rotation.z]} for m in markers.markers}
+            print data
+            ApiWebSocket.distribute_message({"channel": "markers", "action" : "overwrite", "markers" : data, "overlay" : markers.owner})
 
-#        markers_subsriber = MarkersSubscriber(client, "markers", markers_callback)
+        markers_subsriber = MarkersSubscriber(client, "markers", markers_callback)
 
         application = tornado.web.Application(handlers)
 
         server = tornado.httpserver.HTTPServer(application)
-        server.listen(int(os.getenv('MANUS_WEBSHELL_PORT', "8080")))
+        server.listen(int(os.getenv('MANUS_PORT', "8080")))
 
         tornado_loop = tornado.ioloop.IOLoop.instance()
 

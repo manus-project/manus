@@ -1,5 +1,3 @@
-namespace manus.manipulator;
-
 import "geometry.msg";
 import "headers.msg";
 

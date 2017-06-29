@@ -13,7 +13,6 @@ import manus
 
 from manus_apps.blocks import block_color_name
 from manus_apps.workspace import Workspace
-#from manus_webshell.markers import Markers
 
 def evaluate_block(workspace, blocks, active, groups):
 

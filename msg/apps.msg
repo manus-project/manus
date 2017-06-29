@@ -1,11 +1,9 @@
 
-namespace manus.apps;
-
 enumerate AppEventType {ACTIVE}
 enumerate AppCommandType {EXECUTE, TERMINATE, RESCAN}
 
 structure AppData {
-	string id;
+	string id; 
 	string name;
 	int version = 1;
 	string description;

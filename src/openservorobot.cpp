@@ -88,14 +88,14 @@ float scale_joint_to_servo(sv tmp_sv, servo_info si, float pos)
 OpenServoRobot::OpenServoRobot(string path_to_i2c_port, const string& modelfile, const string& calibfile)
 {
   read_rate = 30;
-  _state.state = UNKNOWN;
+  _state.state = MANIPULATORSTATETYPE_UNKNOWN;
   _description.name = "i2c Robot Manipulator";
   _description.version = 0.2f;
 
   loadDescription(modelfile, calibfile);
 
   if (connectTo(path_to_i2c_port))
-    _state.state = ACTIVE;
+    _state.state = MANIPULATORSTATETYPE_ACTIVE;
 
   int num = open_servo.scanPortAutoAddServo();
 
@@ -159,9 +159,9 @@ int OpenServoRobot::loadDescription(const string& modelfile, const string& calib
   _state.joints.resize(_description.joints.size());
   int j = 0;
   for (int i = 0; i < _description.joints.size(); i++) {
-    _state.joints[i].type = IDLE;
+    _state.joints[i].type = JOINTSTATETYPE_IDLE;
 
-    if (_description.joints[i].type == FIXED)
+    if (_description.joints[i].type == JOINTTYPE_FIXED)
       continue;
 
     if (j >= servos.size())
@@ -342,11 +342,11 @@ int OpenServoRobot::joint_to_motor(int j)
 {
   if (j < 0 || j >= _description.joints.size()) return -1;
 
-  if (_description.joints[j].type == FIXED) return -1;
+  if (_description.joints[j].type == JOINTTYPE_FIXED) return -1;
 
   int m = 0;
   for (int i = 0; i < j; i++) {
-    if (_description.joints[i].type != FIXED)
+    if (_description.joints[i].type != JOINTTYPE_FIXED)
       m++;
   }
 
@@ -360,7 +360,7 @@ int OpenServoRobot::motor_to_joint(int m)
   int j = 0;
   while (m > 0) {
     j++; m--;
-    if (_description.joints[j].type == FIXED)
+    if (_description.joints[j].type == JOINTTYPE_FIXED)
       j++;
   }
 

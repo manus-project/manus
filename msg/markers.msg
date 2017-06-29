@@ -1,5 +1,3 @@
-namespace manus.messages.markers;
-
 import "geometry.msg";
 
 enumerate MarkerOperation {OVERWRITE, UPDATE, EXTEND}

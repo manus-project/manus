@@ -72,6 +72,11 @@ Program = {
           container.addClass('program-item');
           var tools = $('<div />').addClass('list-tools').prependTo(container);
 
+          var timestamp = new Date(item.values().timestamp);
+          var metadata = formatDateTime(timestamp) + " " + item.values().language;
+
+          container.append($("<div/>").addClass("metadata").text(metadata));
+
           container.click(function () {
               var key = item.values().key;
               if ($("#programs").hasClass("loading")) {
@@ -112,7 +117,7 @@ Program = {
 
       var list = new List("programs", {
           valueNames : ["name", "modified"],
-          item: "<a class='list-group-item'><div class='name'></div><div class='modified'></div></a>"
+          item: "<a class='list-group-item'><div class='name'></div></a>"
       }, []);
 
       RemoteStorage.list(function(keys) {
@@ -261,11 +266,12 @@ Program = {
     $("#program .toolbar.storage").append(save_button).append(load_button);
 
     PubSub.subscribe("apps.active", function(msg, identifier) {
-      if (identifier == Program.blockly.running_app) {
+      if (identifier !== undefined && (identifier == Program.blockly.running_app)) {
         run_button.hide(); stop_button.show();
         $("#console").removeClass("terminated");
         Program.show("console");
-      } else {
+      } if (Program.blockly.running_app != null && identifier === undefined) {
+        Program.blockly.running_app = null;
         stop_button.hide(); run_button.show();
         $("#console").addClass("terminated");
       }

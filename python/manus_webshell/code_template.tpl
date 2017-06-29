@@ -13,7 +13,6 @@ import manus
 from manus_apps.blocks import block_color_name
 from manus_apps.blocks import Block
 from manus_apps.workspace import Workspace
-#from manus_webshell.markers import Markers
 
 class BlocklyRuntimeError(RuntimeError):
     def __init__(self, message):
@@ -30,7 +29,6 @@ def manus_move_joint(joint, angle):
     # Angle is in degrees so we convert it to radians
     angle = float(angle) * pi / 180.0
     # Angle is also between 0 and 360 so we shift by -180
-    angle -= pi
 
     # TODO: also do some joint-angle-limit checks here?
 

@@ -163,6 +163,11 @@
     cursor: pointer;
 }
 
+.list-group-item.program-item .metadata {
+    font-size: 90%;
+    color: gray;
+}
+
 .list-group-item.apps-item .name {
     font-size: 120%;
 }

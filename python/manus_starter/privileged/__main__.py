@@ -1,17 +1,30 @@
 #!/usr/bin/env python
 import sys
 import os
-import hashlib
+import hashlib, binascii
 import echolib
-from manus.privileged import PrivilegedCommand, PrivilegedCommandType, PrivilegedCommandSubscriber
+from manus.messages import PrivilegedCommand, PrivilegedCommandType, PrivilegedCommandSubscriber
 
 from manus_starter.privileged import *
 
 if __name__ == '__main__':
+
+    if len(sys.argv) > 1:
+        h = hashlib.new('sha1')
+        h.update(sys.argv[1])
+        print h.hexdigest()
+        sys.exit(0)
+
     testing = bool(os.getenv('MANUS_TESTING', False))
+    secret = bool(os.getenv('MANUS_SECRET', False))
     loop = echolib.IOLoop()
 
     def control_callback(command):
+        h = hashlib.new('sha1')
+        h.update(command.secret)
+        if h.hexdigest() != secret:
+            print "Unauthorized command"
+            return
         print "Running privileged command: %s" % PrivilegedCommandType.str(command.type)
         if testing:
             return

@@ -3,7 +3,7 @@ import sys
 import os
 import hashlib
 import echolib
-from manus.apps import AppCommandType, AppEventType, AppListingSubscriber, AppEventSubscriber, \
+from manus.messages import AppCommandType, AppEventType, AppListingSubscriber, AppEventSubscriber, \
                      AppCommandPublisher, AppCommand, AppLogSubscriber
 
 def app_identifier(appfile):

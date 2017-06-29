@@ -38,29 +38,29 @@ bool SimulatedManipulator::step(float time) {
     bool idle = true;
 
     for (int i = 0; i < _description.joints.size(); i++) {
-        float resolution = _description.joints[i].type == ::ROTATION ?
-            MOVE_RESOLUTION_ROTATION : (_description.joints[i].type == ::TRANSLATION ? MOVE_RESOLUTION_TRANSLATION : MOVE_RESOLUTION_GRIP);
+        float resolution = _description.joints[i].type == JOINTTYPE_ROTATION ?
+            MOVE_RESOLUTION_ROTATION : (_description.joints[i].type == JOINTTYPE_TRANSLATION ? MOVE_RESOLUTION_TRANSLATION : MOVE_RESOLUTION_GRIP);
 
         resolution *= (time / 1000.0) * _state.joints[i].speed;
 
         if ((_state.joints[i].position - _state.joints[i].goal) > (resolution / 2)) {
             _state.joints[i].position -= resolution;
-            _state.joints[i].type = MOVING;
+            _state.joints[i].type = JOINTSTATETYPE_MOVING;
             idle = false;
         }
         else if ((_state.joints[i].position - _state.joints[i].goal) < (-resolution / 2)) {
             _state.joints[i].position += resolution;
-            _state.joints[i].type = MOVING;
+            _state.joints[i].type = JOINTSTATETYPE_MOVING;
             idle = false;
         }
         else {
             _state.joints[i].position = _state.joints[i].goal;
-            _state.joints[i].type = IDLE;
+            _state.joints[i].type = JOINTSTATETYPE_IDLE;
         }
 
     }
 
-    _state.state = idle ? PASSIVE : ACTIVE;
+    _state.state = idle ? MANIPULATORSTATETYPE_PASSIVE : MANIPULATORSTATETYPE_ACTIVE;
 
     return idle;
 }

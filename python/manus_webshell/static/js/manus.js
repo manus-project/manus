@@ -3,6 +3,21 @@ function uniqueIdentifier() {
   return Math.round(new Date().getTime() + (Math.random() * 100));
 }
 
+function formatDateTime(date) {
+  var monthNames = [
+    "January", "February", "March",
+    "April", "May", "June", "July",
+    "August", "September", "October",
+    "November", "December"
+  ];
+
+  var day = date.getDate();
+  var monthIndex = date.getMonth();
+  var year = date.getFullYear();
+
+  return day + ' ' + monthNames[monthIndex] + ' ' + year + " " + date.getHours() + ":" + date.getMinutes();
+}
+
 RemoteStorage = {
     get : function(key, callback) {
         $.ajax('/api/storage?key=' + key).done(function(data) {
@@ -352,13 +367,15 @@ $(function() {
 
     /* Camera stuff */
 
-    viewer = $.manus.world.viewer({});
+    var viewer = $.manus.world.viewer({});
     $('#viewer').append(viewer.wrapper);
     $.manus.world.grid(viewer, vec3.fromValues(80, 0, 0));
 
     var updateViewer = function() {
         viewer.resize($('#viewer').width(), $('#viewer').width() * 0.75);
     }
+
+    var markers = $.manus.world.markers(viewer);
 
     $( window ).resize(updateViewer);
     updateViewer();
@@ -493,6 +510,14 @@ $(function() {
             } else if (msg.action == "log") {
                 PubSub.publish("apps.log", {identifier: msg.identifier, lines: msg.lines});
             } 
+
+        } else if (msg.channel == "markers") {
+
+            markers.clear();
+            for (i in msg.markers) {
+                var marker = msg.markers[i];
+                markers.add(marker.location, marker.rotation, [20, 20, 20], [0, 255, 0]);
+            }
 
         }
 

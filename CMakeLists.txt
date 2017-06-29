@@ -14,18 +14,17 @@ FIND_PROGRAM(ECHOGEN echogen)
 
 
 ADD_CUSTOM_TARGET(manus_messages ALL
-                DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/manipulator.h
+                DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/messages.h
                 COMMENT "Generating message wrappers")
 
-ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/manipulator.h
+ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/messages.h
                 COMMAND ${ECHOGEN}
                 --python-outdir ${CMAKE_CURRENT_BINARY_DIR}/python/manus/
                 --cpp-outdir ${CMAKE_CURRENT_BINARY_DIR}/messages/manus/
-                ${CMAKE_SOURCE_DIR}/msg/manipulator.msg
-                ${CMAKE_SOURCE_DIR}/msg/apps.msg
-                ${CMAKE_SOURCE_DIR}/msg/privileged.msg
-                ${CMAKE_SOURCE_DIR}/msg/markers.msg
+                -p ${CMAKE_SOURCE_DIR}/msg/
+                ${CMAKE_SOURCE_DIR}/msg/messages.msg
                 DEPENDS 
+                ${CMAKE_SOURCE_DIR}/msg/messages.msg
                 ${CMAKE_SOURCE_DIR}/msg/manipulator.msg 
                 ${CMAKE_SOURCE_DIR}/msg/apps.msg
                 ${CMAKE_SOURCE_DIR}/msg/privileged.msg

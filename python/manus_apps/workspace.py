@@ -4,15 +4,13 @@
 import numpy as np
 import cv2
 import sys
-from manus.manipulator import JointType, PlanStateType
+from manus.messages import JointType, PlanStateType, Marker, Markers, MarkersPublisher, MarkerOperation
 import manus
 import echolib
 import echocv
 import random
 
 from manus_apps.blocks import BlockDetector
-
-#from manus.markers import Marker, Markers, MarkersPublisher, MarkerOperation
 
 class Camera(object):
 
@@ -130,7 +128,7 @@ class Workspace(object):
         self.bounds = bounds
         self.camera = Camera(self, "camera0")
         self.manipulator = Manipulator(self, "manipulator0")
-#        self.markers_pub = MarkersPublisher(self.client, "markers")
+        self.markers_pub = MarkersPublisher(self.client, "markers")
 
     def detect_blocks(self, block_size=20):
         if not self.manipulator.safe():
@@ -140,19 +138,19 @@ class Workspace(object):
     
         blocks = detector.detect(self.camera)
 
-#        markers = Markers()
-#        markers.operation = MarkerOperation.OVERWRITE
-#        for i, b in enumerate(blocks):
-#            m = Marker()
-#            m.id = str(i)
-#            m.position.x = b.position[0]
-#            m.position.y = b.position[1]
-#            m.position.z = b.position[2]
-#            m.rotation.x = b.rotation[0]
-#            m.rotation.y = b.rotation[1]
-#            m.rotation.z = b.rotation[2]
-#            markers.markers.append(m)
-#        self.markers_pub.send(markers)
+        markers = Markers()
+        markers.operation = MarkerOperation.OVERWRITE
+        for i, b in enumerate(blocks):
+            m = Marker()
+            m.id = str(i)
+            m.location.x = b.position[0]
+            m.location.y = b.position[1]
+            m.location.z = b.position[2]
+            m.rotation.x = b.rotation[0]
+            m.rotation.y = b.rotation[1]
+            m.rotation.z = b.rotation[2]
+            markers.markers.append(m)
+        self.markers_pub.send(markers)
 
         return blocks
 

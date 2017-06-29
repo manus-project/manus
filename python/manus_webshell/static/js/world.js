@@ -513,9 +513,9 @@ $.manus.world = {
 			clear : function() {
 				markers.children = [];
 			},
-			add : function(position, orientation, color) {
-                mesh = Phoria.Util.generateCuboid({"scalex" : 5,
-                         "scaley" : 5, "scalez" : 5}); // "offsetx" : 10, "offsetz" : 10, "offsety" : 10
+			add : function(position, orientation, scale, color) {
+                mesh = Phoria.Util.generateCuboid({"scalex" : scale[0] / 2,
+                         "scaley" : scale[1] / 2, "scalez" : scale[2] / 2}); // "offsetx" : 10, "offsetz" : 10, "offsety" : 10
                 var marker = Phoria.Entity.create({
                     points: mesh.points,
                     edges: mesh.edges,
@@ -527,7 +527,7 @@ $.manus.world = {
                         linewidth: 3,
                     }
                 });
-				marker.identity().translate(position).translate([10, -10, 0]); //.rotateZ(180 * orientation[2] / Math.PI );
+				marker.identity().translate(position).rotateZ(180 * orientation[2] / Math.PI ); //.translate([-scale[0]/4, -scale[1]/4, -scale[2]/4]);
 				markers.children.push(marker);
 			}
 		};

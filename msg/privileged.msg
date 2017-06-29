@@ -3,7 +3,7 @@
 enumerate PrivilegedCommandType {SHUTDOWN, REBOOT, UPGRADE}
 
 message PrivilegedCommand {
-	string key;
+	string secret;
 	PrivilegedCommandType command;
 	string[] arguments;
 }

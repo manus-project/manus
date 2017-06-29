@@ -32,8 +32,9 @@ Blockly.Blocks['manus_move_joint'] = {
         .appendField("Move joint ")
         .appendField(new Blockly.FieldDropdown([["1","0"], ["2","1"], ["3","2"], ["4","3"], ["5","5"]]), "joint_id");
     this.appendDummyInput()
-        .appendField(" to position ")
-        .appendField(new Blockly.FieldAngle(90), "joint_angle");
+        .appendField(" to ")
+        .appendField(new Blockly.FieldNumber(0), "joint_angle")
+        .appendField(" degrees.");
     this.setInputsInline(true);
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);

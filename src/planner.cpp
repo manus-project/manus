@@ -6,13 +6,15 @@
 #include <kdl/joint.hpp>
 #include <kdl/frames.hpp>
 
-#include "voxelgrid.h"
-
-#include <manus/manipulator.h>
+#include <manus/messages.h>
 
 using namespace echolib;
-using namespace manus::manipulator;
+using namespace manus::messages;
 using namespace std;
+
+#include "voxelgrid.h"
+
+using namespace manus::manipulator;
 
 class Planner {
 public:
@@ -54,24 +56,24 @@ protected:
 			JointDescription joint = desc->joints[j];
 
 			switch (joint.type) {
-			case ROTATION: {
+			case JOINTTYPE_ROTATION: {
 				kinematic_chain.addSegment(Segment(Joint(Joint::RotZ), Frame::DH(joint.dh_a, joint.dh_alpha, joint.dh_d, 0)));
 				lmin.push_back(joint.dh_min);
 				lmax.push_back(joint.dh_max);
 				spos.push_back(joint.dh_theta);
 				break;
 			}
-			case TRANSLATION: {
+			case JOINTTYPE_TRANSLATION: {
 				kinematic_chain.addSegment(Segment(Joint(Joint::TransZ), Frame::DH(joint.dh_a, joint.dh_alpha, 0, joint.dh_theta)));
 				lmin.push_back(joint.dh_min);
 				lmax.push_back(joint.dh_max);
 				spos.push_back(joint.dh_d);
 				break;
 			}
-			case GRIPPER: {
+			case JOINTTYPE_GRIPPER: {
 				gripper = j;
 			}
-			case FIXED: {
+			case JOINTTYPE_FIXED: {
 				kinematic_chain.addSegment(Segment(Joint(Joint::None), Frame::DH(joint.dh_a, joint.dh_alpha, joint.dh_d, joint.dh_theta)));
 				break;
 			}
@@ -112,7 +114,7 @@ protected:
 		PlanState planstate;
 		planstate.identifier = trajectory->identifier;
 
-		planstate.type = PLANNING;
+		planstate.type = PLANSTATETYPE_PLANNING;
 		planstate_publisher->send(planstate);
 
 		JntArray initial = state_to_array(*state);
@@ -138,7 +140,7 @@ protected:
 				plan.segments.push_back(segment);
 			} else {
 				cout << "Plan unsuccessful (result code: " << result << ")" << endl;
-				planstate.type = FAILED;
+				planstate.type = PLANSTATETYPE_FAILED;
 				planstate_publisher->send(planstate);
 				return;
 			}
@@ -147,7 +149,7 @@ protected:
 
 		plan_publisher->send(plan);
 
-		planstate.type = PLANNED;
+		planstate.type = PLANSTATETYPE_PLANNED;
 		planstate_publisher->send(planstate);
 
 	}

@@ -7,7 +7,7 @@ import traceback
 import fcntl
 import echolib
 
-from manus.apps import AppCommandType, AppEventType, AppListingPublisher, AppEventPublisher, \
+from manus.messages import AppCommandType, AppEventType, AppListingPublisher, AppEventPublisher, \
                        AppCommandSubscriber, AppEvent, AppData, AppListing, AppLogPublisher, AppLog, \
                        AppCommand
 
