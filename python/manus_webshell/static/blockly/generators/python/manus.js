@@ -30,7 +30,7 @@ Blockly.Python['manus_move_joint'] = function(block) {
   var dropdown_joint_id = block.getFieldValue('joint_id');
   var angle_joint_angle = block.getFieldValue('joint_angle');
   // TODO: Assemble Python into code variable.
-  var code = 'manus_move_joint('+ dropdown_joint_id +', '+ angle_joint_angle +')\n';
+  var code = 'arm.move_joint('+ dropdown_joint_id +', '+ angle_joint_angle +')\n';
   return code;
 };
 
@@ -57,35 +57,20 @@ Blockly.Python['manus_position_vector_var'] = function(block) {
 Blockly.Python['manus_move_arm'] = function(block) {
   var value_coordinates = Blockly.Python.valueToCode(block, 'coordinates', Blockly.Python.ORDER_ATOMIC) || "(0,0,0)";
   // TODO: Assemble Python into code variable.
-  var code = 'manus_move_arm_to_coordinates('+value_coordinates+')\n';
+  var code = 'arm.move_to_coordinates('+value_coordinates+')\n';
   return code;
 };
 
 Blockly.Python['manus_wait'] = function(block) {
   var value_wait_val = Blockly.Python.valueToCode(block, 'wait_val', Blockly.Python.ORDER_ATOMIC) || "0";
   // TODO: Assemble Python into code variable.
-  var code = 'manus_wait('+value_wait_val+')\n';
+  var code = 'arm.wait('+value_wait_val+')\n';
   return code;
 };
-/*
-Blockly.Python['manus_any_block_detector'] = function(block) {
-  // TODO: Assemble Python into code variable.
-  var code = 'manus_any_block_detected()';
-  // TODO: Change ORDER_NONE to the correct strength.
-  return [code, Blockly.Python.ORDER_NONE];
-};
 
-Blockly.Python['manus_colored_block_detector'] = function(block) {
-  var dropdown_block_color = block.getFieldValue('block_color');
-  // TODO: Assemble Python into code variable.
-  var code = 'manus_block_with_color_detected("'+dropdown_block_color+'")';
-  // TODO: Change ORDER_NONE to the correct strength.
-  return [code, Blockly.Python.ORDER_NONE];
-};
-*/
 Blockly.Python['manus_detected_blocks_array'] = function(block) {
   // TODO: Assemble Python into code variable.
-  var code = 'manus_detect_blocks()';
+  var code = 'arm.detect_blocks()';
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_NONE];
 };
@@ -93,7 +78,7 @@ Blockly.Python['manus_detected_blocks_array'] = function(block) {
 Blockly.Python['manus_detect_and_store_blocks'] = function(block) {
   var variable_blocks = Blockly.Python.variableDB_.getName(block.getFieldValue('BLOCKS'), Blockly.Variables.NAME_TYPE);
   // TODO: Assemble Python into code variable.
-  var code = variable_blocks+' = manus_detect_blocks()\n';
+  var code = variable_blocks+' = arm.detect_blocks()\n';
   return code;
 };
 
@@ -109,6 +94,6 @@ Blockly.Python['manus_retrieve_component'] = function(block) {
 Blockly.Python['manus_open_close_gripper'] = function(block) {
   var dropdown_open_close_option = block.getFieldValue('open_close_option');
   // TODO: Assemble Python into code variable.
-  var code = 'manus_cotrol_gripper("'+dropdown_open_close_option+'")\n';
+  var code = 'arm.cotrol_gripper("'+dropdown_open_close_option+'")\n';
   return code;
 };

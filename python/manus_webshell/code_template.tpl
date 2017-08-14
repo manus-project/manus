@@ -57,26 +57,6 @@ def manus_move_arm_to_coordinates(p):
         manus.MoveTo((p[0], p[1], p[2]), (0.0, 0.0, angle), 0)
     ])
 
-def manus_any_block_detected():
-    print "manus_any_block_detected"
-    # Set detection variables!
-    global detection_color, detection_x, detection_y, detection_z 
-    detection_color = "red"
-    detection_x = 200
-    detection_y = 100
-    detection_z = 100
-    return True # Dont't forget to return something
-
-def manus_block_with_color_detected(color):
-    print "manus_block_with_color_detected('"+color+"')"
-    # Set detection variables!
-    global detection_color, detection_x, detection_y, detection_z
-    detection_color = "red"
-    detection_x = 200
-    detection_y = 100
-    detection_z = 100
-    return True # Dont't forget to return something
-
 def manus_detect_blocks():
     print "manus_detect_blocks()"
     return workspace.detect_blocks() # dont't forget to return for manus_detect_and_store_blocks block

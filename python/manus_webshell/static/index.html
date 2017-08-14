@@ -14,7 +14,12 @@
     <script src="js/debug.js"></script>
     <script src="js/widgets.js"></script>
     <script src="js/world.js"></script>
-    <script src="js/manus.js"></script>  
+    <script src="js/manus.js"></script>
+
+     <!-- Ace includes-->
+    <script src="ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="ace-src-min-noconflict/theme-xcode.js" type="text/javascript" charset="utf-8"></script>
+    <script src="ace-src-min-noconflict/mode-python.js" type="text/javascript" charset="utf-8"></script>
 
     <!-- Blockly includes -->
     <script src="blockly/blockly_compressed.js"></script>
@@ -42,6 +47,16 @@
 
     <!-- Blockly tab -->
     <script src="js/blockly_loader.js"></script>
+
+    <style type="text/css" media="screen">
+        #ace-code-container { 
+            position: relative;
+            margin-top: 20px;
+            height: 600px;
+            font-size: 16px;
+        }
+    </style>
+
   </head>
   <body>
 
@@ -92,6 +107,11 @@
           <div class="tab-pane" id="program">
               <h1>Program your manipulator</h1>
               <div id="blockly-container"></div>
+              <div id="ace-code-container">function foo(items):
+    test = "All this is syntax highlighted"
+    print test
+    return x
+              </div>
           </div>
 
           <div class="tab-pane" id="apps">

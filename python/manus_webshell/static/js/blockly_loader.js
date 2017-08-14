@@ -1,11 +1,19 @@
 var workspace;
+var editor;
+var tab_size = 2;
 
 $(document).ready(function(){
     var $blockly_container = $( "#blockly-container" );
     if ($blockly_container.length == 0) {
         console.error("Missing blockly container!");
         return;
-    } 
+    }
+
+    var $ace_code_container = $( "#ace-code-container" );
+    if ($ace_code_container.length == 0) {
+        console.error("Missing ace code container!");
+        return;
+    }
 
     $blockly_container.append('\
       <p> \
@@ -145,12 +153,21 @@ $(document).ready(function(){
         zoom: {controls: true, wheel: true}
     });
 
+     // Ace Code Editor init
+    editor = ace.edit("ace-code-container");
+    editor.setTheme("ace/theme/xcode");
+    //var pythonMode = ace.require("ace/mode/python").Mode;
+    //editor.session.setMode(new pythonMode());
+    editor.getSession().setMode("ace/mode/python");
+    editor.getSession().setTabSize(tab_size);
+
     // Register & call on resize function
     var onresize = function(e) {
         blocklyDiv.style.left = blocklyArea.offsetLeft + 'px';
         blocklyDiv.style.top = blocklyArea.offsetTop  + 'px';
         blocklyDiv.style.width = blocklyArea.offsetWidth + 'px';
         blocklyDiv.style.height = blocklyArea.offsetHeight + 'px';
+
     };
     window.addEventListener('resize', onresize, false);
     onresize();
@@ -161,6 +178,7 @@ $(document).ready(function(){
         if (workspace){
             onresize();
             Blockly.svgResize(workspace);
+            editor.resize();
         }
     })
 
@@ -173,17 +191,44 @@ $(document).ready(function(){
             saveCode();
         }   
     });
-
 });
-function showCode() {
-    // Generate Python code and display it.
+
+function getPythonCodeFromWorkspace(){
     var code = Blockly.Python.workspaceToCode(workspace);
-    alert(code);
+    code = indentLines(code, tab_size);
+    return codePrepends()+code;
+}
+
+function codePrepends(){
+    var tab = " ".repeat(tab_size);
+    return `from manus.robot_arm import *
+
+
+arm = RobotArm()
+
+def main():
+`+tab+`# Wait for one second ...
+`+tab+`arm.wait(1000)
+`+tab+`# ... then start execution
+`
+}
+
+function indentLines(code, indent_size){
+    var tab = " ".repeat(indent_size);
+    var code_lines = code.split("\n");
+    for (var i in code_lines){
+        code_lines[i] = tab + code_lines[i]
+    }
+    return code_lines.join("\n")
+}
+
+function showCode() {
+    updateCodeEditor();
 }
 
 function runCode() {
     // Generate code
-    var code = Blockly.Python.workspaceToCode(workspace);
+    var code = getPythonCodeFromWorkspace();
     // Also generate xml
     var xml = Blockly.Xml.workspaceToDom(workspace);
     var xml_text = Blockly.Xml.domToText(xml);
@@ -214,6 +259,10 @@ function runCode() {
             alert("code submition FAILED!");
         }
     );
+}
+
+function updateCodeEditor(){
+    editor.setValue(getPythonCodeFromWorkspace());
 }
 
 function saveCode(){
