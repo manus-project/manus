@@ -43,7 +43,10 @@ $.manus.widgets = {
             if (options["text"]) button.text(options['text']);
             button.prepend($('<i/>').addClass('glyphicon glyphicon-' + options["icon"]));
             button.click(options['callback']);
-            if (options["tooltip"]) button.tooltip({text: (options['text']), delay: 1});
+            if (options["tooltip"]) {
+                button.attr({title: options['tooltip']});
+                button.tooltip({delay: 300, placement: "bottom"});
+            } 
             return button;
         }
 
@@ -70,14 +73,26 @@ $.manus.widgets = {
 
             var current =  $('<div class="current">').appendTo(status);
             var goal =  $('<div class="goal">').appendTo(status);
+            var dragging = false;
 
             status.click(function(e) {
                 var relative = Math.min(1, Math.max(0, (e.pageX - status.offset().left) / status.width()));
-
                 var absolute = (parameters.max - parameters.min) * relative + parameters.min;
-
                 PubSub.publish(manipulator + '.move_joint', {id: id, position: absolute, speed: 1});
+            });
 
+            status.mousedown(function(e) {
+                dragging = e.buttons == 1;
+            })
+            .mousemove(function(e) {
+                if (!dragging) return;
+                if (e.buttons != 1) { dragging = false; return; }
+                var relative = Math.min(1, Math.max(0, (e.pageX - status.offset().left) / status.width()));
+                var absolute = (parameters.max - parameters.min) * relative + parameters.min;
+                PubSub.publish(manipulator + '.move_joint', {id: id, position: absolute, speed: 1});
+             })
+            .mouseup(function() {
+                dragging = false;
             });
 
             container.append(status);

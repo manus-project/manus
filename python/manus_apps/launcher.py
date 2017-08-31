@@ -126,6 +126,7 @@ class Application(echolib.IOBase):
 
     def __init__(self, context, appfile, listed=True):
         super(Application, self).__init__()
+        self._fd = -1;
         try:
             with open(os.path.abspath(appfile)) as f:
                 content = f.readlines()
@@ -146,6 +147,11 @@ class Application(echolib.IOBase):
 
         self.process = None
 
+    def __del__(self):
+        print "Deleting app"
+        #super(Application, self).__del__()
+        self.context.loop.remove_handler(self)
+
     def __str__(self):
         return self.name
 
@@ -165,10 +171,9 @@ class Application(echolib.IOBase):
         self.process = subprocess.Popen(shlex.split(command), stdin=subprocess.PIPE,
              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=environment,
              shell=False, bufsize=1, cwd=self.dir)
-        fd = self.process.stdout.fileno()
-        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-        print "Add handler"
+        self._fd = self.process.stdout.fileno()
+        fl = fcntl.fcntl(self._fd, fcntl.F_GETFL)
+        fcntl.fcntl(self._fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
         self.context.loop.add_handler(self)
 
 
@@ -219,13 +224,9 @@ class Application(echolib.IOBase):
         return True
 
     def fd(self):
-        if self.alive():
-            return self.process.stdout.fileno()
-        else:
-            return -1
+        return self._fd
 
     def disconnect(self):
-        print "Disconnect"
         self.kill()
         #self.context.loop.remove_handler(self)
 

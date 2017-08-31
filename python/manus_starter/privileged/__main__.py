@@ -16,22 +16,22 @@ if __name__ == '__main__':
         sys.exit(0)
 
     testing = bool(os.getenv('MANUS_TESTING', False))
-    secret = bool(os.getenv('MANUS_SECRET', False))
+    secret = os.getenv('MANUS_SECRET', None)
     loop = echolib.IOLoop()
 
     def control_callback(command):
         h = hashlib.new('sha1')
         h.update(command.secret)
-        if h.hexdigest() != secret:
+        if secret and h.hexdigest() != secret:
             print "Unauthorized command"
             return
-        print "Running privileged command: %s" % PrivilegedCommandType.str(command.type)
+        print "Running privileged command: %s" % PrivilegedCommandType.str(command.command)
         if testing:
             return
         try:
             if command.type == PrivilegedCommandType.SHUTDOWN:
                 manus_privileged.run_shutdown()
-            elif command.type == PrivilegedCommandType.RESTART:
+            elif command.type == PrivilegedCommandType.REBOOT:
                 manus_privileged.run_restart()
             elif command.type == PrivilegedCommandType.UPGRADE:
                 manus_privileged.run_upgrade()

@@ -15,12 +15,12 @@ class PrivilegedClient(object):
 
     def request_shutdown(self, credentials):
         command = PrivilegedCommand()
-        command.type = PrivilegedCommandType.SHUTDOWN
+        command.command = PrivilegedCommandType.SHUTDOWN
         self.pub.send(command)
 
     def request_restart(self, credentials):
         command = PrivilegedCommand()
-        command.type = PrivilegedCommandType.RESTART
+        command.command = PrivilegedCommandType.REBOOT
         self.pub.send(command)
 
 def run_shutdown():

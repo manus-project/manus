@@ -34,7 +34,7 @@ import manus_webshell.static
 from manus.messages import JointType, MarkersSubscriber
 import manus
 from manus_apps import AppsManager, app_identifier
-#from manus_privileged import PrivilegedClient
+from manus_starter.privileged import PrivilegedClient
 
 __author__ = 'lukacu'
 
@@ -201,6 +201,26 @@ class ManipulatorMoveHandler(JsonHandler):
     def check_etag_header(self):
         return False
 
+class ManipulatorMoveSafeHandler(JsonHandler):
+
+    def __init__(self, application, request, manipulator):
+        super(ManipulatorMoveSafeHandler, self).__init__(application, request)
+        self.manipulator = manipulator
+
+    def get(self):
+        try:
+            self.manipulator.move_safe()
+            self.response = {'result' : 'ok'}
+            self.write_json()
+        except ValueError:
+            self.clear()
+            self.set_status(401)
+            self.finish('Illegal request')
+            return
+
+    def check_etag_header(self):
+        return False
+
 class AppsHandler(JsonHandler):
     def __init__(self, application, request, apps):
         super(AppsHandler, self).__init__(application, request)
@@ -239,6 +259,37 @@ class PrivilegedHandler(JsonHandler):
 
     def check_etag_header(self):
         return False
+
+class LoginHandler(JsonHandler):
+
+    def __init__(self, application, request, users):
+        super(LoginHandler, self).__init__(application, request)
+        self._users = users
+
+    def get(self):
+        self.response = {"result" : False}
+        self.write_json()
+
+    def post(self):
+        self.set_secure_cookie("user", self.get_argument("username"))
+        self.response = {"result" : True}
+        self.write_json()
+
+class PrivilegedHandler(JsonHandler):
+
+    def __init__(self, application, request, privileged):
+        super(PrivilegedHandler, self).__init__(application, request)
+        self._privileged = privileged
+
+    def get(self):
+        operation = self.get_argument("operation")
+        if operation == "shutdown":
+            self._privileged.request_shutdown("")
+        if operation == "restart":
+            self._privileged.request_restart("")
+
+        self.response = {"result" : True}
+        self.write_json()
 
 class StorageHandler(tornado.web.RequestHandler):
     keys = []
@@ -436,14 +487,18 @@ def main():
             handlers.append((r'/api/manipulator/state', ManipulatorStateHandler, {"manipulator": manipulator}))
             handlers.append((r'/api/manipulator/move_joint', ManipulatorMoveJointHandler, {"manipulator": manipulator}))
             handlers.append((r'/api/manipulator/move', ManipulatorMoveHandler, {"manipulator": manipulator}))
+            handlers.append((r'/api/manipulator/safe', ManipulatorMoveSafeHandler, {"manipulator": manipulator}))
             manipulators.append(manipulator)
         except Exception, e:
             print traceback.format_exc()
 
         #handlers.append((r'/api/markers', MarkersStorageHandler))
         apps = AppsManager(client)
+        privileged = PrivilegedClient(client)
+        #handlers.append((r'/api/login', LoginHandler, {"users" : None}))
         handlers.append((r'/api/run', ProgramHandler, {"apps" : apps}))
         handlers.append((r'/api/apps', AppsHandler, {"apps" : apps}))
+        handlers.append((r'/api/privileged', PrivilegedHandler, {"privileged": privileged}))
         handlers.append((r'/api/storage', StorageHandler, {"storage" : storage}))
         handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators, "apps": apps}))
         handlers.append((r'/api/info', ApplicationHandler))
@@ -457,7 +512,7 @@ def main():
 
         markers_subsriber = MarkersSubscriber(client, "markers", markers_callback)
 
-        application = tornado.web.Application(handlers)
+        application = tornado.web.Application(handlers, cookie_secret=os.getenv('MANUS_COOKIE_SECRET', "manus"))
 
         server = tornado.httpserver.HTTPServer(application)
         server.listen(int(os.getenv('MANUS_PORT', "8080")))

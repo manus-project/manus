@@ -21,6 +21,16 @@
     vertical-align: top;
 }
 
+#container {
+    margin-top: 30px;
+}
+
+#logo img {
+    width: 3em;
+    margin-top: -12px;
+    cursor: pointer;
+}
+
 .joint .information {
     display: inline-block;
     width: 40%;
@@ -61,7 +71,7 @@
 }
 
 .joint .status .current {
-    background-color: rgb(53, 126, 189);
+    background-color: rgb(50, 93, 136);
     border: 1px rgb(80, 80, 140) solid;
     z-index: 10;
 }
@@ -194,14 +204,10 @@
     margin: 0 3px;
 }
 
-.toolbar.storage {
+.toolbar.right {
     float: right;
     text-align: right;
     display: block;
-}
-
-#programs.loading .addnew {
-    display: none;
 }
 
 #blockly-area {
@@ -214,17 +220,30 @@
 }
 
 #blockly-workspace .blocklyToolboxDiv {
-    background-color: #222;
+    background-color: #aaa;
 }
 
 #blockly-workspace .blocklyTreeRow:hover:not(.blocklyTreeSelected) {
     background-color: #444;
 }
 
+#blockly-workspace .blocklyToolboxDiv .blocklyTreeLabel {
+    color: #222;
+}
 
+#blockly-workspace .blocklyToolboxDiv .blocklyTreeRow:hover {
+    background-color: #555;
+}
 
+#blockly-workspace .blocklyToolboxDiv .blocklyTreeRow:hover .blocklyTreeLabel {
+    color: white;
+}
 
-#console {
+#concole {
+    position: relative;
+}
+
+#console .content {
     margin-top: 10px;
     padding: 10px;
     font-family: monospace;
@@ -236,6 +255,14 @@
     border-radius: 4px;
 }
 
-#console.terminated {
+#console.terminated .content {
     color: gray;
+}
+
+#console .message {
+    display: none;
+}
+
+#console.terminated .message {
+    display: block;
 }

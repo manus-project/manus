@@ -71,36 +71,86 @@ Interface = {
 
     },
 
-    confirmation: function (title, message, callback) {
+    dialog: function (title, message, buttons) {
+
+        if (title === undefined) {
+            $('#block-dialog').modal('hide');
+            return;
+        }
 
         $('#block-dialog .modal-title').text(title);
-        $('#block-dialog .modal-body').text(message);
+        if (typeof message == 'string') {
+            $('#block-dialog .modal-body').text(message);
+        } else if (typeof message == 'function') {
+            message($('#block-dialog .modal-body').empty());
+        } else {
+            $('#block-dialog .modal-body').empty().append(message.clone());
+        }
         $('#block-dialog .modal-footer').empty();
 
-        $('#block-dialog .modal-footer').append($("<button/>")
-            .addClass("btn btn-default").text("Cancel")
-            .click(function() { $('#block-dialog').modal('hide'); }));
-
-        $('#block-dialog .modal-footer').append($("<button/>")
-            .addClass("btn btn-primary").text("Confirm")
-            .click(function() { 
-                callback();
-                $('#block-dialog').modal('hide');
-            }));
+        if (typeof buttons == 'string') {
+            $('#block-dialog .modal-footer').append($("<button/>")
+                .addClass("btn btn-default").text(buttons)
+                .click(function() { $('#block-dialog').modal('hide'); }));
+        } else {
+            function create_button(name, callback) {
+                return $("<button/>").addClass("btn btn-default").text(name)
+                    .click(function() { 
+                        if (callback()) $('#block-dialog').modal('hide');
+                    });
+            }
+            for (var b in buttons) {
+                $('#block-dialog .modal-footer').append(create_button(b, buttons[b]));
+            }
+        }
 
         $('#block-dialog').modal('show');
     },
 
+    confirmation: function (title, message, callback) {
+
+        Interface.dialog(title, message, {
+            "Cancel" : function() { return true; },
+            "Confirm": function() { callback(); return true; } 
+        });
+
+    },
+
     notification: function (title, message) {
 
-        $('#block-dialog .modal-title').text(title);
-        $('#block-dialog .modal-body').text(message);
+        Interface.dialog(title, message, "Close");
+
+    },
+
+    login: function (callback) {
+
+        $('#block-dialog .modal-title').text("Login");
+        var wrapper = $("<div>");
+        var username = $("<input>").attr({type: "text", placeholder: "Username"}).addClass("form-control");
+        var password = $("<input>").attr({type: "password", placeholder: "Password"}).addClass("form-control");
+
+        wrapper.append($("<div>").addClass("form-group").append($("<label>").text("Username")).append(username));
+        wrapper.append($("<div>").addClass("form-group").append($("<label>").text("Password")).append(password));
+
+        function submit() { 
+            callback(username.val(), password.val());
+            $('#block-dialog').modal('hide');
+        }
+
+        username.keypress(function (e) {
+            if(e.which == 13) { submit(); return false; }
+        });
+
+        password.keypress(function (e) {
+            if(e.which == 13) { submit(); return false; }
+        });
+
+        $('#block-dialog .modal-body').empty().append(wrapper);
         $('#block-dialog .modal-footer').empty();
 
         $('#block-dialog .modal-footer').append($("<button/>")
-            .addClass("btn btn-default").text("Close")
-            .click(function() { $('#block-dialog').modal('hide'); }));
-
+            .addClass("btn btn-primary").text("Login")
+            .click(submit));
         $('#block-dialog').modal('show');
     }
 
@@ -238,7 +288,7 @@ function posesList() {
 
     });
 
-    $("#poseslist").append($.manus.widgets.fancybutton({
+    $("#control .toolbar.right").append($.manus.widgets.fancybutton({
         icon: "plus", tooltip: "Add current pose",
         callback: function() {
             if (!currentPose) return;
@@ -248,6 +298,13 @@ function posesList() {
                 name : "New pose " + index,
                 pose: currentPose
             }]);
+        } 
+    }));
+
+    $("#control .toolbar.left").append($.manus.widgets.fancybutton({
+        icon: "tower", tooltip: "Safe position",
+        callback: function() {
+            $.ajax('/api/manipulator/safe');
         } 
     }));
 
@@ -326,25 +383,24 @@ function appsList() {
 
 }
 
-$(function() {
+function initializeTabs() {
 
     var joints = [];
     var emergency;
     var viewer;
     var manipulator;
-	var markers;
+    var markers;
 
-    Interface.init();
     Interface.overlay("Loading ...", "Please wait, the interface is loading.");
 
     function queryMarkerStatus() {
 
         $.ajax('/api/markers/get', {timeout : 300}).done(function(data) {
 
-			markers.clear();
-			for (var m in data) {
-				markers.add(data[m]["position"], data[m]["orientation"], data[m]["color"]);
-			}
+            markers.clear();
+            for (var m in data) {
+                markers.add(data[m]["position"], data[m]["orientation"], data[m]["color"]);
+            }
 
             setTimeout(queryMarkerStatus, 250);
 
@@ -356,16 +412,7 @@ $(function() {
 
     }
 
-    $.ajax('/api/info').done(function(data) {
-
-        $('#appname').text(data.name);
-        $('#appversion').text(data.version);
-
-    });
-
-
-
-    /* Camera stuff */
+/* Camera stuff */
 
     var viewer = $.manus.world.viewer({});
     $('#viewer').append(viewer.wrapper);
@@ -380,6 +427,13 @@ $(function() {
     $( window ).resize(updateViewer);
     updateViewer();
 
+    var viewbar_left = $("#world .toolbar.left");
+    var viewbar_right = $("#world .toolbar.right");
+
+    viewbar_left.append($.manus.widgets.fancybutton({icon : "globe", tooltip: "Free view", callback: function(e) {
+                    viewer.view(null);
+                }}));
+
     $.ajax('/api/camera/describe').done(function(data) {
 
         cameraView = $.manus.world.views.camera('camera', '/api/camera/video', data);
@@ -388,29 +442,21 @@ $(function() {
             PubSub.publish("camera.update", data);
         });
 
-        $.manus.widgets.buttons({
-            free: {
-                text: "World",
-                callback: function(e) {
-                    viewer.view(null);
-                }
-            },
-            camera: {
-                text: "Camera",
-                callback: function(e) {
-                    if (cameraView) viewer.view(cameraView);
-                }
-            }
-        }).addClass('toolbar').prependTo($('#viewer'));
+        viewbar_left.append($.manus.widgets.fancybutton({icon : "facetime-video", tooltip: "Camera view", callback: function(e) {
+                if (cameraView) viewer.view(cameraView);                
+            }}));
 
     }).fail(function () {});
+
+    viewbar_right.append($.manus.widgets.fancybutton({icon : "camera", tooltip: "Take snapshot",callback: function(e) {
+        $(this).attr({href: viewer.snapshot(), download: 'snapshot.png'});
+    }}));
 
     /* Manipulator stuff */
 
     $.ajax('/api/manipulator/describe').done(function(data) {
 
         var container = $("#controls");
-        var header = $('<div class="header">').appendTo(container);
 
         $('#manipulator').text(data.name + " (version: " + data.version.toFixed(2) + ")");
 
@@ -424,16 +470,14 @@ $(function() {
 
         $.manus.world.manipulator(viewer, "manipulator", data["joints"]);
 
-		markers = $.manus.world.markers(viewer);
-		markers.clear();
+        markers = $.manus.world.markers(viewer);
+        markers.clear();
 
         $.ajax('/api/manipulator/state').done(function(data) {
             PubSub.publish("manipulator.update", data);
         });
 
-    }).fail(function () {
-
-    });
+    }).fail(function () {});
 
     posesList();
 
@@ -529,4 +573,68 @@ $(function() {
 
     });
 
+
+}
+
+$(function() {
+
+    Interface.init();
+    //Interface.overlay("Loading ...", "Please wait.");
+
+    $.ajax('/api/info').done(function(data) {
+
+        $('#appname').text(data.name);
+        $('#appversion').text(data.version);
+
+    });
+
+    $("#logo").click(function() {
+
+        Interface.notification("About Manus", $("#about"))
+
+    });
+
+    $("#menu-shutdown").click(function() {
+
+        Interface.dialog("Shutdown", "Do you really want to shutdown the manipulator?",
+            { "Cancel" : function() { return true; },
+              "Shutdown" : function() { $.ajax('/api/privileged?operation=shutdown').done(function(data) { }); return true; },
+              "Restart" : function() { $.ajax('/api/privileged?operation=restart').done(function(data) { }); return true; }
+            }
+        );
+
+    });
+
+    initializeTabs();
+
+    /*
+    $.ajax('/api/login').done(function(data) {
+
+        if (data.result) {
+
+            initializeTabs();
+
+        } else {
+
+            Interface.overlay();
+            Interface.login(function(username, password) {
+                
+                Interface.overlay("Loading ...", "Please wait.");
+                
+                $.ajax({
+                    'type': 'POST',
+                    'url': '/api/login',
+                    'contentType': 'application/json',
+                    'data': JSON.stringify({username: username, password: password}),
+                    'dataType': 'json'
+                }).done(function() {
+                    
+                });
+
+            });
+
+        }
+
+    });
+    */
 });

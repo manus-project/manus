@@ -54,16 +54,15 @@
       </div>
     </div>
 
-
     <!-- Static navbar -->
-    <div class="navbar navbar-default">
+    <div class="navbar navbar-default navbar-static-top">
       <div class="container-fluid">
         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <span class="navbar-brand">Manus</span>
+        <span class="navbar-brand" id="logo"><img src="icon.png" /></span>
         <ul class="nav navbar-nav nav-collapse" id="menu">
           <li id="menu-control"><a href="#control" data-toggle="tab"> <i class="glyphicon glyphicon-dashboard"> </i> Control</a></li>
           <li id="menu-program"><a href="#program" data-toggle="tab"> <i class="glyphicon glyphicon-pencil"> </i> Program</a></li>
@@ -72,8 +71,8 @@
           
         </ul>
         <ul class="nav navbar-nav navbar-right">
-          <li id="menu-about"><a href="#about" data-toggle="tab"> <i class="glyphicon glyphicon-info-sign"> </i></a></li>
-          <!--li><a href="#turnoff"> <i class="glyphicon glyphicon-off"> </i></a></li-->
+          <!--li id="menu-user"><a href="#"> <i class="glyphicon glyphicon-user"> </i></a></li-->
+          <li id="menu-shutdown"><a href="#"> <i class="glyphicon glyphicon-off"> </i></a></li>
         </ul>
       </div>
     </div>
@@ -81,26 +80,28 @@
     <div id="container" class="container-fluid">
         <div class="tab-content col-xs-12 col-sm-8 col-md-7 col-lg-6" id="tabs">
 
-          <div class="tab-pane active row" id="control">
+          <div class="tab-pane active" id="control">
+              <div class="toolbar right"></div>
+              <div class="toolbar left"></div>
+              <div class="row">
               <div id="controls" class="col-xs-12 col-sm-12 col-md-8 col-lg-8"></div>
               <div id="poseslist" class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
                 <div class="alert alert-info" role="alert">Add saved poses by clicking on the button below.</div>
                 <div class="list list-group"></div>
               </div>
+              </div>
           </div>
 
           <div class="tab-pane" id="program">
-              <div class="toolbar storage"></div>
-              <div class="toolbar runtime"></div>
+              <div class="toolbar right"></div>
+              <div class="toolbar left"></div>
               <div id="blockly" class="program-panel">
                 <div id="blockly-area"></div>
                 <div id="blockly-workspace"></div>
               </div>
-              <div id="console" class="program-panel"></div>
-              <div id="programs" class="program-panel">
-                <h3 class="title"></h3>
-                <div class="list list-group"></div>
-                <div class="toolbar"></div>
+              <div id="console" class="program-panel">
+                <div class="content"></div>
+                <div class="message">Program finished. Click the console to return to your program.</div>
               </div>
           </div>
 
@@ -120,21 +121,24 @@
               </ul>
 
           </div>
-          <div class="tab-pane" id="about">
-            <div class="jumbotron">
-              <h1><span id="appname">Manus</span></h1>
-              <p>Version: <span id="appversion">unknown</span></p>
-              <p>Manipulator: <span id="manipulator">unknown</span></p>
-              <p>Manus is a modular manipulation robotics platform for educational purposes. The project consists of open-source software components as well as open hardware designs. The project was started to support a course on robotics and computer vision.
-
-              <br />This webshell enables access to a robotic manipulator and a web camera. </p>
-              <p><a class="btn btn-primary btn-lg" href="https://github.com/lukacu/manus" role="button">Github</a></p>
-            </div>
-          </div>
-
         </div>
-        <div class="tab-content col-xs-12 col-sm-4 col-md-5 col-lg-6" id="view"><div id="viewer"></div></div>
-   </div>
+        <div class="tab-content col-xs-12 col-sm-4 col-md-5 col-lg-6" id="world">
+          <div class="toolbar right"></div>
+          <div class="toolbar left"></div>
+          <div id="viewer"></div>
+        </div>
+  </div>
+
+  <!-- Templates -->
+  <div style="display: none;">
+  <div id="about" >
+      <p>Version: <span id="appversion">unknown</span></p>
+      <p>Manipulator: <span id="manipulator">unknown</span></p>
+      <p>Manus is a modular manipulation robotics platform for educational purposes. The project consists of open-source software components as well as open hardware designs. The project was started to support a course on robotics and computer vision.
+      <br />This webshell enables access to a robotic manipulator and a web camera. </p>
+      <p><a class="btn btn-primary btn-lg" href="https://github.com/lukacu/manus" role="button">Github</a></p>
+  </div>
+  </div>
 
   </body>
 </html>

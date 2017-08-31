@@ -2,234 +2,72 @@ var workspace;
 
 Program = {
 
-    init: function() {
+  init: function() {
 
-      $.ajax('/data/blockly-toolbox.xml').done(function(toolbox) {
+    $.ajax('/data/blockly-toolbox.xml').done(function(toolbox) {
 
-        var blocklyContainer = $("#blockly");
-        var blocklyArea = document.getElementById('blockly-area');
-        var blocklyDiv = document.getElementById('blockly-workspace');
-        blocklyContainer.append(Blockly.Xml.domToText(toolbox));
+      var blocklyContainer = $("#blockly");
+      var blocklyArea = document.getElementById('blockly-area');
+      var blocklyDiv = document.getElementById('blockly-workspace');
+      blocklyContainer.append(Blockly.Xml.domToText(toolbox));
 
-        Program.blockly = {};
+      Program.blockly = {};
 
-        Program.blockly.running_app = null;
-        Program.blockly.workspace = Blockly.inject('blockly-workspace',{
-            grid:{
-                spacing: 25,
-                length: 3,
-                colour: '#ddd',
-                snap: true
-            },
-            media: 'media/',
-            toolbox: document.getElementById('blockly-toolbox'),
-            zoom: {controls: true, wheel: true}
-        });
-
-        // Register & call on resize function
-        var onresize = function(e) {
-            blocklyDiv.style.left = blocklyArea.offsetLeft + 'px';
-            blocklyDiv.style.top = blocklyArea.offsetTop  + 'px';
-            blocklyDiv.style.width = blocklyArea.offsetWidth + 'px';
-            blocklyDiv.style.height = blocklyArea.offsetHeight + 'px';
-        };
-
-        window.addEventListener('resize', onresize, false);
-        //onresize();
-        //Blockly.svgResize(workspace);
-
-        var initial = true;
-
-        // Register on show callback
-        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-            if (Program.blockly.workspace) {
-                onresize();
-                Blockly.svgResize(Program.blockly.workspace);
-                if (initial) {
-                  initial = false;
-                  Program.pull();
-                }
-            }
-        })
-
-        Program.blockly.workspace.addChangeListener(function(event){
-            if (event.type == Blockly.Events.CREATE || 
-                event.type == Blockly.Events.DELETE || 
-                event.type == Blockly.Events.CHANGE || 
-                event.type == Blockly.Events.MOVE 
-            ) {
-                Program.push();
-            }   
-        });
-
+      Program.blockly.running_app = null;
+      Program.blockly.workspace = Blockly.inject('blockly-workspace',{
+          grid:{
+              spacing: 25,
+              length: 3,
+              colour: '#ddd',
+              snap: true
+          },
+          media: 'media/',
+          toolbox: document.getElementById('blockly-toolbox'),
+          zoom: {controls: true, wheel: true}
       });
 
-      var augmentItem = function(item) {
-          var container = $(item.elm);
-          if (container.hasClass('program-item') || item.values().key == "new")
-              return;
+      // Register & call on resize function
+      var onresize = function(e) {
+          blocklyDiv.style.left = blocklyArea.offsetLeft + 'px';
+          blocklyDiv.style.top = blocklyArea.offsetTop  + 'px';
+          blocklyDiv.style.width = blocklyArea.offsetWidth + 'px';
+          blocklyDiv.style.height = blocklyArea.offsetHeight + 'px';
+      };
 
-          container.addClass('program-item');
-          var tools = $('<div />').addClass('list-tools').prependTo(container);
+      window.addEventListener('resize', onresize, false);
+      //onresize();
+      //Blockly.svgResize(workspace);
 
-          var timestamp = new Date(item.values().timestamp);
-          var metadata = formatDateTime(timestamp) + " " + item.values().language;
+      var initial = true;
 
-          container.append($("<div/>").addClass("metadata").text(metadata));
-
-          container.click(function () {
-              var key = item.values().key;
-              if ($("#programs").hasClass("loading")) {
-                RemoteStorage.get(key, function(key, data) {
-                  Program.current(data.code);
-                });
-              } 
-
-              if ($("#programs").hasClass("saving")) {
-                  var name = item.values().name;
-                  var timestamp = (new Date()).toISOString();
-                  RemoteStorage.set(key, {language: "blockly",
-                      name: name,
-                      timestamp: timestamp,
-                      code: Program.current()});
+      // Register on show callback
+      $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+          if (Program.blockly.workspace) {
+              onresize();
+              Blockly.svgResize(Program.blockly.workspace);
+              if (initial) {
+                initial = false;
+                Program.pull();
               }
-
-              Program.show("blockly");
-          });
-
-          tools.append($('<i />').addClass('tool glyphicon glyphicon-trash').click(function() {
-              var name = item.values().name;
-              var key = item.values().key;
-              Interface.confirmation("Deleting program",
-                "Are you sure you want to delete program '" + name + "'? This action cannot be undone.",
-                function() {
-                  RemoteStorage.delete(key);
-                }
-              );
-
-                return false;
-            })
-          );
-
-      }
-
-      var updating = false;
-
-      var list = new List("programs", {
-          valueNames : ["name", "modified"],
-          item: "<a class='list-group-item'><div class='name'></div></a>"
-      }, []);
-
-      RemoteStorage.list(function(keys) {
-
-          for (var i in keys) {
-            if (!keys[i].startsWith("program_"))
-              continue;
-            RemoteStorage.get(keys[i], function(key, value) {
-              value["key"] = key;
-              list.add([value]);
-              list.sort("timestamp", {order: 'desc'});
-            });
           }
-          
+      })
+
+      Program.blockly.workspace.addChangeListener(function(event){
+          if (event.type == Blockly.Events.CREATE || 
+              event.type == Blockly.Events.DELETE || 
+              event.type == Blockly.Events.CHANGE || 
+              event.type == Blockly.Events.MOVE 
+          ) {
+              Program.push();
+          }   
       });
 
-      PubSub.subscribe("storage.update", function(msg, key) {
+    });
 
-          if (!key.startsWith("program_")) 
-              return;
-
-          RemoteStorage.get(key, function(key, value) {
-
-              list.remove("key", key);
-              value["key"] = key;
-              list.add([value]);
-              list.sort("timestamp", {order: 'desc'});
-          });
-
-      });
-
-      PubSub.subscribe("storage.delete", function(msg, key) {
-
-          if (!key.startsWith("program_")) 
-              return;
-          list.remove("key", key);
-
-      });
-
-      var index = 0;
-
-      list.on("updated", function() {
-
-          for (var i = 0; i < list.items.length; i++) {
-              augmentItem(list.items[i]);
-          }
-
-      });
-
-      $("#programs .toolbar").append($.manus.widgets.fancybutton({
-        icon: "plus", tooltip: "Save as new program",
-        callback: function() {
-
-          if ($("#programs").hasClass("loading")) 
-            return;
-          list.add([{key : "new", name: "", modified: "", timestamp: "zzzz"}]);
-          list.update();
-        
-          var container = $(list.get("key", "new")[0].elm);
-          container.addClass('editable');
-          var textbox = container.children(".name");
-          textbox.text("New program");
-          textbox.attr('contenteditable', 'true');
-
-          var sel = window.getSelection();
-          textbox.bind('blur', function() {
-              list.remove("key", "new");
-          }).focus();
-
-          var sel = window.getSelection();
-          var range = document.createRange();
-          range.setStart(textbox[0], 1);
-          range.collapse(true);
-          sel.removeAllRanges();
-          sel.addRange(range);
-          
-          textbox.bind('keyup', function(event) {
-              if(event.keyCode == 13) {
-                  name = textbox.text();
-                  key = "program_" + uniqueIdentifier();
-                  timestamp = (new Date()).toISOString();
-                  RemoteStorage.set(key, {language: "blockly",
-                      name: name,
-                      timestamp: timestamp,
-                      code: Program.current()});
-                  list.remove("key", "new");
-                  Program.show("blockly");
-                  event.stopPropagation();
-              } else if (event.keyCode == 27) {
-                  list.remove("key", "new");
-                  event.stopPropagation();
-              }
-              return true;
-          });
-
-          return false;
-        } 
-
-    }).addClass("addnew"));
-
-   
-    $("#programs .toolbar").append($.manus.widgets.fancybutton({
-        icon: "remove", tooltip: "Cancel",
-        callback: function() {
-          Program.show("blockly");
-        }
-    }));
-
-    var logconsole = $("#console");
+    var logconsole = $("#console .content");
     logconsole.click(function() {
 
-      if ($(this).hasClass("terminated")) {
+      if ($("#console").hasClass("terminated")) {
           Program.show("blockly");
       }
 
@@ -262,8 +100,8 @@ Program = {
 
     Program.show("blockly");
 
-    $("#program .toolbar.runtime").append(run_button).append(stop_button);
-    $("#program .toolbar.storage").append(save_button).append(load_button);
+    $("#program .toolbar.left").append(run_button).append(stop_button);
+    $("#program .toolbar.right").append(save_button).append(load_button);
 
     PubSub.subscribe("apps.active", function(msg, identifier) {
       if (identifier !== undefined && (identifier == Program.blockly.running_app)) {
@@ -318,25 +156,44 @@ Program = {
   },
 
   save: function() {
-    $("#programs").addClass("saving").removeClass("loading");
-    $("#programs").children(".title").text("Save program");
-    Program.show("programs");
+    Interface.dialog("Save program", 
+      function(container) { 
+        var onclose = Program._filemanager(container, "saving", function(key, name) {
+          var timestamp = (new Date()).toISOString();
+          RemoteStorage.set(key, {
+            language: "blockly",
+            name: name,
+            timestamp: timestamp,
+            code: Program.current()
+          });
+          Interface.dialog();
+          onclose();
+        }); 
+      }, 
+      { "Cancel" : function() { return true; } });
   },
 
   load: function() {
-    $("#programs").addClass("loading").removeClass("saving");
-    $("#programs").children(".title").text("Load program");
-    Program.show("programs");
+    Interface.dialog("Load program", 
+      function(container) {
+        var onclose = Program._filemanager(container, "loading", function(key, name) {
+          RemoteStorage.get(key, function(key, data) {
+            Program.current(data.code);
+          });
+          Program.show("blockly");
+          Interface.dialog();
+          onclose();
+        });
+      }, 
+      { "Cancel" : function() { return true; } });
   },
 
   show: function(panel) {
     $("#program").children(".program-panel").hide();
-    $("#program .storage").hide();
     $("#program .runtime").hide();
     if (panel == "blockly") {
       $("#program").children("#blockly").show();
       $("#program .runtime").show();
-      $("#program .storage").show();
       return;
     } 
     if (panel == "console") {
@@ -344,32 +201,142 @@ Program = {
       $("#program .runtime").show();
       return;
     }
-    if (panel == "programs") {
-      $("#program").children("#programs").show();
-      $("#program .storage").show();
-      return;
-    } 
   },
 
   run : function() {
-        var code = Blockly.Python.workspaceToCode(Program.blockly.workspace);
-        $.ajax({
-            'type': 'POST',
-            'url': '/api/run',
-            'contentType': 'application/json',
-            'data': JSON.stringify({code: code, environment: "python"}),
-            'dataType': 'json'
-        }).done(function(data) {
-            if (data.status != "ok"){
-                console.log("Code execution failed. " + data.status + ": " + data.description);
-            } else {
-              Program.blockly.running_app = data.identifier;
-            }
-        }).fail(function(err) {
-            Interface.notification("Error", err);
+    var code = Blockly.Python.workspaceToCode(Program.blockly.workspace);
+    $.ajax({
+        'type': 'POST',
+        'url': '/api/run',
+        'contentType': 'application/json',
+        'data': JSON.stringify({code: code, environment: "python"}),
+        'dataType': 'json'
+    }).done(function(data) {
+        if (data.status != "ok"){
+            console.log("Code execution failed. " + data.status + ": " + data.description);
+        } else {
+          Program.blockly.running_app = data.identifier;
+        }
+    }).fail(function(err) {
+        Interface.notification("Error", err);
 
+    });
+  },
+
+  _filemanager: function(container, type, callback) {
+
+    var augmentItem = function(item) {
+        var container = $(item.elm);
+        if (container.hasClass('program-item') || item.values().key == "new")
+            return;
+
+        container.addClass('program-item');
+        var tools = $('<div />').addClass('list-tools').prependTo(container);
+
+        var timestamp = new Date(item.values().timestamp);
+        var metadata = formatDateTime(timestamp) + " " + item.values().language;
+
+        container.append($("<div/>").addClass("metadata").text(metadata));
+
+        container.click(function () {
+            var key = item.values().key;
+            var name = item.values().name;
+            callback(key, name);
         });
+
+        if (type == "browse") {
+          tools.append($('<i />').addClass('tool glyphicon glyphicon-trash').click(function() {
+              var name = item.values().name;
+              var key = item.values().key;
+              Interface.confirmation("Deleting program",
+                "Are you sure you want to delete program '" + name + "'? This action cannot be undone.",
+                function() {
+                  RemoteStorage.delete(key);
+                }
+              );
+              return false;
+            })
+          );
+        }
     }
+
+    var updating = false;
+
+    $(container).append($("<div>").attr({id : "filemanager"}).append($("<div>").addClass("list list-group")));
+
+    var list = new List("filemanager", {
+        valueNames : ["name", "modified"],
+        item: "<a class='list-group-item'><div class='name'></div></a>"
+    }, []);
+
+    RemoteStorage.list(function(keys) {
+
+        for (var i in keys) {
+          if (!keys[i].startsWith("program_"))
+            continue;
+          RemoteStorage.get(keys[i], function(key, value) {
+            value["key"] = key;
+            list.add([value]);
+            list.sort("timestamp", {order: 'desc'});
+          });
+        }
+        
+    });
+
+    var subscribtions = {
+     update : PubSub.subscribe("storage.update", function(msg, key) {
+
+          if (!key.startsWith("program_")) 
+              return;
+
+          RemoteStorage.get(key, function(key, value) {
+
+              list.remove("key", key);
+              value["key"] = key;
+              list.add([value]);
+              list.sort("timestamp", {order: 'desc'});
+          });
+      }),
+    delete : PubSub.subscribe("storage.delete", function(msg, key) {
+
+          if (!key.startsWith("program_")) 
+              return;
+          list.remove("key", key);
+
+      })
+    }
+
+    var index = 0;
+
+    list.on("updated", function() {
+
+        for (var i = 0; i < list.items.length; i++) {
+            augmentItem(list.items[i]);
+        }
+
+    });
+
+    if (type == "saving") { 
+      var filename = $("<input>").attr({type: "text", placeholder: "New file"}).addClass("form-control");
+      container.append($("<div>").addClass("form-group").append(filename));
+
+      filename.keypress(function (e) {
+          if(e.keyCode == 13) {
+              e.stopPropagation();
+              var name = filename.val();
+              if (name.length < 1) return;
+              var key = "program_" + uniqueIdentifier();
+              callback(key, name);
+          }
+          return true;
+        });
+    } 
+
+    return function() {
+      PubSub.unsubscribe(subscribtions.update);
+      PubSub.unsubscribe(subscribtions.delete);
+    }
+  }
 
 };
 

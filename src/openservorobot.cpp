@@ -92,12 +92,12 @@ OpenServoRobot::OpenServoRobot(string path_to_i2c_port, const string& modelfile,
   _description.name = "i2c Robot Manipulator";
   _description.version = 0.2f;
 
-  loadDescription(modelfile, calibfile);
-
   if (connectTo(path_to_i2c_port))
     _state.state = MANIPULATORSTATETYPE_ACTIVE;
 
   int num = open_servo.scanPortAutoAddServo();
+
+  loadDescription(modelfile, calibfile);
 
   if (num < servos.size())
     throw ManipulatorException("Not enough motors detected.");

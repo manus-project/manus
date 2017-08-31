@@ -146,9 +146,9 @@ $.manus.world = {
                 },
                 clear: null,
                 postrender: function(world) {
-                    var ctx = world.canvas.getContext('2d');
+                    /*var ctx = world.canvas.getContext('2d');
                     ctx.fillStyle = "#aaaaaa";
-                    ctx.fillText("Drag mouse to rotate the view.", 10, 20);
+                    ctx.fillText("Drag mouse to rotate the view.", 10, 20);*/
                 }
             }
         },
@@ -235,23 +235,6 @@ $.manus.world = {
         viewCamera = -1;
         canvas = canvas[0];
 
-		$.manus.widgets.buttons({
-			snapshot: {
-				text: "Save picture",
-				callback: function(e) {
-					var dataURL = canvas.toDataURL('image/png');
-					$(this).attr({href: dataURL, download: 'snapshot.png'});
-				}
-
-			}/*,
-			resize: {
-				text: "Resize",
-				callback: function(e) {
-
-				}
-			}*/
-		}).addClass('tools').appendTo(wrapper);
-
         var scene = new Phoria.Scene();
         scene.camera.position = {x:0.0, y:0.0, z:1.0};
         scene.camera.up = {x:0.0, y:0.0, z:1.0};
@@ -282,6 +265,16 @@ $.manus.world = {
                 scene.viewport.height = canvas.height;
                 var dirty = true;
                 world.render();
+            },
+            snapshot: function() {
+                var buffer = document.createElement('canvas');
+                buffer.width = canvas.width;
+                buffer.height = canvas.height;
+                var context = buffer.getContext('2d');
+                context.drawImage(projection[0], 0, 0, canvas.width, canvas.height);
+                context.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+                var dataURL = buffer.toDataURL('image/png');
+                return dataURL;
             }
         }
 

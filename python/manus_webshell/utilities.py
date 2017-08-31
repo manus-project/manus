@@ -93,5 +93,8 @@ try:
             output = json.dumps(self.response, cls=NumpyEncoder)
             self.write(output)
 
+        def get_current_user(self):
+            return self.get_secure_cookie("user")
+
 except ImportError:
     pass
