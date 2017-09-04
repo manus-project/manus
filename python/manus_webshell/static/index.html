@@ -16,6 +16,12 @@
     <script src="js/world.js"></script>
     <script src="js/manus.js"></script>
 
+    <!-- Ace includes -->
+    <script src="js/ace-src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/ace-src-min-noconflict/theme-xcode.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/ace-src-min-noconflict/mode-python.js" type="text/javascript" charset="utf-8"></script>
+    <script src="js/ace-src-min-noconflict/ext-language_tools.js"></script>
+
     <!-- Blockly includes -->
     <script src="js/blockly_compressed.js"></script>
     <script src="js/python_compressed.js"></script>
@@ -26,6 +32,15 @@
     <script src="js/blockly-blocks-manus.js"></script>
 
     <script src="js/program.js"></script>
+
+    <style type="text/css" media="screen">
+        #ace-code-editor-workspace { 
+            position: relative;
+            margin-top: 20px;
+            height: 600px;
+            font-size: 16px;
+        }
+    </style>
   </head>
   <body>
 
@@ -98,6 +113,9 @@
               <div id="blockly" class="program-panel">
                 <div id="blockly-area"></div>
                 <div id="blockly-workspace"></div>
+              </div>
+              <div id="ace-code-editor-container" class="program-panel">
+                <div id="ace-code-editor-workspace"></div>
               </div>
               <div id="console" class="program-panel">
                 <div class="content"></div>

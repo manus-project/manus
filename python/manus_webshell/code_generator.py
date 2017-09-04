@@ -45,9 +45,11 @@ App generated from Blockly code
                 res.append(prefix+line)
         return "\n".join(res)
 
-    def generate_app_with_code(self, code, write_to_disk=False):
+    def generate_app_with_code(self, code, write_to_disk=False, wrap_with_template=False):
         try:
-            res_code = self.generate_code_with_code(code)
+            res_code = code
+            if wrap_with_template:
+                res_code = self.generate_code_with_code(code)
             if (write_to_disk):
                 app_file_path = self.target_dir+"generated_app.app"
                 python_file_path = self.target_dir+"generated_app.py"
