@@ -30,14 +30,14 @@ Blockly.Python['manus_move_joint'] = function(block) {
   var dropdown_joint_id = block.getFieldValue('joint_id');
   var angle_joint_angle = block.getFieldValue('joint_angle');
   // TODO: Assemble Python into code variable.
-  var code = 'manus_move_joint('+ dropdown_joint_id +', '+ angle_joint_angle +')\n';
+  var code = 'arm.move_joint('+ dropdown_joint_id +', '+ angle_joint_angle +')\n';
   return code;
 };
 
 Blockly.Python['manus_retrieve_joint'] = function(block) {
   var dropdown_joint_id = block.getFieldValue('joint_id');
   // TODO: Assemble Python into code variable.
-  var code = 'manus_get_joint('+ dropdown_joint_id + ')\n';
+  var code = 'arm.get_joint_position('+ dropdown_joint_id + ')\n';
   return code;
 };
 
@@ -64,14 +64,14 @@ Blockly.Python['manus_position_vector_var'] = function(block) {
 Blockly.Python['manus_move_arm'] = function(block) {
   var value_coordinates = Blockly.Python.valueToCode(block, 'coordinates', Blockly.Python.ORDER_ATOMIC) || "(0,0,0)";
   // TODO: Assemble Python into code variable.
-  var code = 'manus_move_arm_to_coordinates('+value_coordinates+')\n';
+  var code = 'arm.move_to_coordinates('+value_coordinates+')\n';
   return code;
 };
 
 Blockly.Python['manus_wait'] = function(block) {
   var value_wait_val = Blockly.Python.valueToCode(block, 'wait_val', Blockly.Python.ORDER_ATOMIC) || "0";
   // TODO: Assemble Python into code variable.
-  var code = 'manus_wait('+value_wait_val+')\n';
+  var code = 'arm.wait('+value_wait_val+')\n';
   return code;
 };
 /*
@@ -92,7 +92,7 @@ Blockly.Python['manus_colored_block_detector'] = function(block) {
 */
 Blockly.Python['manus_detected_blocks_array'] = function(block) {
   // TODO: Assemble Python into code variable.
-  var code = 'manus_detect_blocks()';
+  var code = 'arm.detect_blocks()';
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_NONE];
 };
@@ -100,7 +100,7 @@ Blockly.Python['manus_detected_blocks_array'] = function(block) {
 Blockly.Python['manus_detect_and_store_blocks'] = function(block) {
   var variable_blocks = Blockly.Python.variableDB_.getName(block.getFieldValue('BLOCKS'), Blockly.Variables.NAME_TYPE);
   // TODO: Assemble Python into code variable.
-  var code = variable_blocks+' = manus_detect_blocks()\n';
+  var code = variable_blocks+' = arm.detect_blocks()\n';
   return code;
 };
 
@@ -108,7 +108,7 @@ Blockly.Python['manus_retrieve_coordinate'] = function(block) {
   var dropdown_component_dropdown = block.getFieldValue('coordinate_dropdown');
   var variable_selected_block_for_component_access = Blockly.Python.variableDB_.getName(block.getFieldValue('SELECTED_BLOCK_FOR_COMPONENT_ACCESS'), Blockly.Variables.NAME_TYPE);
   // TODO: Assemble Python into code variable.
-  var code = 'manus_retrieve_coordinate_from_point("'+dropdown_component_dropdown+'", '+variable_selected_block_for_component_access+')';
+  var code = 'retrieve_coordinate_from_point("'+dropdown_component_dropdown+'", '+variable_selected_block_for_component_access+')';
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_NONE];
 };
@@ -116,7 +116,7 @@ Blockly.Python['manus_retrieve_coordinate'] = function(block) {
 Blockly.Python['manus_retrieve_color'] = function(block) {
   var variable_selected_block_for_component_access = Blockly.Python.variableDB_.getName(block.getFieldValue('SELECTED_BLOCK_FOR_COMPONENT_ACCESS'), Blockly.Variables.NAME_TYPE);
   // TODO: Assemble Python into code variable.
-  var code = 'manus_retrieve_color_from_block('+variable_selected_block_for_component_access+')';
+  var code = 'retrieve_color_from_block('+variable_selected_block_for_component_access+')';
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_NONE];
 };
@@ -124,6 +124,6 @@ Blockly.Python['manus_retrieve_color'] = function(block) {
 Blockly.Python['manus_open_close_gripper'] = function(block) {
   var dropdown_open_close_option = block.getFieldValue('open_close_option');
   // TODO: Assemble Python into code variable.
-  var code = 'manus_cotrol_gripper("'+dropdown_open_close_option+'")\n';
+  var code = 'arm.cotrol_gripper("'+dropdown_open_close_option+'")\n';
   return code;
 };

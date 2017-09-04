@@ -45,6 +45,19 @@ $.manus.widgets = {
             button.click(options['callback']);
             if (options["tooltip"]) button.tooltip({text: (options['text']), delay: 1});
             return button;
+        } else if (options["icons"]) {
+            var button = $('<a/>').addClass('btn btn-primary').attr({'role': 'button', 'autocomplete': 'off'});
+            if (options["text"]) button.text(options['text']);
+            button.click(options['callback']);
+            if (options["tooltip"]) button.tooltip({text: (options['text']), delay: 1});
+            for (var _icon in options["icons"]){
+                var icon = options["icons"][_icon];
+                if (_icon != 0)
+                    button.append($('<i style="margin-left:5px;" />').addClass('glyphicon glyphicon-' + icon));
+                else
+                    button.append($('<i  />').addClass('glyphicon glyphicon-' + icon));
+            }
+            return button;
         }
 
         var button = $('<a/>').addClass('btn btn-primary').attr({'role': 'button', 'name': key, 'autocomplete': 'off'}).text(options['text']);

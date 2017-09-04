@@ -287,7 +287,7 @@ function appsList() {
             }
             return false;
         }).tooltip({title: "Run/Stop", delay: 1}));
-
+        
     }
 
     var updating = false;
@@ -482,8 +482,19 @@ $(function() {
         waitForConnection();
     }
 
+    var err_count = 0;
     socket.onmessage = function (event) {
-        var msg = JSON.parse(event.data);
+        var msg;
+        try {
+            msg = JSON.parse(event.data);
+        }catch(err) {
+            err_count++;
+            if (err_count > 200){
+                console.error("Failed to parse JSON in onmessage: " + err.message);
+                err_count = 0;
+            }
+            return; 
+        }
 
         if (msg.channel == "camera") {
 
