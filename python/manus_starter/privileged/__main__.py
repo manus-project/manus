@@ -3,6 +3,7 @@ import sys
 import os
 import hashlib, binascii
 import echolib
+import traceback
 from manus.messages import PrivilegedCommand, PrivilegedCommandType, PrivilegedCommandSubscriber
 
 from manus_starter.privileged import *
@@ -29,12 +30,12 @@ if __name__ == '__main__':
         if testing:
             return
         try:
-            if command.type == PrivilegedCommandType.SHUTDOWN:
-                manus_privileged.run_shutdown()
-            elif command.type == PrivilegedCommandType.REBOOT:
-                manus_privileged.run_restart()
-            elif command.type == PrivilegedCommandType.UPGRADE:
-                manus_privileged.run_upgrade()
+            if command.command == PrivilegedCommandType.SHUTDOWN:
+                run_shutdown()
+            elif command.command == PrivilegedCommandType.REBOOT:
+                run_restart()
+            elif command.command == PrivilegedCommandType.UPGRADE:
+                run_upgrade()
         except Exception, e:
             print traceback.format_exc()
 

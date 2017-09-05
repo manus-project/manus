@@ -15,6 +15,13 @@
         "restart" : false,
         "wait" : 1
     },
+    "privileged" : {
+        "command" : "python -m manus_starter.privileged",
+        "restart" : true,
+        "user" : "root",
+        "group" : ["admin"],
+        "depends" : ["echo"]
+    },
     "cameraserver" : {
         "command" : "echocv_camera 0",
         "required" : false,
@@ -22,7 +29,7 @@
         "directory" : "${MANUS_ROOT}/share/manus/",
         "depends" : ["echo"],
         "wait" : 0.1,
-		"environment" : {"LIMIT_FPS" : "5"},
+        "environment" : {"LIMIT_FPS" : "5"},
         "remap" : {
             "camera" : "camera0.image",
             "intrinsics" : "camera0.parameters"
@@ -42,17 +49,17 @@
     },
     "manipulator": {
 		"command": "manus_openservo_manipulator manipulator1.yaml /etc/calibration.yaml",
-        "depends": ["echo"],
+		"depends": ["echo"],
 		"directory" : "${MANUS_ROOT}/share/manus/models",
 		"restart": false,
 		"wait": 1,
-        "remap" : {
-            "state" : "manipulator0.state",
-            "description" : "manipulator0.description",
-            "plan" : "manipulator0.plan",
-            "planstate" : "manipulator0.planstate",
-            "trajectory" : "manipulator0.trajectory"
-        }
+		"remap" : {
+			"state" : "manipulator0.state",
+			"description" : "manipulator0.description",
+			"plan" : "manipulator0.plan",
+			"planstate" : "manipulator0.planstate",
+			"trajectory" : "manipulator0.trajectory"
+		}
     },
     "webshell" : {
         "command" : "python -u -m manus_webshell",

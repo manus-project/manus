@@ -1,10 +1,12 @@
-
 import os
 import sys
 import time
 import struct
 import signal
 import shutil
+import traceback
+
+from subprocess import call
 
 from manus.messages import PrivilegedCommand, PrivilegedCommandType, PrivilegedCommandPublisher
 
@@ -30,18 +32,22 @@ def run_shutdown():
             return True
         else:
             return False
-    finally:
+    except Exception, e:
+        print traceback.format_exc()
         return False
+
 
 def run_restart():
     try:
         if os.geteuid() == 0:
-            call(["sudo", "/sbin/reboot"])
+            call(["/sbin/reboot"])
             return True
         else:
             return False
-    finally:
+    except Exception, e:
+        print traceback.format_exc()
         return False
+
 
 def run_upgrade():
     try:
@@ -54,3 +60,4 @@ def run_upgrade():
             return False
     finally:
         return False
+~                     
