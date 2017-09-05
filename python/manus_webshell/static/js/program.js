@@ -173,10 +173,14 @@ Program = {
 
     var convert_python = $.manus.widgets.fancybutton({
       callback : function() {          
-        Program.python.ace.setValue(CodeParser.prepare_std_code(Blockly.Python.workspaceToCode(Program.blockly.workspace)));
-        Program.python.shown = true;
-        Program.python.in_use = true;
-        Program.show("python");
+
+        Interface.confirmation("Convert to Python", "If you would like to keep your Blockly program make sure that you have saved it first.",
+          function() {
+            Program.python.ace.setValue(CodeParser.prepare_std_code(Blockly.Python.workspaceToCode(Program.blockly.workspace)));
+            Program.python.shown = true;
+            Program.python.in_use = true;
+            Program.show("python");
+          });
       },
       icon: "align-left", 
       tooltip: "Convert to Python"
