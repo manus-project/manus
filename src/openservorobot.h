@@ -72,7 +72,7 @@ private:
   pthread_mutex_t sleep_mutex    = PTHREAD_MUTEX_INITIALIZER;
   pthread_mutex_t read_servo_mutex    = PTHREAD_MUTEX_INITIALIZER;
   pthread_cond_t wake_up_condition = PTHREAD_COND_INITIALIZER;
-  bool in_slipe;
+  bool in_sleep;
   bool end_thread;
   std::queue<buff_data> q_out;
 

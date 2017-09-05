@@ -108,12 +108,12 @@ OpenServoRobot::OpenServoRobot(string path_to_i2c_port, const string& modelfile,
 
 OpenServoRobot::~OpenServoRobot()
 {
-  bool tmp_in_slip;
+  bool tmp_in_sleep;
   pthread_mutex_lock(&sleep_mutex); // potrebno?
   end_thread = true;
-  tmp_in_slip = in_slipe;
+  tmp_in_sleep = in_sleep;
   pthread_mutex_unlock(&sleep_mutex);
-  if (tmp_in_slip)
+  if (tmp_in_sleep)
     pthread_cond_signal(&wake_up_condition);
 
   pthread_join(thread_req, 0);
@@ -246,11 +246,9 @@ int OpenServoRobot::size() {
 }
 
 
-int OpenServoRobot::move(int joint, float position, float speed)
-{
-  //cout << " move joint " << joint << " pos: " << position << endl;
-  // dodamo ukaz v vrsto za pošiljanje...
-  bool tmp_in_slip;
+int OpenServoRobot::move(int joint, float position, float speed) {
+
+  bool tmp_in_sleep;
   buff_data tmp;
   tmp.action_type = MOVE;
   tmp.joint = joint;
@@ -262,9 +260,9 @@ int OpenServoRobot::move(int joint, float position, float speed)
   pthread_mutex_unlock (&q_mutex);
 
   pthread_mutex_lock(&sleep_mutex);
-  tmp_in_slip = in_slipe;
+  tmp_in_sleep = in_sleep;
   pthread_mutex_unlock(&sleep_mutex);
-  if (tmp_in_slip)
+  if (tmp_in_sleep)
     pthread_cond_signal(&wake_up_condition);
 
   return 1;
@@ -280,9 +278,7 @@ void OpenServoRobot::sendMove(int joint, float speed, float position)
   if (&tmp_sv == NULL)
     return;
   float pos = ::round(scale_joint_to_servo(tmp_sv, servos[tmp_mot], position));
-  // preveri, če je slučajno pos prevelik!!
 
-  //cout << " send move joint " << joint << " motor: " << tmp_mot << " pos: " << (int)pos << endl;
   open_servo.setSeekPossition(runtime_data[tmp_mot].address, (int)pos);
 
 }
@@ -296,17 +292,14 @@ ManipulatorDescription OpenServoRobot::describe()
 
 ManipulatorState OpenServoRobot::state()
 {
-  //posodobi podatke v _state in vrni
-  // le ta del je kritičen pri branju v thredu
+  // refresh state data
   int tmp_mot = -1;
-  //  for(int q=0; q<_state.joints.size()+1; q++)
-  for (int q = 0; q < _description.joints.size(); q++)
-  {
+  for (int q = 0; q < _description.joints.size(); q++) {
     tmp_mot = joint_to_motor(q);
     if ( tmp_mot < 0)
       continue;
     pthread_mutex_lock(&read_servo_mutex);
-    sv tmp_sv = open_servo.getServo(runtime_data[tmp_mot].address); // če tega servota ni, vrne null
+    sv tmp_sv = open_servo.getServo(runtime_data[tmp_mot].address); // return null if servo not present
     pthread_mutex_unlock(&read_servo_mutex);
     if (&tmp_sv != NULL)
     {
@@ -421,7 +414,7 @@ void OpenServoRobot::threadRoutine()
     //cout << "** IO thread loop -> sleep\n";
     // go to sleep
     pthread_mutex_lock(&sleep_mutex);
-    in_slipe = true;
+    in_sleep = true;
     pthread_mutex_unlock(&sleep_mutex);
 
     // waiting for signal
@@ -431,12 +424,10 @@ void OpenServoRobot::threadRoutine()
     pthread_mutex_unlock(&sleep_mutex);
 
     pthread_mutex_lock(&sleep_mutex);
-    in_slipe = false;
+    in_sleep = false;
     pthread_mutex_unlock(&sleep_mutex);
-    // tudi če je end_loop true moramo prej sprazniti vrsto
   }
 
-  // je potrebno sprostiti še kakšne vire?
   pthread_exit(NULL);
 }
 
@@ -468,7 +459,7 @@ void OpenServoRobot::threadRoutineReq()
 
 void OpenServoRobot::updateJoints()
 {
-  bool tmp_in_slip;
+  bool tmp_in_sleep;
 
   buff_data tmp;
   tmp.action_type = UPDATE_JOINTS;
@@ -478,9 +469,9 @@ void OpenServoRobot::updateJoints()
   pthread_mutex_unlock (&q_mutex);
 
   pthread_mutex_lock(&sleep_mutex);
-  tmp_in_slip = in_slipe;
+  tmp_in_sleep = in_sleep;
   pthread_mutex_unlock(&sleep_mutex);
-  if (tmp_in_slip)
+  if (tmp_in_sleep)
     pthread_cond_signal(&wake_up_condition);
 }
 
