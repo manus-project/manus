@@ -56,7 +56,12 @@ class Manipulator(object):
         return self._description.data
 
     def move_safe(self, identifier='safe'):
-        self.move({0 : -0.43, 1: 2.22, 2: -1.84, 3: -0.63, 4: 0.0, 5: -1.5, 6: 0.01}, identifier=identifier)
+        plan = messages.Plan()
+        plan.identifier = identifier
+        segment = messages.PlanSegment()
+        plan.segments.append(segment)
+        self._move.send(plan)
+        #self.move({0 : -0.43, 1: 2.22, 2: -1.84, 3: -0.63, 4: 0.0, 5: -1.5, 6: 0.01}, identifier=identifier)
 
     def move(self, joints, speed = 1.0, identifier='move'):
         plan = messages.Plan()

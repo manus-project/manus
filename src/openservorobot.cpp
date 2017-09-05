@@ -122,7 +122,7 @@ OpenServoRobot::~OpenServoRobot()
 
 int OpenServoRobot::connectTo(string path_to_i2c_port)
 {
-  open_servo.openPort(path_to_i2c_port);
+  return open_servo.openPort(path_to_i2c_port) == 1;
 }
 
 bool parse_calibration(const string& filename, vector<servo_info>& servos) {

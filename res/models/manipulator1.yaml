@@ -16,7 +16,7 @@ joints:
       a: 108
     min: 0
     max: 180
-    safe: 90
+    safe: 150
   - type: "rotation"
     dh:
       alpha: 0
@@ -24,7 +24,7 @@ joints:
       a: 112
     min: -110
     max: 110
-    safe: -80
+    safe: -90
   - type: "rotation"
     dh:
       alpha: 0
@@ -32,7 +32,7 @@ joints:
       a: 20
     min: -180
     max: 180
-    safe: -50
+    safe: -90
   - type: "fixed"
     dh:
       theta: 90

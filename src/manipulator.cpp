@@ -239,6 +239,17 @@ void ManipulatorManager::push(shared_ptr<Plan> t) {
     cout << "Received new plan" << endl;
 
     for (size_t s = 0; s < t->segments.size(); s++) {
+        // Move to safe position if no joint given
+        if (t->segments[s].joints.size() == 0) {
+            cout << "Moving to safe position" << endl;
+            for (size_t j = 0; j < manipulator->size(); j++) {
+                JointCommand tmp;
+                tmp.goal = description.joints[j].dh_safe;
+                tmp.speed = 1;
+                t->segments[s].joints.push_back(tmp);
+            }
+        }
+
         if (t->segments[s].joints.size() != manipulator->size()) {
             cout << "Wrong manipulator size " << t->segments[s].joints.size() << " vs. " << manipulator->size() << endl;
             return;
