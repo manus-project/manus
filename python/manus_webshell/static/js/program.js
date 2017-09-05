@@ -129,6 +129,8 @@ Program = {
           }   
       });
 
+      Program.python.ace.on("input", function() { Program.push(); } );
+
     });
 
     var logconsole = $("#console .content");
@@ -154,15 +156,11 @@ Program = {
               {
                 "Cancel" : function() { return true; },
                 "Blocky" : function() {
-                  Program.python.shown = false;
-                  Program.python.in_use = false;
-                  Program.show("blockly");
+                  Program.current(null, "blockly");
                   return true;
                 },
                 "Python" : function() {
-                  Program.python.shown = false;
-                  Program.python.in_use = false;
-                  Program.show("blockly");
+                  Program.current(null, "python");
                   return true;
                 }
 
@@ -174,48 +172,37 @@ Program = {
     }).addClass("button-codetime");
 
     var convert_python = $.manus.widgets.fancybutton({
-      callback : function() {  
-        if (Program.python.shown){
-            Interface.confirmation("Back to Blockly?",
-                "If you haven't saved your python code you will lose it. Are you sure you want to go back to blockly?",
-                function() {
-                    Program.python.shown = false;
-                    Program.python.in_use = false;
-                    Program.show("blockly");
-                }
-              );
-        } else {
-            Program.python.ace.setValue(CodeParser.prepare_std_code(Blockly.Python.workspaceToCode(Program.blockly.workspace)));
-            Program.python.shown = true;
-            Program.python.in_use = true;
-            Program.show("python");
-        }
+      callback : function() {          
+        Program.python.ace.setValue(CodeParser.prepare_std_code(Blockly.Python.workspaceToCode(Program.blockly.workspace)));
+        Program.python.shown = true;
+        Program.python.in_use = true;
+        Program.show("python");
       },
       icon: "align-left", 
       tooltip: "Convert to Python"
-    }).addClass("button-blockly button-codetime");
+    }).addClass("button-blockly");
 
     var stop_button = $.manus.widgets.fancybutton({
       callback : function() {  
           $.ajax('/api/apps?run=').done(function(data) {});
       }, icon: "stop", tooltip: "Stop"
-    }).hide();
+    }).addClass("button-runtime").hide();
 
     var load_button = $.manus.widgets.fancybutton({
       callback : function() {  
           Program.load();
       }, icon: "open", tooltip: "Load"
-    });
+    }).addClass("button-codetime");
 
     var save_button = $.manus.widgets.fancybutton({
       callback : function() {  
           Program.save();
       }, icon: "save", tooltip: "Save"
-    });
+    }).addClass("button-codetime");
 
     Program.show("blockly");
 
-    $("#program .toolbar.left").append(run_button).append(convert_python).append(stop_button);
+    $("#program .toolbar.left").append(run_button).append(stop_button).append(new_program).append(convert_python);
     $("#program .toolbar.right").append(save_button).append(load_button);
 
     PubSub.subscribe("apps.active", function(msg, identifier) {
@@ -247,6 +234,20 @@ Program = {
       }
       var xml = Blockly.Xml.workspaceToDom(Program.blockly.workspace);
       return { code: Blockly.Xml.domToText(xml), language: BLOCKLY_LANGUAGE };
+    } else if (data === null) {
+      if (language == undefined)
+        language = BLOCKLY_LANGUAGE;
+      if (language == BLOCKLY_LANGUAGE) {
+        Program.blockly.workspace.clear(); // Don't forget to call clear before load. Othervie it will just add more elements to workspace.
+        Program.show("blockly");
+        return true;
+      } else if (language == PYTHON_LANGUAGE) {
+        Program.python.ace.setValue("");
+        Program.show("python");
+        return true;
+      } else {
+        return false;
+      }
     } else {
       if (language == undefined)
         language = BLOCKLY_LANGUAGE;
@@ -255,12 +256,13 @@ Program = {
         var xml_dom = Blockly.Xml.textToDom(data);
         Program.blockly.workspace.clear(); // Don't forget to call clear before load. Othervie it will just add more elements to workspace.
         Blockly.Xml.domToWorkspace(xml_dom, Program.blockly.workspace);
+        Program.show("blockly");
         return true;
       } else if (language == PYTHON_LANGUAGE) {
-        Program.python.ace.setValue(data)
+        Program.python.ace.setValue(data);
+        Program.show("python");
         return true;
       } else {
-        console.error("Unknown code language: "+language);
         return false;
       }
     }
@@ -269,17 +271,18 @@ Program = {
   push: function() {
     // Store to client storage
     if (typeof(Storage) !== "undefined") {
-        localStorage.setItem('saved_code', Program.current().code);
+        localStorage.setItem('saved_program', JSON.stringify(Program.current()));
     }
   },
 
   pull: function() {
     // Retrieve code from client storage
     if (typeof(Storage) !== "undefined") {
-        var xml_text = localStorage.getItem('saved_code');
+        var data = localStorage.getItem('saved_program');
         // Clear & Load xml into workspace
-        if (xml_text && xml_text.length > 0) {
-            Program.current(xml_text, BLOCKLY_LANGUAGE);
+        if (data && data.length > 0) {
+          data = JSON.parse(data);
+          Program.current(data.code, data.language);
         }
     } 
   },
@@ -337,17 +340,22 @@ Program = {
     }
     if (Program.python) Program.python.shown = false;
     $("#program").children(".program-panel").hide();
-    $("#program .runtime").hide();
+    //$("#program .runtime").hide();
+    $("#program .toolbar .btn").hide();
     if (panel == "blockly") {
       $("#program").children("#blockly").show();
-      $("#program .runtime").show();
+      //$("#program .runtime").show();
+      $("#program .toolbar .button-blockly").show();
+      $("#program .toolbar .button-codetime").show();
     } else if (panel == "python") {
       if (Program.python) Program.python.shown = true;
       $("#program").children("#python").show();
-      $("#program .runtime").show();
+      //$("#program .runtime").show();
+      $("#program .toolbar .button-codetime").show();
     } else if (panel == "console") {
       $("#program").children("#console").show();
-      $("#program .runtime").show();
+      //$("#program .runtime").show();
+      $("#program .toolbar .button-runtime").show();
     }
     Program.update_state();
   },
