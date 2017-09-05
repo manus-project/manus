@@ -67,18 +67,18 @@ Program = {
       });
 
       // Ace code editor init
-      Program.code_editor = {};
-      Program.code_editor.shown = false;
-      Program.code_editor.in_use = false;
-      Program.code_editor.ace = ace.edit("ace-code-editor-workspace");
-      Program.code_editor.ace.setTheme("ace/theme/xcode");
-      Program.code_editor.ace.getSession().setMode("ace/mode/python");
-      Program.code_editor.ace.getSession().setTabSize(Program.code_editor.tab_size);
-      Program.code_editor.ace.setOptions({
+      Program.python = {};
+      Program.python.shown = false;
+      Program.python.in_use = false;
+      Program.python.ace = ace.edit("python-editor");
+      Program.python.ace.setTheme("ace/theme/xcode");
+      Program.python.ace.getSession().setMode("ace/mode/python");
+      Program.python.ace.getSession().setTabSize(Program.python.tab_size);
+      Program.python.ace.setOptions({
           enableBasicAutocompletion: true,
           enableLiveAutocompletion: true
       });
-      Program.code_editor.ace.completers.push({
+      Program.python.ace.completers.push({
         getCompletions: function(editor, session, pos, prefix, callback) {
           callback(null, [
               {value: "arm.move_joint(joint, angle)", score: 1000, meta: "Robot arm: Move one joint to specific angle."},
@@ -145,39 +145,55 @@ Program = {
           Program.run();
           logconsole.empty();
       }, icon: "play", tooltip: "Run"
-    });
+    }).addClass("button-codetime");
 
-    var to_python_code_button = $.manus.widgets.fancybutton({
+    var new_program = $.manus.widgets.fancybutton({
       callback : function() {  
-        if (Program.code_editor.shown){
+          Interface.dialog("New document",
+              "Do you want to start from scratch? Make sure that you have saved your work first.",
+              {
+                "Cancel" : function() { return true; },
+                "Blocky" : function() {
+                  Program.python.shown = false;
+                  Program.python.in_use = false;
+                  Program.show("blockly");
+                  return true;
+                },
+                "Python" : function() {
+                  Program.python.shown = false;
+                  Program.python.in_use = false;
+                  Program.show("blockly");
+                  return true;
+                }
+
+              }
+            );
+      },
+      icon: "file", 
+      tooltip: "New program"
+    }).addClass("button-codetime");
+
+    var convert_python = $.manus.widgets.fancybutton({
+      callback : function() {  
+        if (Program.python.shown){
             Interface.confirmation("Back to Blockly?",
                 "If you haven't saved your python code you will lose it. Are you sure you want to go back to blockly?",
                 function() {
-                    Program.code_editor.shown = false;
-                    Program.code_editor.in_use = false;
+                    Program.python.shown = false;
+                    Program.python.in_use = false;
                     Program.show("blockly");
-                    var $i = $("a.btn i.glyphicon-arrow-left");
-                    if ($i) {
-                        $i.removeClass("glyphicon-arrow-left");
-                        $i.addClass("glyphicon-arrow-right");
-                    }
                 }
               );
         } else {
-            Program.code_editor.ace.setValue(CodeParser.prepare_std_code(Blockly.Python.workspaceToCode(Program.blockly.workspace)));
-            Program.code_editor.shown = true;
-            Program.code_editor.in_use = true;
-            Program.show("code_editor");
-            var  $i = $("a.btn i.glyphicon-arrow-right");
-            if ($i) {
-                $i.removeClass("glyphicon-arrow-right");
-                $i.addClass("glyphicon-arrow-left");
-            }
+            Program.python.ace.setValue(CodeParser.prepare_std_code(Blockly.Python.workspaceToCode(Program.blockly.workspace)));
+            Program.python.shown = true;
+            Program.python.in_use = true;
+            Program.show("python");
         }
       },
-      icons: ["th", "arrow-right", "align-left"], 
-      tooltip: "Convert to python code"
-    });
+      icon: "align-left", 
+      tooltip: "Convert to Python"
+    }).addClass("button-blockly button-codetime");
 
     var stop_button = $.manus.widgets.fancybutton({
       callback : function() {  
@@ -199,7 +215,7 @@ Program = {
 
     Program.show("blockly");
 
-    $("#program .toolbar.left").append(run_button).append(to_python_code_button).append(stop_button);
+    $("#program .toolbar.left").append(run_button).append(convert_python).append(stop_button);
     $("#program .toolbar.right").append(save_button).append(load_button);
 
     PubSub.subscribe("apps.active", function(msg, identifier) {
@@ -226,8 +242,8 @@ Program = {
 
   current: function(data, language) {
     if (data === undefined) {
-      if (Program.code_editor && Program.code_editor.in_use){
-          return { code: Program.code_editor.ace.getValue(), language: PYTHON_LANGUAGE }
+      if (Program.python && Program.python.in_use){
+          return { code: Program.python.ace.getValue(), language: PYTHON_LANGUAGE }
       }
       var xml = Blockly.Xml.workspaceToDom(Program.blockly.workspace);
       return { code: Blockly.Xml.domToText(xml), language: BLOCKLY_LANGUAGE };
@@ -241,7 +257,7 @@ Program = {
         Blockly.Xml.domToWorkspace(xml_dom, Program.blockly.workspace);
         return true;
       } else if (language == PYTHON_LANGUAGE) {
-        Program.code_editor.ace.setValue(data)
+        Program.python.ace.setValue(data)
         return true;
       } else {
         console.error("Unknown code language: "+language);
@@ -271,12 +287,7 @@ Program = {
   save: function() {
     Interface.dialog("Save program", 
       function(container) { 
-        var onclose = Program._filemanager(container, "saving", function(key, name, read_only) {
-            if (typeof read_only !== 'undefined' && read_only === true) {
-              Interface.notification("Read only program",
-                  "This is a read-only program. Please choose another program.")
-              return;
-            }
+        var onclose = Program._filemanager(container, "saving", function(key, name) {
           var timestamp = (new Date()).toISOString();
           var curr = Program.current();
           RemoteStorage.set(key, {
@@ -299,7 +310,7 @@ Program = {
         var onclose = Program._filemanager(container, "loading", function(key, name) {
           RemoteStorage.get(key, function(key, data) {
             if (data.language == PYTHON_LANGUAGE){
-                Program.show("code_editor");
+                Program.show("python");
             } else {
                 Program.show("blockly");
             }
@@ -315,24 +326,24 @@ Program = {
 
   show: function(panel) {
     if (panel == undefined){
-        if (Program.code_editor) { 
-            if (Program.code_editor.in_use)
-                panel = "code_editor"
+        if (Program.python) { 
+            if (Program.python.in_use)
+                panel = "python"
             else
                 panel = "blockly"
         } else {
             panel = "blockly"
         }
     }
-    if (Program.code_editor) Program.code_editor.shown = false;
+    if (Program.python) Program.python.shown = false;
     $("#program").children(".program-panel").hide();
     $("#program .runtime").hide();
     if (panel == "blockly") {
       $("#program").children("#blockly").show();
       $("#program .runtime").show();
-    } else if (panel == "code_editor") {
-      if (Program.code_editor) Program.code_editor.shown = true;
-      $("#program").children("#ace-code-editor-container").show();
+    } else if (panel == "python") {
+      if (Program.python) Program.python.shown = true;
+      $("#program").children("#python").show();
       $("#program .runtime").show();
     } else if (panel == "console") {
       $("#program").children("#console").show();
@@ -343,8 +354,8 @@ Program = {
 
   run : function() {
     var code = "";
-    if (Program.code_editor.in_use) 
-        code = Program.code_editor.ace.getValue();
+    if (Program.python.in_use) 
+        code = Program.python.ace.getValue();
     else
         code = CodeParser.prepare_std_code(Blockly.Python.workspaceToCode(Program.blockly.workspace));
     $.ajax({
@@ -376,16 +387,23 @@ Program = {
         var tools = $('<div />').addClass('list-tools').prependTo(container);
 
         var timestamp = new Date(item.values().timestamp);
-        var metadata = formatDateTime(timestamp) + " " + item.values().language;
+        var metadata = formatDateTime(timestamp);
+        var read_only = item.values().read_only;
 
-        container.append($("<div/>").addClass("metadata").text(metadata));
+        if (read_only && type == "saving")
+          container.addClass("readonly");
 
-        container.click(function () {
-            var read_only = item.values().read_only;
-            var key = item.values().key;
-            var name = item.values().name;
-            callback(key, name, read_only);
-        });
+        var metadiv = $("<div/>").addClass("metadata").text(metadata);
+        container.append(metadiv);
+
+        if (!read_only || type != "saving") {
+          container.click(function () {
+              var key = item.values().key;
+              var name = item.values().name;
+              callback(key, name);
+          });
+        }
+
 
         if (type == "browse") {
           tools.append($('<i />').addClass('tool glyphicon glyphicon-trash').click(function() {
@@ -403,22 +421,12 @@ Program = {
         }
 
         // Add language icon
-        $lang_span = container.find("span.language")
-        if ($lang_span && $lang_span.length == 1){
-            if ($lang_span.data("language") == PYTHON_LANGUAGE){
-                $lang_span.html("<span class='glyphicon glyphicon-align-left'></span> ");
-            }else{
-                $lang_span.html("<span class='glyphicon glyphicon-th'></span> ");
-            }
+        if (item.values().language == PYTHON_LANGUAGE){
+          metadiv.prepend($("<span/> ").addClass("glyphicon glyphicon-align-left"));
+        }else{
+          metadiv.prepend($("<span/> ").addClass("glyphicon glyphicon-th-large"));
         }
 
-        // Add lock icon
-        $read_only_span = container.find("span.read_only")
-        if ($read_only_span && $read_only_span.length == 1){
-            if ($read_only_span.attr("data-read-only") == "true"){
-                $read_only_span.html("<span class='glyphicon glyphicon-lock' style='color:Crimson;'></span> ");
-            }
-        }
     }
 
     var updating = false;
@@ -427,7 +435,7 @@ Program = {
 
     var list = new List("filemanager", {
         valueNames : ["name", "modified", { name: 'language', attr: 'data-language' }, { name: 'read_only', attr: 'data-read-only' }],
-        item: "<a class='list-group-item'><div><span class='read_only'></span><span class='language'></span><span class='name'></span></div></a>"
+        item: "<a class='list-group-item'><div><span class='name'></span></div></a>"
     }, []);
 
     RemoteStorage.list(function(keys) {
@@ -445,7 +453,7 @@ Program = {
     });
 
     var subscribtions = {
-     update : PubSub.subscribe("storage.update", function(msg, key) {
+      update : PubSub.subscribe("storage.update", function(msg, key) {
 
           if (!key.startsWith("program_")) 
               return;
@@ -458,7 +466,7 @@ Program = {
               list.sort("timestamp", {order: 'desc'});
           });
       }),
-    delete : PubSub.subscribe("storage.delete", function(msg, key) {
+      delete : PubSub.subscribe("storage.delete", function(msg, key) {
 
           if (!key.startsWith("program_")) 
               return;
@@ -487,8 +495,7 @@ Program = {
               var name = filename.val();
               if (name.length < 1) return;
               var key = "program_" + uniqueIdentifier();
-              var read_only = item.values().read_only;
-              callback(key, name, false);
+              callback(key, name);
           }
           return true;
         });
@@ -501,20 +508,20 @@ Program = {
   },
 
   update_state : function() {
-        var ace_visible = $("#ace-code-editor-container").is(":visible");
+        var ace_visible = $("#python").is(":visible");
         var blockly_visible = $("#blockly").is(":visible");
 
         if (ace_visible && !blockly_visible){
-            Program.code_editor.shown = true;
-            Program.code_editor.in_use = true;
+            Program.python.shown = true;
+            Program.python.in_use = true;
             var  $i = $("a.btn i.glyphicon-arrow-right");
             if ($i) {
                 $i.removeClass("glyphicon-arrow-right");
                 $i.addClass("glyphicon-arrow-left");
             }
         } else if (!ace_visible && blockly_visible) {
-            Program.code_editor.shown = false;
-            Program.code_editor.in_use = false;
+            Program.python.shown = false;
+            Program.python.in_use = false;
             var  $i = $("a.btn i.glyphicon-arrow-left");
             if ($i) {
                 $i.removeClass("glyphicon-arrow-left");

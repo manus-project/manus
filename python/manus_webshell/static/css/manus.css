@@ -266,3 +266,14 @@
 #console.terminated .message {
     display: block;
 }
+
+#python-editor {
+    position: relative;
+    height: 600px;
+    font-size: 16px;
+    border: 1px gray solid;
+}
+
+.program-item.readonly {
+    background-color: #eeeeee;
+}

@@ -229,11 +229,13 @@ function posesList() {
 
     var currentPose = null;
     var updating = false;
-
+    
     var list = new List("poseslist", {
         valueNames : ["name"],
         item: "<a class='list-group-item'><div class='name'></div></a>"
     }, []);
+
+    $(list.listContainer).prepend($("<div/>").addClass("alert alert-info").text("Add saved poses by clicking on the button above."));
 
     RemoteStorage.get("poses", function(key, data) {
 
@@ -477,9 +479,9 @@ function initializeTabs() {
             PubSub.publish("manipulator.update", data);
         });
 
-    }).fail(function () {});
+        posesList();
 
-    posesList();
+    }).fail(function () {});
 
     appsList();
 
