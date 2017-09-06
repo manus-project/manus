@@ -7,63 +7,59 @@
 
 #include "manipulator.h"
 
-//#include <openservolib/openservo_lib.h>
-
-//using namespace std;
-
-typedef struct sv_info
-{
-  int servo_id;
-  int joint_id;
-  int AD_min;
-  int AD_max;
-  int AD_center;
-  float factor;
+typedef struct sv_info {
+	int servo_id;
+	int joint_id;
+	int AD_min;
+	int AD_max;
+	int AD_center;
+	float factor;
 } servo_info;
 
 
 class OpenServoRobot : public Manipulator, public IOBase
 {
 public:
-  //OpenServoRobot(string path_to_i2c_port, string path_to_robot_description_file);
-  OpenServoRobot(string path_to_i2c_port, const string& modelfile, const string& calibfile);
-  ~OpenServoRobot();
+	OpenServoRobot(string path_to_i2c_port, const string& modelfile, const string& calibfile);
+	~OpenServoRobot();
 
-  virtual int lock(int joint = -1);
-  virtual int release(int joint = -1);
-  virtual int rest();
+	virtual int lock(int joint = -1);
+	virtual int release(int joint = -1);
+	virtual int rest();
 
-  virtual int size();
-  virtual int move(int joint, float position, float speed);
+	virtual int size();
+	virtual int move(int joint, float position, float speed);
 
-  virtual ManipulatorDescription describe();
-  virtual ManipulatorState state();
+	virtual ManipulatorDescription describe();
+	virtual ManipulatorState state();
 
-  virtual int get_file_descriptor();
+	virtual int get_file_descriptor();
 	virtual bool handle_output();
 	virtual bool handle_input();
 	virtual void disconnect();
 
+	void push();
+
 private:
 
-  virtual int connectTo(string path_to_i2c_port);
-  virtual int loadDescription(const string& modelfile, const string& calibfile);
+	virtual int connectTo(string path_to_i2c_port);
+	virtual int loadDescription(const string& modelfile, const string& calibfile);
 
-  enum ActionType {MOVE, UPDATE_JOINTS};
-  struct buff_data
-  {
-    ActionType action_type;
-    int joint;
-    float speed;
-    float position;
-  };
+	enum ActionType {MOVE, UPDATE_JOINTS};
+	struct buff_data
+	{
+		ActionType action_type;
+		int joint;
+		float speed;
+		float position;
+	};
 
-  struct servo_data
-  {
-    int address;
-    std::deque<int> position_median;
-    std::deque<int> goal_median;
-  };
+	struct servo_data
+	{
+		int address;
+		std::deque<int> position_median;
+		std::deque<int> goal_median;
+	};
 
   // thread
   pthread_t thread1, thread_req;
@@ -76,7 +72,7 @@ private:
   bool end_thread;
   std::queue<buff_data> q_out;
 
-  std::vector<servo_data> runtime_data; 
+  std::vector<servo_data> runtime_data;
 
   ManipulatorDescription _description;
   ManipulatorState _state;

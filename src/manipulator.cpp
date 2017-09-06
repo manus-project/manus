@@ -263,8 +263,8 @@ void ManipulatorManager::push(shared_ptr<Plan> t) {
             if (goal < description.joints[j].dh_min ||
                     t->segments[s].joints[j].goal > description.joints[j].dh_max) {
                 if (description.joints[j].type != JOINTTYPE_FIXED) {
-                    cout << "Warning: rong joint " << j << " goal " << goal << " out of range " << description.joints[j].dh_min << " to " << description.joints[j].dh_max << ". Truncating." << endl;
-                    goal = max(description.joints[j].dh_min, max(description.joints[j].dh_max, goal));
+                    cout << "Warning: wrong joint " << j << " goal " << goal << " out of range " << description.joints[j].dh_min << " to " << description.joints[j].dh_max << ". Truncating." << endl;
+                    goal = max(description.joints[j].dh_min, min(description.joints[j].dh_max, goal));
                 } else {
                     goal = description.joints[j].dh_min;
                 }
@@ -316,7 +316,6 @@ void ManipulatorManager::step(bool force) {
     bool goal = true;
 
     ManipulatorState state = manipulator->state();
-
     for (size_t i = 0; i < manipulator->size(); i++) {
         idle &= state.joints[i].type == JOINTSTATETYPE_IDLE;
         goal &= close_enough(state.joints[i].position, state.joints[i].goal);

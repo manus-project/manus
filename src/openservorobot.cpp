@@ -268,18 +268,24 @@ int OpenServoRobot::move(int joint, float position, float speed) {
   return 1;
 }
 
+#define MEDIAN_WINDOW 20
+
+
 void OpenServoRobot::sendMove(int joint, float speed, float position)
 {
-  //
   int tmp_mot = joint_to_motor(joint);
   if (tmp_mot < 0)
     return;
   sv tmp_sv = open_servo.getServo(runtime_data[tmp_mot].address);
   if (&tmp_sv == NULL)
     return;
+
   float pos = ::round(scale_joint_to_servo(tmp_sv, servos[tmp_mot], position));
 
   open_servo.setSeekPossition(runtime_data[tmp_mot].address, (int)pos);
+
+  runtime_data[tmp_mot].goal_median.clear();
+  runtime_data[tmp_mot].goal_median.assign(MEDIAN_WINDOW, (int)pos);
 
 }
 
@@ -287,8 +293,6 @@ ManipulatorDescription OpenServoRobot::describe()
 {
   return _description;
 }
-
-#define MEDIAN_WINDOW 20
 
 ManipulatorState OpenServoRobot::state()
 {
@@ -361,64 +365,51 @@ int OpenServoRobot::motor_to_joint(int m)
 
 }
 
-void OpenServoRobot::threadRoutine()
-{
-  sv* servo;
-  int action_type;
-  buff_data tmp_data;
+void OpenServoRobot::push() {
 
-  bool end_loop = false;
+    while (true) {
+		pthread_mutex_lock(&q_mutex);
+		if (q_out.empty()) {
+			pthread_mutex_unlock(&q_mutex);
+			return;
+		}
+		buff_data command = q_out.front();
+		q_out.pop();
+		pthread_mutex_unlock(&q_mutex);
 
-  //while(!end_loop)
-  while (true)
-  {
-    //cout << "** IO thread loop\n";
-    pthread_mutex_lock(&q_mutex);
-    bool empty = q_out.empty();
-    pthread_mutex_unlock(&q_mutex);
-
-    while (!empty)
-    {
-      pthread_mutex_lock(&q_mutex);
-      action_type = q_out.front().action_type;
-      pthread_mutex_unlock(&q_mutex);
-      switch (action_type)
+      switch (command.action_type)
       {
       case MOVE:
-        pthread_mutex_lock(&q_mutex);
-        tmp_data = q_out.front();
-        q_out.pop();
-        pthread_mutex_unlock(&q_mutex);
-        //cout << "** Thread IO, MOVE joint: " << tmp_data.joint << endl;
-        sendMove(tmp_data.joint, tmp_data.speed, tmp_data.position);
+        sendMove(command.joint, command.speed, command.position);
         break;
       case UPDATE_JOINTS:
-        pthread_mutex_lock(&q_mutex);
-        q_out.pop();
-        pthread_mutex_unlock(&q_mutex);
-
         pthread_mutex_lock(&read_servo_mutex);
         open_servo.updateBasicValuesAllServo();
         pthread_mutex_unlock(&read_servo_mutex);
         break;
       }
-
-      pthread_mutex_lock(&q_mutex);
-      empty = q_out.empty();
-      pthread_mutex_unlock(&q_mutex);
     }
+}
+
+void OpenServoRobot::threadRoutine()
+{
+  bool end_loop = false;
+
+  //while(!end_loop)
+  while (true)
+  {
+	push();
 
     // varneje bi blo prej še poslati/počakati oz. sprazniti vrsto
     if (end_loop)
       break;
-    //cout << "** IO thread loop -> sleep\n";
     // go to sleep
     pthread_mutex_lock(&sleep_mutex);
     in_sleep = true;
     pthread_mutex_unlock(&sleep_mutex);
 
     // waiting for signal
-    pthread_mutex_lock(&sleep_mutex); // potrebno?
+    pthread_mutex_lock(&sleep_mutex);
     pthread_cond_wait(&wake_up_condition, &sleep_mutex);
     end_loop = end_thread;
     pthread_mutex_unlock(&sleep_mutex);
@@ -435,21 +426,16 @@ void OpenServoRobot::threadRoutineReq()
 {
   chrono::steady_clock::time_point begin;
   chrono::microseconds interval_micro(1000000 / read_rate);
-  //cout << "request, micro: " << chrono::duration_cast<chrono::microseconds>(interval_micro).count() << "us" << endl;
   bool end_loop = false;
-  //auto zamik = chrono::duration_cast<chrono::microseconds>(begin - chrono::steady_clock::now()).count();
   begin = chrono::steady_clock::now();
   while (true)
   {
-    //cout << " Req. thread loop -> request\n";
     updateJoints();
-    //cout << " Req. thread loop -> request in que\n";
     pthread_mutex_lock(&sleep_mutex);
     end_loop = end_thread;
     pthread_mutex_unlock(&sleep_mutex);
     if (end_loop)
       break;
-    //cout << " Req. thread loop -> sleep\n";
     begin += interval_micro;
     usleep(chrono::duration_cast<chrono::microseconds>(begin - chrono::steady_clock::now()).count());
   }
@@ -495,9 +481,10 @@ int main(int argc, char** argv) {
   cout << "Init OK" << endl;
 
   while (echolib::wait(50)) {
-  
     manager.update();
+    manipulator->push();
   }
 
   exit(0);
 }
+
