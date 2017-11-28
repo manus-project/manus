@@ -32,7 +32,7 @@ joints:
       a: 20
     min: -180
     max: 180
-    safe: -90
+    safe: -70
   - type: "fixed"
     dh:
       theta: 90

@@ -1,5 +1,5 @@
 {
-"description" : "Manus Simulator stack",
+"description" : "Manus stack for M1 manipulator",
 "log" : "/var/log/manus/",
 "user" : "manus",
 "group" : ["manus", "video", "i2c"],
@@ -66,7 +66,7 @@
         "required" : false,
         "restart" : true,
 		"depends": ["manipulator", "planner"],
-		"environment" : {"STORAGE" : "${MANUS_ROOT}/share/manus/apps"}
+		"environment" : {"MANUS_STORAGE" : "/var/local/manus/storage.db"}
     },
     "planner" : {
         "command" : "manus_planner",
