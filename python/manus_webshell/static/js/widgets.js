@@ -85,14 +85,20 @@ $.manus.widgets = {
                 dragging = e.buttons == 1;
             })
             .mousemove(function(e) {
-                if (!dragging) return;
-                if (e.buttons != 1) { dragging = false; return; }
                 var relative = Math.min(1, Math.max(0, (e.pageX - status.offset().left) / status.width()));
                 var absolute = (parameters.max - parameters.min) * relative + parameters.min;
-                PubSub.publish(manipulator + '.move_joint', {id: id, position: absolute, speed: 1});
+                if (!dragging) {
+                    PubSub.publish(manipulator + '.hover', {id: id, position: absolute});
+                } else {
+                    if (e.buttons != 1) { dragging = false; return; }
+                    PubSub.publish(manipulator + '.move_joint', {id: id, position: absolute, speed: 1});
+                }
              })
             .mouseup(function() {
                 dragging = false;
+            }).mouseout(function() {
+                dragging = false;
+                PubSub.publish(manipulator + '.hover', {});
             });
 
             container.append(status);

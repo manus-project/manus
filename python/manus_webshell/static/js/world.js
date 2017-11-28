@@ -359,7 +359,7 @@ $.manus.world = {
         var jointMesh = Phoria.Util.generateUnitCube(10);
         var rootTransform = mat4.create();
         var parentJoint;
-        var rootJoint;
+        var manipulatorRoot;
 
         for (var v in chain) {
 
@@ -367,6 +367,9 @@ $.manus.world = {
             var d = chain[v].d;
             var alpha = chain[v].alpha;
             var theta = chain[v].theta;
+
+            var overlay = undefined;
+            var hover = undefined;
 
             var joint = Phoria.Entity.create({
                 id : "Joint" + (v+1),
@@ -380,6 +383,8 @@ $.manus.world = {
                     linewidth: 4,
                 }
             });
+
+            var jointContainer = Phoria.Entity.create({});
 
             switch (chain[v].type.toLowerCase()) {
                 case "fixed":
@@ -415,6 +420,47 @@ $.manus.world = {
                         }
                     });
 
+                    var overlay_points = [{"x": 0, "y": 0, "z": 0}];
+                    var overlay_edges = [];
+
+                    var segment_count = Math.max(3, Math.round((chain[v].max - chain[v].min) / 0.2));
+                    var segment_space = (chain[v].max - chain[v].min) / segment_count;
+
+                    for (var i = 0; i <= segment_count; i++) {
+                        var angle = segment_space * i + chain[v].min;
+                        overlay_points.push({"x": Math.cos(angle) * 100, "y": Math.sin(angle) * 100, "z": 0});
+                        overlay_edges.push({"a": i, "b": i+1});
+                    }
+
+                    overlay_edges.push({"a": segment_count + 1, "b": 0});
+
+                    overlay = Phoria.Entity.create({
+                        points: overlay_points,
+                        edges: overlay_edges,
+                        polygons: [],
+                        disabled: true,
+                        style: {
+                            color: [200,200,200],
+                            drawmode: "wireframe",
+                            shademode: "plain",
+                            linewidth: 3,
+                        }
+                    });
+
+                    hover = Phoria.Entity.create({
+                        points: [{"x": 0, "y": 0, "z": 0}, {"x": 100, "y": 0, "z": 0}],
+                        edges: [{"a": 0, "b": 1}],
+                        polygons: [],
+                        style: {
+                            color: [200,0,0],
+                            drawmode: "wireframe",
+                            shademode: "plain",
+                            linewidth: 5,
+                        }
+                    });
+
+                    overlay.children.push(hover);
+
                     break;
                 }
                 case "gripper": {
@@ -439,22 +485,49 @@ $.manus.world = {
                 }
             }
 
-            joints[v] = {"segment" : segment, "joint" : joint, "data" : chain[v]};
+            joints[v] = {"segment" : segment, "joint" : joint, "data" : chain[v], "overlay": overlay, "hover": hover};
             joints[v].data.type = joints[v].data.type.toLowerCase();
             joint.identity().rotateZ(theta).translateZ(d);
             segment.identity().rotateX(alpha).translateX(a);
 
+            if (overlay !== undefined)
+                jointContainer.children.push(overlay);
+            jointContainer.children.push(joint);
+
             if (parentJoint === undefined) {
-                world.scene.graph.push(joint);
-                rootJoint = joint;
+                manipulatorRoot = jointContainer;
+                world.scene.graph.push(manipulatorRoot);
             } else {
-                parentJoint.children.push(joint);
+                parentJoint.children.push(jointContainer);
             }
 
             joint.children.push(segment);
             parentJoint = segment;
 
         }
+
+        PubSub.subscribe(manipulator + ".hover", function(msg, data) {
+
+            for (var i in joints) {
+                if (joints[i].overlay !== undefined)
+                    joints[i].overlay.disabled = true;
+            }
+
+            if (data.id === undefined) return;
+
+            if (joints[data.id].overlay !== undefined)
+                joints[data.id].overlay.disabled = false;
+
+            if (joints[data.id].hover !== undefined) {
+                switch (joints[data.id].data.type) {
+                    case "rotation": { joints[data.id].hover.identity().rotateZ(data.position); break; }
+                   // case "translation": {d = data.position; break;}
+                }
+            }
+
+            world.render();
+
+        });
 
         PubSub.subscribe(manipulator + ".update", function(msg, data) {
 
@@ -473,13 +546,13 @@ $.manus.world = {
                     joints[v].joint.identity().rotateZ(theta).translateZ(d);
                 }
 
-                rootJoint.matrix = mat4.multiply(rootJoint.matrix, rootTransform, rootJoint.matrix);
+                manipulatorRoot.matrix = mat4.multiply(manipulatorRoot.matrix, rootTransform, manipulatorRoot.matrix);
 
                 world.render();
 
             });
 
-        rootTransform = mat4.translate(mat4.create(), mat4.create(), vec3.fromValues(0, 0, 0));
+            rootTransform = mat4.translate(mat4.create(), mat4.create(), vec3.fromValues(0, 0, 0));
 
 /*        transform : function(transform) {
             rootTransform = mat4.clone(transform);
