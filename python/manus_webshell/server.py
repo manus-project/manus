@@ -13,6 +13,7 @@ import logging.handlers
 import os.path
 import os
 import signal
+import traceback
 from bsddb3 import db 
 
 import tornado.httpserver
@@ -31,7 +32,11 @@ from .code_generator import CodeGenerator
 from .utilities import synchronize, RedirectHandler, DevelopmentStaticFileHandler, JsonHandler, NumpyEncoder
 import manus_webshell.static
 
-from manus.messages import JointType, MarkersSubscriber
+from manus_webshell.manipulator import ManipulatorBlockingHandler, ManipulatorDescriptionHandler, \
+                                       ManipulatorStateHandler, ManipulatorMoveJointHandler, \
+                                       ManipulatorMoveHandler, ManipulatorMoveSafeHandler 
+
+from manus.messages import MarkersSubscriber
 import manus
 from manus_apps import AppsManager, app_identifier
 from manus_starter.privileged import PrivilegedClient
@@ -97,126 +102,6 @@ class CameraLocationHandler(JsonHandler):
 
     def on_connection_close(self):
         self.camera.unlisten_location(self)
-
-    def check_etag_header(self):
-        return False
-
-class ManipulatorDescriptionHandler(JsonHandler):
-
-    def __init__(self, application, request, manipulator):
-        super(ManipulatorDescriptionHandler, self).__init__(application, request)
-        self.manipulator = manipulator
-
-    def get(self):
-        if getattr(self.manipulator, 'description', None) is None:
-            self.clear()
-            self.set_status(400)
-            self.finish('Unavailable')
-            return
-        description = self.manipulator.description
-        self.response = ManipulatorDescriptionHandler.encode_description(description)
-        self.write_json()
-
-    @staticmethod
-    def encode_description(description):
-        joints = []
-        for j in description.joints:
-            joints.append({"type" : JointType.str(j.type), "theta" : j.dh_theta,
-                    "alpha" : j.dh_alpha, "d" : j.dh_d, "a" : j.dh_a, "min" : j.dh_min, "max" : j.dh_max} )
-        return {"name": description.name, "version": description.version, "joints" : joints}
-
-    def check_etag_header(self):
-        return False
-
-class ManipulatorStateHandler(JsonHandler):
-
-    def __init__(self, application, request, manipulator):
-        super(ManipulatorStateHandler, self).__init__(application, request)
-        self.manipulator = manipulator
-
-    def get(self):
-        state = self.manipulator.state
-        if state is None:
-            self.clear()
-            self.set_status(400)
-            self.finish('Unavailable')
-            return
-        self.response = ManipulatorStateHandler.encode_state(state)
-        self.write_json()
-
-    @staticmethod
-    def encode_state(state):
-        return {"joints" : [ {"position" : j.position, "goal": j.goal} for j in state.joints]}
-
-    def check_etag_header(self):
-        return False
-
-class ManipulatorMoveJointHandler(JsonHandler):
-
-    def __init__(self, application, request, manipulator):
-        super(ManipulatorMoveJointHandler, self).__init__(application, request)
-        self.manipulator = manipulator
-
-    def get(self):
-        if not "id" in self.request.arguments:
-            self.clear()
-            self.set_status(400)
-            self.finish('Unavailable')
-            return
-        try:
-            id = int(self.request.arguments.get("id")[0])
-            position = float(self.request.arguments.get("position", "0")[0])
-            speed = float(self.request.arguments.get("speed", "1.0")[0])
-            self.manipulator.move_joint(id, position, speed)
-            self.response = {'result' : 'ok'}
-            self.write_json()
-        except ValueError:
-            self.clear()
-            self.set_status(401)
-            self.finish('Illegal request')
-            return
-
-    def check_etag_header(self):
-        return False
-
-class ManipulatorMoveHandler(JsonHandler):
-
-    def __init__(self, application, request, manipulator):
-        super(ManipulatorMoveHandler, self).__init__(application, request)
-        self.manipulator = manipulator
-
-    def get(self):
-        try:
-            positions = [float(self.request.arguments.get("j%d" % i, "0")[0]) for i in xrange(1, len(self.manipulator.state.joints)+1)]
-            speed = float(self.request.arguments.get("speed", "1.0")[0])
-            self.manipulator.move(positions, speed)
-            self.response = {'result' : 'ok'}
-            self.write_json()
-        except ValueError:
-            self.clear()
-            self.set_status(401)
-            self.finish('Illegal request')
-            return
-
-    def check_etag_header(self):
-        return False
-
-class ManipulatorMoveSafeHandler(JsonHandler):
-
-    def __init__(self, application, request, manipulator):
-        super(ManipulatorMoveSafeHandler, self).__init__(application, request)
-        self.manipulator = manipulator
-
-    def get(self):
-        try:
-            self.manipulator.move_safe()
-            self.response = {'result' : 'ok'}
-            self.write_json()
-        except ValueError:
-            self.clear()
-            self.set_status(401)
-            self.finish('Illegal request')
-            return
 
     def check_etag_header(self):
         return False
@@ -546,7 +431,7 @@ def main():
         echocv.tornado.uninstall_client(tornado_loop, client)
 
     except Exception, e:
-        print e
+        print traceback.format_exc()
 
     logger.info("Stopping %s webshell" % manus.NAME)
     storage.close()

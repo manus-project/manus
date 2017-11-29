@@ -50,7 +50,10 @@ class Manipulator(object):
         self._listeners.append(listener)
 
     def unlisten(self, listener):
-        self._listeners.remove(listener)
+        try:
+            self._listeners.remove(listener)
+        except ValueError:
+            pass
 
     def description(self):
         return self._description.data
