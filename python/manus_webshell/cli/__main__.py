@@ -27,7 +27,7 @@ def do_backup(args):
 		data = response.read()
 		type = mimetypes.guess_extension(response.info().type)
 		print "Saving %s" % key
-		with open(os.path.join(args.storage, "%s.%s" % (key, type)), "w") as file:
+		with open(os.path.join(args.storage, "%s%s" % (key, type)), "w") as file:
 			file.write(data)
 
 def do_clear(args):
