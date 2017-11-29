@@ -12,7 +12,7 @@ using namespace echolib;
 
 #include "simulation.h"
 
-SimulatedManipulator::SimulatedManipulator(const string& filename) {
+SimulatedManipulator::SimulatedManipulator(const string& filename, float speed) : speed(speed) {
 
     if (!parse_description(filename, _description)) {
         throw ManipulatorException("Unable to parse manipulator model description");
@@ -41,7 +41,7 @@ bool SimulatedManipulator::step(float time) {
         float resolution = _description.joints[i].type == JOINTTYPE_ROTATION ?
             MOVE_RESOLUTION_ROTATION : (_description.joints[i].type == JOINTTYPE_TRANSLATION ? MOVE_RESOLUTION_TRANSLATION : MOVE_RESOLUTION_GRIP);
 
-        resolution *= (time / 1000.0) * _state.joints[i].speed;
+        resolution *= (time / 1000.0) * _state.joints[i].speed * speed;
 
         if ((_state.joints[i].position - _state.joints[i].goal) > (resolution / 2)) {
             _state.joints[i].position -= resolution;
@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    shared_ptr<SimulatedManipulator> manipulator = shared_ptr<SimulatedManipulator>(new SimulatedManipulator(string(argv[1])));
+    shared_ptr<SimulatedManipulator> manipulator = shared_ptr<SimulatedManipulator>(new SimulatedManipulator(string(argv[1]), 1));
 
     SharedClient client = echolib::connect();
 

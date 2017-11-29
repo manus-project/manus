@@ -5,7 +5,7 @@
 
 class SimulatedManipulator : public Manipulator {
 public:
-    SimulatedManipulator(const string& filename);
+    SimulatedManipulator(const string& filename, float speed);
     ~SimulatedManipulator();
 
 	bool step(float time);
@@ -20,6 +20,8 @@ public:
 	virtual ManipulatorState state();
 
 private:
+
+	float speed;
 
     ManipulatorDescription _description;
     ManipulatorState _state;
