@@ -1,0 +1,63 @@
+{
+"description" : "Manus Simulator using Image",
+"log" : "/var/log/manus/",
+"user" : "manus",
+"group" : ["manus"],
+"environment" : {
+	"MANUS_ROOT" : "/usr",
+	"ECHOLIB_SOCKET" : "/tmp/echo.sock"
+},
+"plugins" : ["ignition.plugin.Wait", "ignition.plugin.Debug", "echolib.ignition.Mapping"],
+"programs" : {
+    "echo" : {
+        "command" : "echodaemon",
+        "required" : true,
+        "restart" : false,
+        "wait" : 1
+    },
+    "cameraserver" : {
+        "command" : "echocv_image board1.jpg",
+        "required" : false,
+        "restart" : true,
+        "debug": false,
+        "directory" : "${MANUS_ROOT}/share/manus/static",
+        "depends" : ["echo"],
+        "environment" : {"LIMIT_FPS" : "10"},
+        "wait" : 0.1,
+        "remap" : {
+            "camera" : "camera0.image",
+            "intrinsics" : "camera0.parameters"
+        }
+    },
+    "artracker" : {
+        "command" : "echocv_artrack board1.yml",
+        "directory" : "${MANUS_ROOT}/share/manus/arboards",
+        "required" : false,
+        "restart" : true,
+        "depends" : ["echo", "cameraserver"],
+        "remap" : {
+            "camera" : "camera0.image",
+            "intrinsics" : "camera0.parameters",
+            "location" : "camera0.location"
+        }
+    },
+    "manipulator": {
+		"command": "manus_simulator_manipulator manipulator1.yaml",
+		"depends": ["echo"],
+		"directory" : "${MANUS_ROOT}/share/manus/models",
+		"restart": false,
+		"wait": 1,
+		"remap" : {
+			"state" : "manipulator0.state",
+			"description" : "manipulator0.description",
+			"plan" : "manipulator0.plan",
+			"planstate" : "manipulator0.planstate",
+			"trajectory" : "manipulator0.trajectory"
+		}
+    },
+    "frontend" : {
+        "include" : "../frontend.include",
+        "depends" : ["echo", "manipulator"]
+    }
+}
+}

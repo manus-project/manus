@@ -42,6 +42,7 @@ if __name__ == '__main__':
     def shutdown_handler(signum, frame):
         sys.exit(0)
 
+    #signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
 
     client = echolib.Client()

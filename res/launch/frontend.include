@@ -1,0 +1,35 @@
+{
+"description" : "Manus Frontend include",
+"programs" : {
+    "privileged" : {
+        "command" : "python -m manus_starter.privileged",
+        "restart" : true,
+        "user" : "root",
+        "group" : ["admin"]
+    },
+    "webshell" : {
+        "command" : "python -u -m manus_webshell",
+        "required" : false,
+        "restart" : true,
+		"depends": ["planner"],
+		"environment" : {"MANUS_STORAGE" : "/var/local/manus/storage.db"}
+    },
+    "planner" : {
+        "command" : "manus_planner",
+        "required" : false,
+        "restart" : true,
+        "remap" : {
+            "state" : "manipulator0.state",
+            "description" : "manipulator0.description",
+            "plan" : "manipulator0.plan",
+            "planstate" : "manipulator0.planstate",
+            "trajectory" : "manipulator0.trajectory"
+        }
+    },
+    "applications": {
+        "command": "python -u -m manus_apps",
+		"restart": true,
+		"environment" : {"APPS_PATH" : "${MANUS_ROOT}/share/manus/apps"}
+    }
+}
+}
