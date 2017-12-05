@@ -4,6 +4,8 @@ import os
 import hashlib, binascii
 import echolib
 import traceback
+import signal
+
 from manus.messages import PrivilegedCommand, PrivilegedCommandType, PrivilegedCommandSubscriber
 
 from manus_starter.privileged import *

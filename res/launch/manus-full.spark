@@ -68,6 +68,14 @@
 		"depends": ["manipulator", "planner"],
 		"environment" : {"MANUS_STORAGE" : "/var/local/manus/storage.db"}
     },
+    "portmap" : {
+        "command" : "python -u -m manus_starter.ports 8080:80",
+        "required" : false,
+        "restart" : false,
+        "depends": ["webshell"],
+        "user" : "root",
+        "group" : ["admin"]
+    },
     "planner" : {
         "command" : "manus_planner",
         "required" : false,
