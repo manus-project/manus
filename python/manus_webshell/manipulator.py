@@ -23,20 +23,24 @@ class ManipulatorBlockingHandler(JsonHandler):
     @tornado.web.asynchronous
     def get(self):
         try:
-            blocking = bool(self.request.arguments.get("blocking", "0")[0])
+            blocking = self.request.arguments.get("blocking", "0")[0]
+            blocking = (blocking.lower() in ("yes", "true", "1"))
             if blocking:
                 self.manipulator.listen(self)
             
             result = self.run(self.moveid)
 
-            if not blocking and result:
-                self.response = {'result' : 'ok'}
+            if not blocking:
+                if result:
+                    self.response = {'result' : 'ok'}
+                else:
+                    self.response = {'result' : 'error'}
                 self.write_json()
                 self.finish()
         except ValueError:
-            self.clear()
             self.set_status(401)
-            self.finish('Illegal request')
+            self.response = {'result' : 'illegal'}
+            self.write_json()
             self.finish()
 
     def on_finish(self):
