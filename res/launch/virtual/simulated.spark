@@ -4,7 +4,7 @@
 "user" : "manus",
 "group" : ["manus"],
 "environment" : {
-	"MANUS_ROOT" : "/usr",
+	"MANUS_ROOT" : "/home/lukacu/Local/builds/manus",
 	"ECHOLIB_SOCKET" : "/tmp/echo.sock"
 },
 "plugins" : ["ignition.plugin.Wait", "ignition.plugin.Debug", "echolib.ignition.Mapping"],
@@ -16,11 +16,11 @@
         "wait" : 1
     },
     "cameraserver" : {
-        "command" : "echocv_image board1.jpg",
+        "command" : "echocv_image static/board1.jpg",
         "required" : false,
         "restart" : true,
         "debug": false,
-        "directory" : "${MANUS_ROOT}/share/manus/static",
+        "directory" : "${MANUS_ROOT}/share/manus",
         "depends" : ["echo"],
         "environment" : {"LIMIT_FPS" : "10"},
         "wait" : 0.1,
