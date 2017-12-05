@@ -4,7 +4,7 @@
 "user" : "manus",
 "group" : ["manus"],
 "environment" : {
-	"MANUS_ROOT" : "/home/lukacu/Local/builds/manus",
+	"MANUS_ROOT" : "/usr",
 	"ECHOLIB_SOCKET" : "/tmp/echo.sock"
 },
 "plugins" : ["ignition.plugin.Wait", "ignition.plugin.Debug", "echolib.ignition.Mapping"],
