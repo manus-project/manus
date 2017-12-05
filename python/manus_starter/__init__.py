@@ -7,6 +7,7 @@ import struct
 import signal
 import shutil
 
+from subprocess import call
 from ignition import ProgramGroup
 
 try:
@@ -191,14 +192,14 @@ def run_interactive(launchfiles):
             menu_items.append((group.description, wrap_run(group)))
         finally:
             pass
-        
-    def run_exit_curses():
-        global kill_now
-        kill_now = True
 
-    menu_items.append(('Upgrade system', lambda x: run_upgrade))
-    menu_items.append(('Exit to terminal', run_exit_curses))
-    menu_items.append(('Shutdown', lambda x: run_shutdown))
+    def run_terminal():
+        call(["sudo", "-u", "manus", "bash"])
+        return False
+
+    menu_items.append(('Upgrade system', run_upgrade))
+    menu_items.append(('Exit to terminal', run_terminal))
+    menu_items.append(('Shutdown', run_shutdown))
 
     menu = Menu(menu_items)
     curses.wrapper(lambda scr: menu.display(scr))

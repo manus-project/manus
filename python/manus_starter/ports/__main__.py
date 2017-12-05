@@ -9,9 +9,11 @@ from subprocess import call
 
 def add_port_redirect(src, dst):
     call(["iptables", "-t", "nat", "-A", "OUTPUT", "-p", "tcp", "--dport", str(dst), "-j", "REDIRECT", "--to", str(src)])
+    call(["iptables", "-t", "nat", "-A", "PREROUTING", "-p", "tcp", "--dport", str(dst), "-j", "REDIRECT", "--to", str(src)])
 
 def del_port_redirect(src, dst):
     call(["iptables", "-t", "nat", "-D", "OUTPUT", "-p", "tcp", "--dport", str(dst), "-j", "REDIRECT", "--to", str(src)])
+    call(["iptables", "-t", "nat", "-D", "PREROUTING", "-p", "tcp", "--dport", str(dst), "-j", "REDIRECT", "--to", str(src)])
 
 #iptables -t nat -A OUTPUT -p tcp --dport 80 -j REDIRECT --to 8080
 if __name__ == '__main__':
