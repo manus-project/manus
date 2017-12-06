@@ -10,6 +10,8 @@ import shutil
 from subprocess import call
 from ignition import ProgramGroup
 
+from manus_starter.privileged import run_upgrade, run_shutdown
+
 try:
     from manus import VERSION
 except ImportError:
@@ -139,11 +141,12 @@ class Menu(object):
             self.screen.keypad(1)
 
 def run_script(script, shutdown=None):
-    print "Running %s" % script
     try:
         if isinstance(script, ProgramGroup):
             group = script
+            print "Running %s" % group.description
         else:
+            print "Running %s" % script
             group = ProgramGroup(script)
 
         group.announce("Starting up ...")
@@ -197,7 +200,12 @@ def run_interactive(launchfiles):
         call(["sudo", "-u", "manus", "bash"])
         return False
 
-    menu_items.append(('Upgrade system', run_upgrade))
+    def run_upgrade_reload():
+        run_upgrade()
+        os.execv(sys.executable, [sys.executable, sys.argv[0]])
+        return True
+
+    menu_items.append(('Upgrade system', run_upgrade_reload))
     menu_items.append(('Exit to terminal', run_terminal))
     menu_items.append(('Shutdown', run_shutdown))
 
