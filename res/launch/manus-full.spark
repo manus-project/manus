@@ -19,7 +19,7 @@
         "command" : "python -m manus_starter.privileged",
         "restart" : true,
         "user" : "root",
-        "group" : ["admin"],
+        "group" : ["root"],
         "depends" : ["echo"]
     },
     "cameraserver" : {
@@ -74,7 +74,7 @@
         "restart" : false,
         "depends": ["webshell"],
         "user" : "root",
-        "group" : ["admin"]
+        "group" : ["root"]
     },
     "planner" : {
         "command" : "manus_planner",

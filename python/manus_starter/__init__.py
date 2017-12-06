@@ -157,18 +157,21 @@ def run_script(script, shutdown=None):
         print "Error opening spark file %s" % e
         return False
 
+    stop_requested = False
+
     try:
         while group.valid():
             time.sleep(1)
             if not shutdown is None and shutdown():
+                stop_requested = True
                 break
     except KeyboardInterrupt:
-        pass
+        stop_requested = True
 
     group.announce("Shutting down ...")
     group.stop()
 
-    return True
+    return not stop_requested
 
 
 def scan_resources():
@@ -214,10 +217,16 @@ def run_interactive(launchfiles):
     
 def run_service(launchfile):
     signal.signal(signal.SIGTERM, exit_gracefully)
+
+    def resources_available():
+        camera, manipulator = scan_resources()
+        print camera, manipulator
+        return camera and manipulator
+
     try:
         while not kill_now:
-            if scan_resources():
-                if not run_script(launchfile, shutdown=lambda: scan_resources() or kill_now):
+            if resources_available():
+                if not run_script(launchfile, shutdown=lambda: kill_now):
                     break
             else:
                 time.sleep(3)

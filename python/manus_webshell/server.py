@@ -348,8 +348,10 @@ def main():
 
         storagefile = os.getenv('MANUS_STORAGE', "/tmp/manus_storage.db")
         if os.path.exists(storagefile):
+            logger.info("Opening storage database from %s" % storagefile)
             storage.open(storagefile, None, db.DB_HASH)
         else:
+            logger.info("Creating storage database in %s" % storagefile)
             storage.open(storagefile, None, db.DB_HASH, db.DB_CREATE)
 
         handlers = []
@@ -429,6 +431,8 @@ def main():
             print traceback.format_exc()
 
         echocv.tornado.uninstall_client(tornado_loop, client)
+
+        flush_database()
 
     except Exception, e:
         print traceback.format_exc()
