@@ -53,8 +53,7 @@ if __name__ == '__main__':
     control = PrivilegedCommandSubscriber(client, "privileged", control_callback)
 
     try:
-        while True:
-            loop.wait(100)
+        while loop.wait(100):
     except KeyboardInterrupt:
         pass
     finally:
