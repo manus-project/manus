@@ -7,12 +7,23 @@ import signal
 
 from subprocess import call
 
+from netifaces import interfaces, ifaddresses, AF_INET
+
+def ip4_addresses():
+    ip_list = []
+    for interface in interfaces():
+        for link in ifaddresses(interface)[AF_INET]:
+            ip_list.append(link['addr'])
+    return ip_list
+
 def add_port_redirect(src, dst):
-    call(["iptables", "-t", "nat", "-A", "OUTPUT", "-p", "tcp", "--dport", str(dst), "-j", "REDIRECT", "--to", str(src)])
+    # Separate rule for localhost
+    call(["iptables", "-t", "nat", "-A", "OUTPUT", "-p", "tcp", "-o", "lo", "--dport", str(dst), "-j", "REDIRECT", "--to", str(src)])
     call(["iptables", "-t", "nat", "-A", "PREROUTING", "-p", "tcp", "--dport", str(dst), "-j", "REDIRECT", "--to", str(src)])
 
 def del_port_redirect(src, dst):
-    call(["iptables", "-t", "nat", "-D", "OUTPUT", "-p", "tcp", "--dport", str(dst), "-j", "REDIRECT", "--to", str(src)])
+    # Separate rule for localhost
+    call(["iptables", "-t", "nat", "-D", "OUTPUT", "-p", "tcp", "-o", "lo", "--dport", str(dst), "-j", "REDIRECT", "--to", str(src)])
     call(["iptables", "-t", "nat", "-D", "PREROUTING", "-p", "tcp", "--dport", str(dst), "-j", "REDIRECT", "--to", str(src)])
 
 #iptables -t nat -A OUTPUT -p tcp --dport 80 -j REDIRECT --to 8080
