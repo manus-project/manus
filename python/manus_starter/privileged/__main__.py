@@ -54,6 +54,7 @@ if __name__ == '__main__':
 
     try:
         while loop.wait(100):
+            pass
     except KeyboardInterrupt:
         pass
     finally:
