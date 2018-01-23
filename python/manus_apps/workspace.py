@@ -15,16 +15,16 @@ from manus_apps.blocks import BlockDetector
 class Camera(object):
 
     def __init__(self, workspace, name):
+        self.image = None
+        self.location = None
+        self.parameters = None
+        self.workspace = workspace
         self.image_sub = echocv.ImageSubscriber(
             workspace.client, "%s.image" % name, lambda x: self._image_callback(x))
         self.parameters_sub = echocv.CameraIntrinsicsSubscriber(
             workspace.client, "%s.parameters" % name, lambda x: self._parameters_callback(x))
         self.location_sub = echocv.CameraExtrinsicsSubscriber(
             workspace.client, "%s.location" % name, lambda x: self._location_callback(x))
-        self.image = None
-        self.location = None
-        self.parameters = None
-        self.workspace = workspace
 
     def _image_callback(self, image):
         self.image = image
@@ -34,6 +34,9 @@ class Camera(object):
 
     def _parameters_callback(self, parameters):
         self.parameters = parameters
+
+    def is_ready(self):
+        return not (self.location == None or self.parameters == None)
 
     def get_image(self):
         return self.image
@@ -78,6 +81,9 @@ class Manipulator(object):
         self.workspace = workspace
         self.current_state = None
 
+    def is_ready(self):
+        return not self.current_state == None
+
     def on_manipulator_state(self, manipulator, state):
         self.current_state = state
 
@@ -111,6 +117,11 @@ class Manipulator(object):
         self.handle.move_joint(joint, goal, identifier=self.identifier)
         return self.wait_for(self.identifier)
 
+    def gripper(self, goal=None):
+        if goal is None:
+            return self.current_state.joints[-1].goal
+        return self.joint(len(self.current_state.joints)-1, goal)
+
     def wait_for(self, identifier):
         self.move_waiting = identifier
         while True:
@@ -129,6 +140,9 @@ class Workspace(object):
         self.camera = Camera(self, "camera0")
         self.manipulator = Manipulator(self, "manipulator0")
         self.markers_pub = MarkersPublisher(self.client, "markers")
+
+        while not (self.camera.is_ready() and self.manipulator.is_ready()):
+            self.wait(100)
 
     def detect_blocks(self, block_size=20):
         if not self.manipulator.safe():

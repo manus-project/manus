@@ -61,18 +61,22 @@
     <block type="lists_split"></block>  
     <block type="lists_reverse"></block>  
   </category>  
-  <category name="Robot" colour="0">  
+  <category name="Manipulator" colour="20">  
       <block type="manus_move_joint"></block>  
       <block type="manus_retrieve_joint"></block>  
       <block type="manus_open_close_gripper"></block>  
       <block type="manus_move_arm"></block>  
+  </category>
+  <category name="Camera" colour="60">   
       <block type="manus_position_vector"></block>  
       <block type="manus_position_vector_var"></block>  
       <block type="manus_detected_blocks_array"></block>  
       <block type="manus_detect_and_store_blocks"></block>  
-      <block type="manus_wait"></block>  
       <block type="manus_retrieve_coordinate"></block>  
       <block type="manus_retrieve_color"></block>  
+  </category>
+  <category name="Time" colour="100">  
+      <block type="manus_wait"></block>  
   </category>  
   <sep></sep>  
   <category name="Variables" colour="330" custom="VARIABLE"></category>  

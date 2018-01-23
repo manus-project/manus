@@ -21,14 +21,12 @@ CodeParser = {
 
     std_code_prepend: function (){
         var tab = CodeParser.tab();
-        return `from manus.robot_arm import *
+        return `import manus
+from manus_apps.workspace import Workspace
+from manus_apps.blocks import Block, block_color_name
 
 
-arm = RobotArm()
-
-# Wait for one second ...
-arm.wait(1000)
-# ... then start execution
+workspace = Workspace()
 `
     },
 
@@ -81,14 +79,10 @@ Program = {
       Program.python.ace.completers.push({
         getCompletions: function(editor, session, pos, prefix, callback) {
           callback(null, [
-              {value: "arm.move_joint(joint, angle)", score: 1000, meta: "Robot arm: Move one joint to specific angle."},
-              {value: "arm.cotrol_gripper(cmd)", score: 1000, meta: "Robot arm: Open, half close or close gripper."},
-              {value: "arm.wait(milisecs)", score: 1000, meta: "Robot arm: Wait/Sleep for milisecs."},
-              {value: "arm.move_to_coordinates(p)", score: 1000, meta: "Robot arm: Move arm to coordinates/point."},
-              {value: "arm.detect_blocks()", score: 1000, meta: "Robot arm: Detect all blocks."},
-              {value: "arm.get_joint_position(joint)", score: 1000, meta: "Robot arm: Get joints position."},
-              {value: "retrieve_coordinate_from_point(comp, point)", score: 1000, meta: "Robot arm: Retrieve coordinate from point/coordinates."},
-              {value: "retrieve_color_from_block(block)", score: 1000, meta: "Robot arm: Retrieve color from block."}
+              {value: "workspace", score: 1000, meta: "Main workspace reference"},
+              {value: "workspace.manipulator", score: 1000, meta: "Manipulator reference"},
+              {value: "workspace.camera", score: 1000, meta: "Camera reference"},
+              {value: "workspace.wait(10)", score: 1000, meta: "Wait for some time"}
           ]);
         }
       });
@@ -134,12 +128,20 @@ Program = {
     });
 
     var logconsole = $("#console .content");
-    logconsole.click(function() {
+    logconsole.dblclick(function() {
 
       if ($("#console").hasClass("terminated")) {
           Program.show();
       }
 
+    });
+
+    $(document).keyup(function(e) {
+         if (e.keyCode == 27) {
+            if ($("#console").hasClass("terminated")) {
+              Program.show();
+          }
+        }
     });
 
     var run_button = $.manus.widgets.fancybutton({

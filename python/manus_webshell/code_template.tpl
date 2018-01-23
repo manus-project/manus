@@ -1,8 +1,5 @@
 #!/usr/bin/python
 
-import numpy as np
-import scipy.spatial.distance
-import cv2
 import sys
 from random import shuffle
 
@@ -10,20 +7,14 @@ from math import *
 
 import manus
 
-from manus_apps.blocks import block_color_name
-from manus_apps.blocks import Block
+from manus_apps.blocks import Block, block_color_name
 from manus_apps.workspace import Workspace
 
 class BlocklyRuntimeError(RuntimeError):
     def __init__(self, message):
         super(BlocklyRuntimeError, self).__init__(message)
 
-workspace = Workspace() #bounds=[(100, -200), (360, -200), (360, 200), (100, 200)])
-
-detection_color = None
-detection_x = None
-detection_y = None
-detection_z = None
+workspace = Workspace()
 
 def manus_move_joint(joint, angle):
     # Angle is in degrees so we convert it to radians
@@ -59,22 +50,10 @@ def manus_move_arm_to_coordinates(p):
         manus.MoveTo((p[0], p[1], p[2]), (0.0, 0.0, angle), gripper)
     ])
 
-def manus_any_block_detected():
-    # Set detection variables!
-    global detection_color, detection_x, detection_y, detection_z 
-    detection_color = "red"
-    detection_x = 200
-    detection_y = 100
-    detection_z = 100
-    return True # Dont't forget to return something
-
 def manus_detect_blocks():
     blocks = workspace.detect_blocks() # dont't forget to return for manus_detect_and_store_blocks block
     shuffle(blocks)
     return blocks
-
-def manus_get_position():
-    pass
 
 def manus_get_joint(joint):
     joints = workspace.manipulator.state().joints
@@ -106,7 +85,6 @@ def manus_retrieve_color_from_block(block):
         raise BlocklyRuntimeError("Not a block object")
 
 try:
-    workspace.wait(500)
 {{code_container}}
 
 except BlocklyRuntimeError, e:

@@ -2,39 +2,32 @@
 import os
 import traceback
 
-class CodeGenerator(object):
 
-    def __init__(self, template_path, target_dir):
-        self.template_path = template_path
-        if target_dir[len(target_dir)-1] is not "/":
-            target_dir = target_dir+"/"
-        self.target_dir = target_dir
+class AppGenerator(object):
+
+    def __init__(self, target_dir):
         self.template = ""
-        self.read_template()
-        
-        self.app_file_content = """Generated App
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        self.read_template(os.path.join(current_dir, "code_template.tpl"))
+        self.app_file_content = """Auto-generated App
 1
 generated_app.py
-Blockly generated app
+Automatically generated app
 
-App generated from Blockly code
+Automatically generated app
 """
 
-    def read_template(self):
+    def read_template(self, template_path):
         try:
-            if not os.path.isfile(self.template_path):
-                raise RuntimeError("template file at path "+self.template_path+" not found!")
-            tmpl_file = open(self.template_path, "r")
+            if not os.path.isfile(template_path):
+                return False
+            tmpl_file = open(template_path, "r")
             self.template = tmpl_file.read()
-            tmpl_file.close() 
+            tmpl_file.close()
+            return True
         except Exception as e:
-            raise RuntimeError("failed to read template file: "+e.message)
+            return False
 
-    def generate_code_with_code(self, code):
-        # Indent code with 4 spaces
-        code = self.prefix_lines_with_spaces(code, 4)
-        return self.template.replace("{{code_container}}", code)
-    
     def prefix_lines_with_spaces(self, code, num_of_spaces):
         res = list()
         prefix = " " * num_of_spaces
@@ -42,27 +35,28 @@ App generated from Blockly code
             if len(line) == 0:
                 res.append(line)
             else:
-                res.append(prefix+line)
+                res.append(prefix + line)
         return "\n".join(res)
 
-    def generate_app_with_code(self, code, write_to_disk=False, wrap_with_template=False):
+    def generate(self, code, destination=None):
         try:
-            res_code = code
-            if wrap_with_template:
-                res_code = self.generate_code_with_code(code)
-            if (write_to_disk):
-                app_file_path = self.target_dir+"generated_app.app"
-                python_file_path = self.target_dir+"generated_app.py"
+
+            # Indent code with 4 spaces
+            code = self.prefix_lines_with_spaces(code, 4)
+            code = self.template.replace("{{code_container}}", code)
+
+            if (not destination == None):
+                app_file_path = os.path.join(destination, "generated_app.app")
+                python_file_path = os.path.join(destination, "generated_app.py")
 
                 app_file = open(app_file_path, "w")
                 python_file = open(python_file_path, "w")
 
                 app_file.write(self.app_file_content)
-                python_file.write(res_code)
+                python_file.write(code)
 
                 app_file.close()
-                python_file.close
-            return res_code
+                python_file.close()
+            return True
         except Exception as e:
-            raise RuntimeError("failed to generate app: "+e.message+"\n"+traceback.format_exc())
-
+            return False

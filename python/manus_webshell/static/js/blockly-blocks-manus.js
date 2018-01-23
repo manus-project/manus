@@ -178,11 +178,11 @@ Blockly.Blocks['manus_detect_and_store_blocks'] = {
 Blockly.Blocks['manus_retrieve_color'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("Get color from")
+        .appendField("Get color of block")
         .appendField(new Blockly.FieldVariable(null), "SELECTED_BLOCK_FOR_COMPONENT_ACCESS");
     this.setOutput(true, null);
     this.setColour(0);
-    this.setTooltip('Retrieves color of block.');
+    this.setTooltip('Retrieves color of a given block.');
     this.setHelpUrl('');
   }
 };
@@ -192,11 +192,11 @@ Blockly.Blocks['manus_retrieve_coordinate'] = {
     this.appendDummyInput()
         .appendField("Get")
         .appendField(new Blockly.FieldDropdown([["x","x"], ["y","y"], ["z","z"]]), "coordinate_dropdown")
-        .appendField("from")
+        .appendField("of block")
         .appendField(new Blockly.FieldVariable(null), "SELECTED_BLOCK_FOR_COMPONENT_ACCESS");
     this.setOutput(true, null);
     this.setColour(0);
-    this.setTooltip('Retrieves coordinate from point.');
+    this.setTooltip('Retrieves coordinate of a given block.');
     this.setHelpUrl('');
   }
 };

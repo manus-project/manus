@@ -8,6 +8,7 @@ import json
 import time
 import datetime
 import uuid
+import tempfile
 import logging
 import logging.handlers
 import os.path
@@ -28,7 +29,7 @@ import echolib
 import echocv
 import echocv.tornado
 
-from .code_generator import CodeGenerator
+from .generator import AppGenerator
 from .utilities import synchronize, RedirectHandler, DevelopmentStaticFileHandler, JsonHandler, NumpyEncoder
 import manus_webshell.static
 
@@ -310,9 +311,8 @@ class ProgramHandler(JsonHandler):
             "status" : "ok",
         }
         try:
-            current_dir = os.path.dirname(os.path.realpath(__file__))
-            generator = CodeGenerator(os.path.join(current_dir, "code_template.tpl"), "/tmp")
-            generator.generate_app_with_code(self.request.arguments[u"code"], True)
+            generator = AppGenerator("/tmp")
+            generator.generate(self.request.arguments[u"code"], tempfile.gettempdir())
             self._apps.run("/tmp/generated_app.app")
             self.response["identifier"] = app_identifier("/tmp/generated_app.app")
         except Exception as e:
@@ -394,7 +394,6 @@ def main():
 
         def markers_callback(markers):
             data = {m.id : {"location": [m.location.x, m.location.y, m.location.z], "rotation": [m.rotation.x, m.rotation.y, m.rotation.z]} for m in markers.markers}
-            print data
             ApiWebSocket.distribute_message({"channel": "markers", "action" : "overwrite", "markers" : data, "overlay" : markers.owner})
 
         markers_subsriber = MarkersSubscriber(client, "markers", markers_callback)
