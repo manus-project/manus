@@ -53,7 +53,6 @@ IF (BUILD_MPSSE)
     INCLUDE_DIRECTORIES(${LIBFTDI_INCLUDE_DIRS})
 ENDIF(BUILD_MPSSE)
 
-FIND_PACKAGE(LibFTDI1 REQUIRED)
 ADD_EXECUTABLE(manus_openservo_manipulator src/manipulator.cpp src/openservorobot.cpp src/debug.cpp)
 TARGET_LINK_LIBRARIES(manus_openservo_manipulator ${echolib_LIBRARIES} ${OpenServo_LIBRARIES} ${YAML_CPP_LIBRARIES} ${LIBFTDI_LIBRARIES})
 add_dependencies(manus_openservo_manipulator manus_messages)
