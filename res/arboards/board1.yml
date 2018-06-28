@@ -1,33 +1,42 @@
 %YAML:1.0
-marker1.png:
-  name: marker1
-  size: 50
-  origin:
-    y: -215
-    x: -25
-  rotation:
-    z: 270
-marker2.png:
-  name: marker2
-  size: 50
-  origin:
-    x: 410
-    y: -215
-  rotation:
-    z: 90
-marker5.png:
-  name: marker5
-  size: 50
-  origin:
-    x: 410
-    y: 225
-  rotation:
-    z: -90
-marker4.png:
-  name: marker4
-  size: 50
-  origin:
-    y: 225
-    x: -25
-  rotation:
-    z: 180
+anchors:
+  - template: marker1.png
+    size: 50
+    identifier: Marker 1
+    type: binary
+    group: Global
+    origin:
+      y: -215
+      x: -25
+    rotation:
+      z: 180
+  - template: marker2.png
+    size: 50
+    identifier: Marker 2
+    type: binary
+    group: Global
+    origin:
+      x: -410
+      y: 215
+    rotation:
+      z: 0
+  - template: marker5.png
+    size: 50
+    identifier: Marker 5
+    type: binary
+    group: Global
+    origin:
+      y: 410
+      x: -215
+    rotation:
+      z: -90
+  - template: marker4.png
+    size: 50
+    identifier: Marker 4
+    type: binary
+    group: Global
+    origin:
+      y: 225
+      x: -025
+    rotation:
+      z: 180

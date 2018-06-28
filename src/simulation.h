@@ -9,12 +9,9 @@ public:
     ~SimulatedManipulator();
 
 	bool step(float time);
-	virtual int lock(int joint = -1);
-	virtual int release(int joint = -1);
-	virtual int rest();
 	
     virtual int size();
-	virtual int move(int joint, float speed, float position);	
+	virtual bool move(int joint, float speed, float position);	
 
 	virtual ManipulatorDescription describe();
 	virtual ManipulatorState state();

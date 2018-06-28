@@ -11,6 +11,7 @@
 #include <yaml-cpp/yaml.h>
 
 using namespace std;
+using namespace openservo;
 
 float hardcoded_factors[] = {0.0009380807, 0.0009349769, 0.0009304994, 0.0008597145, 0.0008597145, 0.0008597145};
 
@@ -49,18 +50,18 @@ void print_motor(const motor_calibration& motor) {
 		<< motor.position << " Min:" << motor.min << " Max:" << motor.max << endl;
 }
 
-int update_state(OpenServo& os, vector<motor_calibration>& motors) {
+int update_state(ServoBus& bus, vector<motor_calibration>& motors) {
 
-	os.updateServoValuesAllServo();
+	bus.update();
 
 	for (int i = 0; i < motors.size(); i++) {
 
 		if (motors[i].id > -1)
 			continue;
 
-		sv status = os.getServo(motors[i].addr);
+		ServoHandler sv = bus.find(motors[i].addr);
 
-		motors[i].measurements.push_back(status.position);
+		motors[i].measurements.push_back(sv->getPosition());
 
 		if (motors[i].measurements.size() > 20) {
 
@@ -86,20 +87,17 @@ int update_state(OpenServo& os, vector<motor_calibration>& motors) {
 
 int main(int argc, char** argv) {
 
-	OpenServo os;
+	ServoBus bus;
 	struct termios old_tio, new_tio;
-	if (argc < 2 || !os.openPort(argv[1])) {
+	if (argc < 2 || !bus.open(argv[1])) {
 		cout << "Unable to connect to i2c bus" << endl;
 		return -1;
 	}
 
 	cout << "Welcome to OpenServo manipulator calibration utility" << endl;
 
-	unsigned char adrs[128];
-	int n = os.scanPort(adrs);
+	int n = bus.scan();
 	cout << "Found " << n << " motors\n";
-
-  	os.scanPortAutoAddServo();
 
 	if (argc < 3) {
 
@@ -109,7 +107,7 @@ int main(int argc, char** argv) {
 			motors[i].max = -1000000;
 			motors[i].center = 0;
 			motors[i].factor = 0;
-			motors[i].addr = (int) adrs[i];
+			motors[i].addr = bus.get(i)->getAddress();
 			motors[i].id = -1;
 		}
 
@@ -128,7 +126,7 @@ int main(int argc, char** argv) {
 			cout << "Please move motor " << m << " to both extreme positions and then to center position and press any key." << endl;
 
 			while (wait_key() < 0) {
-				update_state(os, motors);
+				update_state(bus, motors);
 			}
 
 			int candidate = -1;
@@ -182,21 +180,23 @@ int main(int argc, char** argv) {
 		motors[i].min = max(motors[i].min, 16);
 
 		cout << "Writing data to motor " << i << endl;
-		os.writeEnable(motors[i].addr);
-		os.setMaxSeek(motors[i].addr, motors[i].max);
-		os.setMinSeek(motors[i].addr, motors[i].min);
-		os.writeDisable(motors[i].addr);
-		os.registerSave(motors[i].addr);
+
+		ServoHandler sv = bus.find(motors[i].addr);
+		sv->unlock();
+		sv->set("seek.max", motors[i].max);
+		sv->set("seek.min", motors[i].min);
+		bus.update();
+		sv->registersCommit();
 
 	}
 
 	cout << "Verifying ... " << endl;
-	os.updateServoValuesAllServo();
+	bus.update(true);
 
 	for (int i = 0; i < motors.size(); i++) {
 
-		sv s = os.getServo(motors[i].addr);
-		cout << "Motor " << motors[i].addr << " min: " << s.minseek << " max: " << s.maxseek << endl;
+		ServoHandler sv = bus.find(motors[i].addr);
+		cout << "Motor " << motors[i].addr << " min: " << sv->getMinSeek() << " max: " << sv->getMaxSeek() << endl;
 
 	}
 

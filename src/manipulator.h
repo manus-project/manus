@@ -21,12 +21,8 @@ public:
 	Manipulator() {};
 	~Manipulator() {};
 
-	virtual int lock(int joint = -1) = 0;
-	virtual int release(int joint = -1) = 0;
-	virtual int rest() = 0;
-
 	virtual int size() = 0;
-	virtual int move(int joint, float goal, float speed) = 0;
+	virtual bool move(int joint, float goal, float speed) = 0;
 
 	virtual ManipulatorDescription describe() = 0;
 	virtual ManipulatorState state() = 0;

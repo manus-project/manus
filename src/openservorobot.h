@@ -1,105 +1,60 @@
-#ifndef __OPENSERVOROBOT_MANIPULATOR_H
-#define __OPENSERVOROBOT_MANIPULATOR_H
+#ifndef __OPENSERVO_MANIPULATOR_H
+#define __OPENSERVO_MANIPULATOR_H
 
 #include <string>
 #include <vector>
 #include <queue>
 
+#include <openservo.h>
+
 #include "manipulator.h"
 
-typedef struct sv_info {
+typedef struct MotorData {
 	int servo_id;
 	int joint_id;
 	int AD_min;
 	int AD_max;
 	int AD_center;
 	float factor;
-} servo_info;
+} MotorData;
 
-
-class OpenServoRobot : public Manipulator, public IOBase
+class OpenServoManipulator : public Manipulator
 {
 public:
-	OpenServoRobot(string path_to_i2c_port, const string& modelfile, const string& calibfile);
-	~OpenServoRobot();
-
-	virtual int lock(int joint = -1);
-	virtual int release(int joint = -1);
-	virtual int rest();
+	OpenServoManipulator(const string& device,
+    const string& model_file, const string& calibration_file);
+	~OpenServoManipulator();
 
 	virtual int size();
-	virtual int move(int joint, float position, float speed);
+	virtual bool move(int joint, float position, float speed);
 
 	virtual ManipulatorDescription describe();
 	virtual ManipulatorState state();
 
-	virtual int get_file_descriptor();
-	virtual bool handle_output();
-	virtual bool handle_input();
-	virtual void disconnect();
-
-	void push();
+	bool process();
 
 private:
 
-	virtual int connectTo(string path_to_i2c_port);
-	virtual int loadDescription(const string& modelfile, const string& calibfile);
+	virtual int load_description(const string& model_file, const string& calibration_file);
 
-	enum ActionType {MOVE, UPDATE_JOINTS};
-	struct buff_data
-	{
-		ActionType action_type;
-		int joint;
-		float speed;
-		float position;
-	};
-
-	struct servo_data
+	struct ServoRuntimeData
 	{
 		int address;
 		std::deque<int> position_median;
 		std::deque<int> goal_median;
 	};
 
-  // thread
-  pthread_t thread1, thread_req;
-  bool non_blocking;
-  pthread_mutex_t q_mutex        = PTHREAD_MUTEX_INITIALIZER;
-  pthread_mutex_t sleep_mutex    = PTHREAD_MUTEX_INITIALIZER;
-  pthread_mutex_t read_servo_mutex    = PTHREAD_MUTEX_INITIALIZER;
-  pthread_cond_t wake_up_condition = PTHREAD_COND_INITIALIZER;
-  bool in_sleep;
-  bool end_thread;
-  std::queue<buff_data> q_out;
-
-  std::vector<servo_data> runtime_data;
+  std::vector<ServoRuntimeData> runtime_data;
 
   ManipulatorDescription _description;
   ManipulatorState _state;
-  std::vector<servo_info> servos;
+  std::vector<MotorData> servos;
   int read_rate;
 
-  OpenServo open_servo;
+  openservo::ServoBus bus;
 
-  static void* startRoutine(void* arg)
-  {
-    OpenServoRobot* ops = reinterpret_cast<OpenServoRobot*>(arg);
-    ops->threadRoutine();
-  }
-  static void* startRoutineReq(void* arg)
-  {
-    OpenServoRobot* ops = reinterpret_cast<OpenServoRobot*>(arg);
-    ops->threadRoutineReq();
-  }
-  void threadRoutine();
-  void threadRoutineReq();
-
-  void sendMove(int joint, float speed, float position);
-  void updateJoints();
   int joint_to_motor(int joint);
-  int motor_to_joint(int m);
-
-  void printServos();
+  int motor_to_joint(int motor);
 
 };
 
@@ -107,10 +62,9 @@ private:
 
 /*
     Joint description:
-      - min, max AD vrednosti -> dh_min in dh_max se porečunata glede na parametre
-      - izhodišno verdnost za AD
-      - max kot servota
-      - faktor pretvorbe iz AD v kot
-      - dh_theta, dh_alpha, dh_d, dh_a, dh_min(se lahko naknadno poračuna), dh_max(se lahko naknadno poračuna)
-
+      - min, max AD values -> dh_min in dh_max calculated based on parameters
+      - origin value for AD
+      - max angle
+      - conversion factor from AD to angle
+      - dh_theta, dh_alpha, dh_d, dh_a, dh_min (computed later), dh_max(computed later)
 */

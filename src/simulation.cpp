@@ -65,31 +65,14 @@ bool SimulatedManipulator::step(float time) {
     return idle;
 }
 
-int SimulatedManipulator::lock(int joint) {
-    return 0;
-}
-
-int SimulatedManipulator::release(int joint) {
-	return 0;
-}
-
-int SimulatedManipulator::rest() {
-
-    for (int i = 0; i < _state.joints.size(); i++) {
-        _state.joints[i].goal = _state.joints[i].position;
-    }
-
-	return 0;
-}
-
 int SimulatedManipulator::size() {
     return _state.joints.size();
 }
 
-int SimulatedManipulator::move(int joint, float position, float speed) {
+bool SimulatedManipulator::move(int joint, float position, float speed) {
 
     if (joint < 0 || joint >= size())
-        return -1;
+        return false;
 
     if (_description.joints[joint].dh_min > position)
         position = _description.joints[joint].dh_min;
@@ -100,7 +83,7 @@ int SimulatedManipulator::move(int joint, float position, float speed) {
     _state.joints[joint].goal = position;
     _state.joints[joint].speed = speed;
 
-	return 0;
+	return true;
 }
 
 ManipulatorDescription SimulatedManipulator::describe() {
@@ -109,12 +92,13 @@ ManipulatorDescription SimulatedManipulator::describe() {
 
 }
 
-
 ManipulatorState SimulatedManipulator::state() {
 
     return _state;
 
 }
+
+#define SIMULATION_DELTA 50
 
 int main(int argc, char** argv) {
 
@@ -129,9 +113,9 @@ int main(int argc, char** argv) {
 
     ManipulatorManager manager(client, manipulator);
 
-    while (echolib::wait(50)) {
-        manipulator->step(50);
+    while (echolib::wait(SIMULATION_DELTA)) {        
         manager.update();
+        manipulator->step(SIMULATION_DELTA);
     }
 
     exit(0);
