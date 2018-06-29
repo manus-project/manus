@@ -441,6 +441,10 @@ Program = {
           metadiv.prepend($("<span/> ").addClass("glyphicon glyphicon-th-large"));
         }
 
+        if (read_only) {
+          metadiv.prepend($("<span/> ").addClass("glyphicon glyphicon-lock"));
+        }
+
     }
 
     var updating = false;
