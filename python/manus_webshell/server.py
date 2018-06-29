@@ -353,7 +353,17 @@ def main():
         else:
             logger.info("Creating storage database in %s" % storagefile)
             storage.open(storagefile, None, db.DB_HASH, db.DB_CREATE)
-
+            defaults_storage = os.getenv('MANUS_STORAGE_DEFAULTS', None)
+            if defaults_storage and os.path.exists(defaults_storage):
+                for root, dirs, files in os.walk(defaults_storage):
+                    for file in files:
+                        if file.endswith(".json"):
+                            key = os.path.splitext(file)[0]
+                            with open(os.path.join(defaults_storage, file), 'r') as fd:
+                                data = "%s;%s" % ("text/json", fd.read())
+                                storage.put(key, data)
+                                logger.info("Restoring initial data from: %s" % file)
+ 
         handlers = []
         cameras = []
         manipulators = []

@@ -70,7 +70,7 @@
         "required" : false,
         "restart" : true,
 		"depends": ["manipulator", "planner"],
-		"environment" : {"MANUS_STORAGE" : "/var/local/manus/storage.db"}
+		"environment" : {"MANUS_STORAGE" : "/var/local/manus/storage.db", "MANUS_STORAGE_DEFAULTS" : "${MANUS_ROOT}/share/manus/defaults"}
     },
     "portmap" : {
         "command" : "python -u -m manus_starter.ports 8080:80",
