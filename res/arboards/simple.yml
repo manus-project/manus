@@ -1,17 +1,23 @@
 %YAML:1.0
-marker1.png:
-  name: marker1
-  size: 50
-  origin:
-    x: 55
-    y: 115
-  rotation:
-    z: 180
-marker2.png:
-  name: marker2
-  size: 50
-  origin:
-    x: 55
-    y: -115
-  rotation:
-    z: 180
+anchors:
+  - template: marker1.png
+    size: 50
+    identifier: Marker 1
+    type: binary
+    group: Global
+    origin:
+      x: 55
+      y: 115
+    rotation:
+      z: 180
+  - template: marker2.png
+    size: 50
+    identifier: Marker 2
+    type: binary
+    group: Global
+    origin:
+      x: 55
+      y: -115
+    rotation:
+      z: 180
+
