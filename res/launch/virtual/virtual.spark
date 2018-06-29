@@ -3,6 +3,10 @@
 "log" : "/var/log/manus/",
 "user" : "manus",
 "group" : ["manus", "video"],
+"parameters" : {
+    "manus.camera" : true,  
+    "manus.manipulator" : false
+},
 "environment" : {
 	"MANUS_ROOT" : "/usr",
 	"ECHOLIB_SOCKET" : "/tmp/echo.sock"
@@ -29,7 +33,7 @@
         }
     },
     "artracker" : {
-        "command" : "echocv_artrack board1.yml",
+        "command" : "manus_artrack board1.yml",
         "directory" : "${MANUS_ROOT}/share/manus/arboards",
         "required" : false,
         "restart" : true,
