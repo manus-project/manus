@@ -178,6 +178,11 @@
     color: gray;
 }
 
+.list-group-item.program-item .metadata span {
+    margin-right: 10px;
+}
+
+
 .list-group-item.apps-item .name {
     font-size: 120%;
 }
