@@ -196,7 +196,10 @@ int OpenServoManipulator::motor_to_joint(int m) {
 
 bool OpenServoManipulator::process() {
 
-  if (!bus.update()) return false;
+  if (!bus.update()) {
+    cout << bus.getLastError() << endl;
+    return false;
+  }
 
   // refresh state data
   for (int q = 0; q < _description.joints.size(); q++) {
