@@ -52,7 +52,7 @@
         }
     },
     "manipulator": {
-		"command": "manus_openservo_manipulator manipulator1.yaml /etc/calibration.yaml",
+		"command": "manus_openservo_manipulator manipulator1.yaml /etc/calibration.yaml /dev/i2c-1",
 		"depends": ["echo"],
 		"directory" : "${MANUS_ROOT}/share/manus/models",
 		"restart": false,
