@@ -64,7 +64,7 @@ Blockly.Python['manus_position_vector_var'] = function(block) {
 Blockly.Python['manus_move_arm'] = function(block) {
   var value_coordinates = Blockly.Python.valueToCode(block, 'coordinates', Blockly.Python.ORDER_ATOMIC) || "(0.0,0.0,0.0)";
   // TODO: Assemble Python into code variable.
-  return 'workspace.manipulator.trajectory([ manus.MoveTo(('+value_coordinates+'), (0.0, 0.0, 0.0), workspace.manipulator.gripper()])\n';
+  return 'workspace.manipulator.trajectory([ manus.MoveTo(('+value_coordinates+'), (0.0, 0.0, 0.0), workspace.manipulator.gripper())])\n';
 };
 
 Blockly.Python['manus_wait'] = function(block) {
