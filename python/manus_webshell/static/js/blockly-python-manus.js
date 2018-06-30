@@ -38,7 +38,8 @@ Blockly.Python['manus_move_joint'] = function(block) {
 Blockly.Python['manus_retrieve_joint'] = function(block) {
   var dropdown_joint_id = block.getFieldValue('joint_id');
   // TODO: Assemble Python into code variable.
-  return 'workspace.manipulator.state().joints['+ dropdown_joint_id + ']\n';
+  var code = 'workspace.manipulator.state().joints['+ dropdown_joint_id + '].position';
+  return [code, Blockly.Python.ORDER_NONE];
 };
 
 Blockly.Python['manus_position_vector'] = function(block) {
