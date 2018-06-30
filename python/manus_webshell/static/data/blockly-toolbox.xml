@@ -11,7 +11,9 @@
     <block type="math_modulo"></block>  
     <block type="math_constrain"></block>  
     <block type="math_random_int"></block>  
-    <block type="math_random_float"></block>  
+    <block type="math_random_float"></block>
+    <block type="manus_position_vector"></block>  
+    <block type="manus_position_vector_var"></block>   
   </category>  
   <category name="Logic" colour="210">  
     <block type="controls_if"></block>  
@@ -68,8 +70,6 @@
       <block type="manus_move_arm"></block>  
   </category>
   <category name="Camera" colour="60">   
-      <block type="manus_position_vector"></block>  
-      <block type="manus_position_vector_var"></block>  
       <block type="manus_detected_blocks_array"></block>  
       <block type="manus_detect_and_store_blocks"></block>  
       <block type="manus_retrieve_coordinate"></block>  

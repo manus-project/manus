@@ -31,7 +31,7 @@ Blockly.Python['manus_move_joint'] = function(block) {
   var angle_joint_angle = block.getFieldValue('joint_angle');
   // TODO: Assemble Python into code variable.
 
-  angle_joint_angle = float(angle_joint_angle) * Math.PI / 180.0;
+  angle_joint_angle = angle_joint_angle * Math.PI / 180.0;
   return 'workspace.manipulator.joint('+ dropdown_joint_id +', '+ angle_joint_angle +')\n';
 };
 
