@@ -146,6 +146,8 @@ bool OpenServoManipulator::move(int joint, float position, float speed) {
   runtime_data[motor].goal_median.clear();
   runtime_data[motor].goal_median.assign(MEDIAN_WINDOW, (int)pos);
 
+  _state.joints[joint].goal = position;
+
   return true;
 
 }
