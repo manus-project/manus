@@ -198,7 +198,7 @@ bool OpenServoManipulator::process() {
 
   if (!bus.update()) {
     cout << bus.getLastError() << endl;
-    return false;
+    //return false;
   }
 
   // refresh state data
