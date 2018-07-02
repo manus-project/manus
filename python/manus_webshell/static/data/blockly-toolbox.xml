@@ -34,6 +34,8 @@
   </category>  
   <category name="Text" colour="160">  
     <block type="text"></block>  
+    <block type="text_print"></block>  
+    <block type="text_newline"></block>  
     <block type="text_join"></block>  
     <block type="text_append"></block>  
     <block type="text_length"></block>  
@@ -43,8 +45,7 @@
     <block type="text_getSubstring"></block>  
     <block type="text_changeCase"></block>  
     <block type="text_trim"></block>  
-    <block type="text_print"></block>  
-    <block type="text_prompt_ext"></block>  
+    <!--block type="text_prompt_ext"></block-->  
     <block type="text_count"></block>  
     <block type="text_replace"></block>  
     <block type="text_reverse"></block>  

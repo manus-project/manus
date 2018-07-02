@@ -25,7 +25,6 @@ CodeParser = {
 from manus_apps.workspace import Workspace
 from manus_apps.blocks import Block, block_color_name
 
-
 workspace = Workspace()
 `
     },
@@ -36,7 +35,6 @@ workspace = Workspace()
     }
 
 }
-
 
 Program = {
 
@@ -128,7 +126,7 @@ Program = {
     });
 
     var logconsole = $("#console .content");
-    logconsole.dblclick(function() {
+    $("#console").dblclick(function() {
 
       if ($("#console").hasClass("terminated")) {
           Program.show();
@@ -137,11 +135,15 @@ Program = {
     });
 
     $(document).keyup(function(e) {
-         if (e.keyCode == 27) {
-            if ($("#console").hasClass("terminated")) {
-              Program.show();
-          }
+      if (Program.blockly.running_app !== undefined && !$("#console").hasClass("terminated")) {
+        //console.log(e.keyCode);
+      }
+
+      if (e.keyCode == 27) {
+        if ($("#console").hasClass("terminated")) {
+          Program.show();
         }
+      }
     });
 
     var run_button = $.manus.widgets.fancybutton({

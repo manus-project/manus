@@ -22,6 +22,17 @@
 
 goog.require('Blockly.Blocks');
 
+Blockly.Blocks['text_newline'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("new line")
+    this.setOutput(true, "String");
+    this.setColour(160);
+    this.setTooltip('New line character.');
+    this.setHelpUrl('');
+  }
+};
+
 Blockly.Blocks['manus_move_joint'] = {
   init: function() {
     this.appendDummyInput()

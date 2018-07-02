@@ -244,7 +244,7 @@
     color: white;
 }
 
-#concole {
+#console {
     position: relative;
 }
 
@@ -266,10 +266,17 @@
 
 #console .message {
     display: none;
+    position: absolute;
+    top: 50%;
+    text-align: center;
+    width: 100%;
+    background-color: gray;
+    padding: 10px;
+    user-select: none;
 }
 
 #console.terminated .message {
-    display: block;
+    display: inline-block;
 }
 
 #python-editor {

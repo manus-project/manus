@@ -26,6 +26,10 @@
 
 goog.require('Blockly.Python');
 
+Blockly.Python['text_newline'] = function(block) {
+  return ["\"\\n\"", Blockly.Python.ORDER_NONE];
+};
+
 Blockly.Python['manus_move_joint'] = function(block) {
   var dropdown_joint_id = block.getFieldValue('joint_id');
   var angle_joint_angle = block.getFieldValue('joint_angle');
