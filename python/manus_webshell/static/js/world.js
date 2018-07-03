@@ -602,7 +602,7 @@ $.manus.world = {
                         linewidth: 3,
                     }
                 });
-console.log(color);
+
 				marker.identity().translate(position).rotateZ(orientation[2] / Math.PI * 180.0); //.translate([-scale[0]/4, -scale[1]/4, -scale[2]/4]);
 				markers.children.push(marker);
 			}
