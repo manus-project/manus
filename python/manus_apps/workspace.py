@@ -10,7 +10,7 @@ import echolib
 import echocv
 import random
 
-from manus_apps.blocks import BlockDetector
+from manus_apps.blocks import BlockDetector, block_color
 
 class Camera(object):
 
@@ -163,6 +163,13 @@ class Workspace(object):
             m.rotation.x = b.rotation[0]
             m.rotation.y = b.rotation[1]
             m.rotation.z = b.rotation[2]
+            m.size.x = b.size[0]
+            m.size.y = b.size[1]
+            m.size.z = b.size[2]
+            c = block_color(b)
+            m.color.red = c[0]
+            m.color.green = c[1]
+            m.color.blue = c[2]
             markers.markers.append(m)
         self.markers_pub.send(markers)
 

@@ -403,7 +403,10 @@ def main():
         handlers.append((r'/(.*)', DevelopmentStaticFileHandler, {'path': os.path.dirname(manus_webshell.static.__file__)}))
 
         def markers_callback(markers):
-            data = {m.id : {"location": [m.location.x, m.location.y, m.location.z], "rotation": [m.rotation.x, m.rotation.y, m.rotation.z]} for m in markers.markers}
+            data = {m.id : {"location": [m.location.x, m.location.y, m.location.z], \
+                "rotation": [m.rotation.x, m.rotation.y, m.rotation.z], \
+                "size": [m.size.x, m.size.y, m.size.z], \
+                "color": [m.color.red, m.color.green, m.color.blue]} for m in markers.markers}
             ApiWebSocket.distribute_message({"channel": "markers", "action" : "overwrite", "markers" : data, "overlay" : markers.owner})
 
         markers_subsriber = MarkersSubscriber(client, "markers", markers_callback)

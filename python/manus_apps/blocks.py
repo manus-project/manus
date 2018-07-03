@@ -34,20 +34,40 @@ def block_color_name(block):
 
     h, s, v = block.color
 
+    print h, s, v
+
     color = 'unknown'
     if v < 70:
         color = 'black'
     elif v > 210 and s < 40:
         color = 'white'
-    elif s > 100 and (h < 25 or h > 225):
+    elif s > 100 and (h < 17 or h > 160):
         color = 'red'
-    elif s > 100 and (h > 125 or h < 180):
+    elif s > 100 and (h > 90 and h < 125):
         color = 'blue'
-    elif s > 100 and (h > 50 or h < 100):
+    elif s > 100 and (h > 35 and h < 70):
         color = 'green'
+
+    print color
 
     return color
 
+def block_color(block):
+
+    name = block_color_name(block)
+
+    if name == 'unknown':
+        return (100, 100, 100)
+    elif name == 'black':
+        return (0, 0, 0)
+    elif name == 'white':
+        return (255, 255, 255)
+    elif name == 'red':
+        return (255, 0, 0)
+    elif name == 'green':
+        return (0, 255, 0)
+    elif name == 'blue':
+        return (0, 0, 255)
 
 class Block(object):
 
@@ -245,7 +265,7 @@ class BlockDetector(object):
                 v = np.median(H_v[S == k])
 
                 blocks.append(Block((P[0], P[
-                              1], 0), (0, 0, a), (self.block_size, self.block_size, self.block_size), (h, s, v)))
+                              1], self.block_size / 2), (0, 0, a), (self.block_size, self.block_size, self.block_size), (h, s, v)))
 
         return blocks
 

@@ -418,7 +418,7 @@ function initializeTabs() {
 
     var viewer = $.manus.world.viewer({});
     $('#viewer').append(viewer.wrapper);
-    $.manus.world.grid(viewer, vec3.fromValues(80, 0, 0));
+    $.manus.world.grid(viewer, vec3.fromValues(100, 0, 0));
 
     var updateViewer = function() {
         viewer.resize($('#viewer').width(), $('#viewer').width() * 0.75);
@@ -562,7 +562,7 @@ function initializeTabs() {
             markers.clear();
             for (i in msg.markers) {
                 var marker = msg.markers[i];
-                markers.add(marker.location, marker.rotation, [20, 20, 20], [0, 255, 0]);
+                markers.add(marker.location, marker.rotation, marker.size, marker.color);
             }
 
         }

@@ -126,6 +126,9 @@ $.manus.world = {
 
                     world.scene.perspective.fov = 35.0;
 
+                    world.scene.viewport.x = 0;
+                    world.scene.viewport.y = 0;
+
                     world.canvas.addEventListener('mousedown', mouse.onMouseDown, false);
                     world.canvas.addEventListener('mouseup', mouse.onMouseUp, false);
                     world.canvas.addEventListener('mouseout', mouse.onMouseOut, false);
@@ -186,8 +189,14 @@ $.manus.world = {
 
                     var fov1 = 360 * Math.atan2(data.image.width, 2*data.intrinsics[0][0]) / Math.PI;
                     var fov2 = 360 * Math.atan2(data.image.height, 2*data.intrinsics[1][1]) / Math.PI;
-                    world.scene.perspective.aspect = fov1 / fov2;
-                    world.scene.perspective.fov = fov2; // (fov1 + fov2) / 2; // Compute average fov
+                    world.scene.perspective.aspect = data.image.width / data.image.height;
+                    world.scene.perspective.fov = fov2; // Compute average fov
+
+                    // TODO: hardcoded - calculate it from intrinsics
+                    world.scene.viewport.y = -15;
+                    world.scene.viewport.x = -5;
+
+                    //console.log(data.intrinsics);
                     world.projection.attr({src: url});
 
                 },
@@ -593,14 +602,15 @@ $.manus.world = {
                         linewidth: 3,
                     }
                 });
-				marker.identity().translate(position).rotateZ(180 * orientation[2] / Math.PI ); //.translate([-scale[0]/4, -scale[1]/4, -scale[2]/4]);
+console.log(color);
+				marker.identity().translate(position).rotateZ(orientation[2] / Math.PI * 180.0); //.translate([-scale[0]/4, -scale[1]/4, -scale[2]/4]);
 				markers.children.push(marker);
 			}
 		};
 
     },
     grid: function(world, position) {
-        var plane = Phoria.Util.generateTesselatedPlane(16,16,0,600);
+        var plane = Phoria.Util.generateTesselatedPlane(16,16,0,500);
         var wireframe = Phoria.Entity.create({
             points: plane.points,
             edges: plane.edges,
@@ -611,7 +621,7 @@ $.manus.world = {
                 linewidth: 2,
                 objectsortmode: "back"
             }
-        }).translateX(300).rotateX(90 * Phoria.RADIANS).translate(position);
+        }).translateX(250).rotateX(90 * Phoria.RADIANS).translate(position);
 
         world.scene.graph.push(wireframe);
 
