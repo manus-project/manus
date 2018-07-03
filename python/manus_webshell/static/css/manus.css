@@ -255,13 +255,48 @@
     height: 550px;
     overflow: auto;
     background: black;
-    color: green;
-    white-space: pre;
-    border-radius: 4px;
+    color: #64FF00;
+    border-radius: 4px 4px 0px 0px;
+}
+
+#console .content span {
+    display: block;
+}
+
+#console .content span.input {
+    color: #FF0010;
+}
+
+#console .content span.output {
+    color: #64FF00;
+}
+
+#console .inputline {
+    width: 100%;
+    margin: 0;
+    background-color: gray;
+    font-family: monospace;
+    color: black;
+    font-weight: bold;
+    border-radius: 0 0 10px 10px;
+    border: 5px black;
+    padding: 10px;
+}
+
+#console .inputline:hover {
+    background-color: #aaaaaa;
 }
 
 #console.terminated .content {
     color: gray;
+}
+
+#console.terminated .content span.input {
+    color: #804044;
+}
+
+#console.terminated .content span.output {
+    color: #578040;
 }
 
 #console .message {

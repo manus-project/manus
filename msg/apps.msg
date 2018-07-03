@@ -25,7 +25,7 @@ message AppCommand {
 	string[] arguments;
 }
 
-message AppLog {
+message AppStreamData {
 	string id;
 	string[] lines;
 }

@@ -253,7 +253,14 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
         self.apps.listen(self)
 
     def on_message(self, raw):
-        message = json.loads(message)
+        message = json.loads(raw)
+        channel = message.get("channel", "")
+        action = message.get("action", "")
+        if channel == "apps":
+            if action == "input" and not self.apps.active() is None:
+                if message.get("identifier", "") == self.apps.active().id:
+                    self.apps.input(message.get("lines", []))
+
         # can request info about the device?
 
     def on_close(self):
@@ -289,9 +296,11 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
         else:
             self.send_message({"channel": "apps", "action" : "activated", "identifier" : app.id})
 
-    def on_app_log(self, identifier, lines):
-        self.send_message({"channel": "apps", "action" : "log", "identifier": identifier, "lines" : lines})
+    def on_app_output(self, identifier, lines):
+        self.send_message({"channel": "apps", "action" : "output", "identifier": identifier, "lines" : lines})
 
+    def on_app_input(self, identifier, lines):
+        self.send_message({"channel": "apps", "action" : "input", "identifier": identifier, "lines" : lines})
 
 class ProgramHandler(JsonHandler):
 

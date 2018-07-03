@@ -8,7 +8,8 @@ import fcntl
 import echolib
 
 from manus.messages import AppCommandType, AppEventType, AppListingPublisher, AppEventPublisher, \
-                       AppCommandSubscriber, AppEvent, AppData, AppListing, AppLogPublisher, AppLog, \
+                       AppCommandSubscriber, AppEvent, AppData, AppListing, \
+                       AppStreamDataPublisher, AppStreamDataSubscriber, AppStreamData, \
                        AppCommand
 
 from manus_apps import app_identifier
@@ -33,7 +34,8 @@ class Context(object):
         self.control = AppCommandSubscriber(self.client, "apps.control", lambda x: self.control_callback(x))
         self.announce = AppEventPublisher(self.client, "apps.announce")
         self.listing = AppListingPublisher(self.client, "apps.list")
-        self.logging = AppLogPublisher(self.client, "apps.logging")
+        self.output = AppStreamDataPublisher(self.client, "apps.output")
+        self.input = AppStreamDataSubscriber(self.client, "apps.input", lambda x: self.input_callback(x))
 
     def control_callback(self, command):
         try:
@@ -42,6 +44,11 @@ class Context(object):
                 self.start_application(appid)
         except Exception, e:
             print traceback.format_exc()
+
+    def input_callback(self, message):
+        if not self.active_application is None and self.active_application.identifier == message.id:
+            for line in message.lines:
+                self.active_application.input(line)
 
     def start_application(self, identifier = None):
         starting_application = None
@@ -214,14 +221,17 @@ class Application(echolib.IOBase):
             except Exception, e: 
                 break
         if len(lines) > 0:
-            message = AppLog()
+            message = AppStreamData()
             message.id = self.identifier
             message.lines = lines
-            self.context.logging.send(message)
+            self.context.output.send(message)
         return self.alive()
 
     def handle_output(self):
         return True
+
+    def input(self, line):
+        self.process.stdin.write(line)
 
     def fd(self):
         return self._fd

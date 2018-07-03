@@ -49,7 +49,7 @@ Program = {
 
       Program.blockly = {};
 
-      Program.blockly.running_app = null;
+      Program.running_app = null;
       Program.blockly.workspace = Blockly.inject('blockly-workspace',{
           grid:{
               spacing: 25,
@@ -134,8 +134,19 @@ Program = {
 
     });
 
+    $("#console .inputline").keypress(function (e) {
+            if(e.which == 13) { 
+              var line = $("#console .inputline").val();
+
+              PubSub.publish("apps.send", {"identifier" : Program.running_app, "lines" : [line + "\n"]});
+
+              $("#console .inputline").val("");
+              return false; 
+            }
+        });
+
     $(document).keyup(function(e) {
-      if (Program.blockly.running_app !== undefined && !$("#console").hasClass("terminated")) {
+      if (Program.running_app !== undefined && !$("#console").hasClass("terminated")) {
         //console.log(e.keyCode);
       }
 
@@ -214,21 +225,21 @@ Program = {
     $("#program .toolbar.right").append(save_button).append(load_button);
 
     PubSub.subscribe("apps.active", function(msg, identifier) {
-      if (identifier !== undefined && (identifier == Program.blockly.running_app)) {
+      if (identifier !== undefined && (identifier == Program.running_app)) {
         run_button.hide(); stop_button.show();
         $("#console").removeClass("terminated");
         Program.show("console");
-      } if (Program.blockly.running_app != null && identifier === undefined) {
-        Program.blockly.running_app = null;
+      } if (Program.running_app != null && identifier === undefined) {
+        Program.running_app = null;
         stop_button.hide(); run_button.show();
         $("#console").addClass("terminated");
       }
     });
 
-    PubSub.subscribe("apps.log", function(msg, data) {
-      if (data.identifier == Program.blockly.running_app) {
+    PubSub.subscribe("apps.console", function(msg, data) {
+      if (data.identifier == Program.running_app) {
         for (i in data.lines) {
-          logconsole.append(data.lines[i]);
+          logconsole.append($("<span>").addClass(data.source).text(data.lines[i]));
         }
       }
     });
@@ -384,7 +395,7 @@ Program = {
         if (data.status != "ok"){
             console.log("Code execution failed. " + data.status + ": " + data.description);
         } else {
-          Program.blockly.running_app = data.identifier;
+          Program.running_app = data.identifier;
         }
     }).fail(function(err) {
         Interface.notification("Error", err);

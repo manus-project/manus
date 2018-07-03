@@ -553,8 +553,10 @@ function initializeTabs() {
                 PubSub.publish("apps.active", msg.identifier);
             } else if (msg.action == "deactivated") {
                 PubSub.publish("apps.active", undefined);
-            } else if (msg.action == "log") {
-                PubSub.publish("apps.log", {identifier: msg.identifier, lines: msg.lines});
+            } else if (msg.action == "output") {
+                PubSub.publish("apps.console", {identifier: msg.identifier, lines: msg.lines, source: "output"});
+            } else if (msg.action == "input") {
+                PubSub.publish("apps.console", {identifier: msg.identifier, lines: msg.lines, source: "input"});
             } 
 
         } else if (msg.channel == "markers") {
@@ -568,6 +570,12 @@ function initializeTabs() {
         }
 
     }
+
+    PubSub.subscribe("apps.send", function(msg, data) {
+
+        socket.send(JSON.stringify({"channel" : "apps", "action": "input", "identifier" : data.identifier, "lines" : data.lines}));
+
+    });
 
     PubSub.subscribe("manipulator.move_joint", function(msg, data) {
 
