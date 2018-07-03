@@ -25,6 +25,7 @@ class Camera(object):
             workspace.client, "%s.parameters" % name, lambda x: self._parameters_callback(x))
         self.location_sub = echocv.CameraExtrinsicsSubscriber(
             workspace.client, "%s.location" % name, lambda x: self._location_callback(x))
+        self.name = name
 
     def _image_callback(self, image):
         self.image = image
@@ -69,6 +70,9 @@ class Camera(object):
 
     def get_height(self):
         return self.image.shape[0]
+
+    def __str__(self):
+        return "Camera %s" % self.name
 
 class Manipulator(object):
 
@@ -129,6 +133,9 @@ class Manipulator(object):
             if self.move_waiting is None:
                 return self.move_result
 
+    def __str__(self):
+        return "Manipulator %s" % self.identifier
+
 
 class Workspace(object):
 
@@ -179,6 +186,7 @@ class Workspace(object):
         self.loop.wait(duration)
 
 
-
+    def __str__(self):
+        return "Workspace"
 
 

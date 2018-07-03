@@ -34,8 +34,6 @@ def block_color_name(block):
 
     h, s, v = block.color
 
-    print h, s, v
-
     color = 'unknown'
     if v < 70:
         color = 'black'
@@ -47,8 +45,6 @@ def block_color_name(block):
         color = 'blue'
     elif s > 100 and (h > 35 and h < 70):
         color = 'green'
-
-    print color
 
     return color
 
@@ -76,6 +72,9 @@ class Block(object):
         self.rotation = rotation
         self.size = size
         self.color = color
+
+    def __str__(self):
+        return "Block at position %f,%f,%f" % (self.position[0], self.position[1], self.position[2])
 
 
 class SavedCamera(object):
