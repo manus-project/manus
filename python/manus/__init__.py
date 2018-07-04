@@ -1,6 +1,8 @@
 
 import manus.messages as messages
 
+import numpy as np
+
 NAME = 'Manus'
 VERSION = 'N/A'
 
@@ -114,3 +116,31 @@ class Manipulator(object):
     def _planstate_callback(self, state):
         for s in self._listeners:
             s.on_planner_state(self, state)
+
+
+    def transform(self, joint):
+        origin = np.identity(4)
+        if self.description is None or joint < 0 or joint >= len(self.state.joints):
+            return origin
+        for j in xrange(0, joint+1):
+            dh_a, dh_alpha, dh_d, dh_theta = self.description.joints[j].dh_a, \
+                self.description.joints[j].dh_alpha, \
+                self.description.joints[j].dh_d, \
+                self.description.joints[j].dh_theta
+
+            if self.description.joints[j].type == messages.JointType.ROTATION:
+                dh_theta = self.state.joints[j].position
+            elif self.description.joints[j].type == messages.JointType.TRANSLATION:
+                dh_d = self.state.joints[j].position
+
+            ct = np.cos(dh_theta)
+            st = np.sin(dh_theta)
+            ca = np.cos(dh_alpha)
+            sa = np.sin(dh_alpha)
+
+            transform = np.array(((ct, -st * ca, st * sa, dh_a * ct), \
+                             (st, ct * ca, -ct * sa, dh_a * st), (0, sa, ca, dh_d), (0, 0, 0, 1)))
+
+            origin = np.matmul(origin, transform)
+
+        return origin

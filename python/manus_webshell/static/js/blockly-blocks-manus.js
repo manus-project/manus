@@ -51,18 +51,63 @@ Blockly.Blocks['manus_move_joint'] = {
   }
 };
 
+Blockly.Blocks['manus_move_joint_variable'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("move joint ")
+        .appendField(new Blockly.FieldDropdown([["1","0"], ["2","1"], ["3","2"], ["4","3"], ["5","5"]]), "joint_id");
+    this.appendDummyInput()
+        .appendField(" to ");
+    this.appendValueInput("joint_angle");
+    this.appendDummyInput()
+        .appendField(" degrees.");
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(20);
+    this.setTooltip('');
+    this.setHelpUrl('Set the angle for one joint of the manipulator.');
+  }
+};
+
+
 Blockly.Blocks['manus_retrieve_joint'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("get joint")
+        .appendField(new Blockly.FieldDropdown([["1","0"], ["2","1"], ["3","2"], ["4","3"], ["5","5"]]), "joint_id")
+        .appendField("angle");
+    this.setOutput(true, null);
+    this.setColour(20);
+    this.setTooltip('Retrieves current angle of a manipulator\'s joint.');
+    this.setHelpUrl('');
+  }
+};
+
+Blockly.Blocks['manus_retrieve_joint_position'] = {
   init: function() {
     this.appendDummyInput()
         .appendField("get joint ")
         .appendField(new Blockly.FieldDropdown([["1","0"], ["2","1"], ["3","2"], ["4","3"], ["5","5"]]), "joint_id")
-        .appendField(" position.");
+        .appendField("position");
     this.setOutput(true, null);
     this.setColour(20);
-    this.setTooltip('Retrieves position of a manipulator\'s joint.');
+    this.setTooltip('Retrieves current coordinates of a manipulator\'s joint.');
     this.setHelpUrl('');
   }
 };
+
+Blockly.Blocks['manus_retrieve_gripper_position'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("get gripper position");
+    this.setOutput(true, null);
+    this.setColour(20);
+    this.setTooltip('Retrieves current coordinates of a manipulator\'s gripper.');
+    this.setHelpUrl('');
+  }
+};
+
 
 Blockly.Blocks['manus_position_vector'] = {
   init: function() {
@@ -106,11 +151,23 @@ Blockly.Blocks['manus_position_vector_var'] = {
   }
 };
 
+Blockly.Blocks['manus_safe_position'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("move manipulator to safe position");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(20);
+    this.setTooltip('Move manipulator to a predefined safe position');
+    this.setHelpUrl('');
+  }
+};
+
 Blockly.Blocks['manus_move_arm'] = {
   init: function() {
     this.appendValueInput("coordinates")
         .setCheck("manus_position_vector")
-        .appendField("move manipulator to");
+        .appendField("move gripper to");
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
     this.setColour(20);
@@ -188,7 +245,7 @@ Blockly.Blocks['manus_retrieve_color'] = {
   init: function() {
     this.appendDummyInput()
         .appendField("get color of")
-        .appendField(new Blockly.FieldVariable(null), "SELECTED_BLOCK_FOR_COMPONENT_ACCESS");
+        .appendField(new Blockly.FieldVariable(null), "varname");
     this.setOutput(true, null);
     this.setColour(60);
     this.setTooltip('Retrieves color of a given block.');
@@ -201,11 +258,11 @@ Blockly.Blocks['manus_retrieve_coordinate'] = {
     this.appendDummyInput()
         .appendField("get")
         .appendField(new Blockly.FieldDropdown([["x","x"], ["y","y"], ["z","z"]]), "coordinate_dropdown")
-        .appendField("of block")
-        .appendField(new Blockly.FieldVariable(null), "SELECTED_BLOCK_FOR_COMPONENT_ACCESS");
+        .appendField("from")
+        .appendField(new Blockly.FieldVariable(null), "varname");
     this.setOutput(true, null);
-    this.setColour(60);
-    this.setTooltip('Retrieves coordinate of a given block.');
+    this.setColour(230);
+    this.setTooltip('Retrieves individual coordinate of a given object.');
     this.setHelpUrl('');
   }
 };

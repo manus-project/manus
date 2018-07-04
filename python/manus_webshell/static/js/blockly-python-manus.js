@@ -39,10 +39,27 @@ Blockly.Python['manus_move_joint'] = function(block) {
   return 'workspace.manipulator.joint('+ dropdown_joint_id +', '+ angle_joint_angle +')\n';
 };
 
+Blockly.Python['manus_move_joint_variable'] = function(block) {
+  var dropdown_joint_id = block.getFieldValue('joint_id');
+  var joint_angle = Blockly.Python.valueToCode(block, 'joint_angle', Blockly.Python.ORDER_ATOMIC) || "0";
+  return 'workspace.manipulator.joint('+ dropdown_joint_id +', '+ joint_angle +')\n';
+};
+
 Blockly.Python['manus_retrieve_joint'] = function(block) {
   var dropdown_joint_id = block.getFieldValue('joint_id');
   // TODO: Assemble Python into code variable.
   var code = 'workspace.manipulator.state().joints['+ dropdown_joint_id + '].position';
+  return [code, Blockly.Python.ORDER_NONE];
+};
+
+Blockly.Python['manus_retrieve_joint_position'] = function(block) {
+  var dropdown_joint_id = block.getFieldValue('joint_id');
+  var code = 'workspace.manipulator.position('+ dropdown_joint_id + ')';
+  return [code, Blockly.Python.ORDER_NONE];
+};
+
+Blockly.Python['manus_retrieve_gripper_position'] = function(block) {
+  var code = 'workspace.manipulator.position(6)';
   return [code, Blockly.Python.ORDER_NONE];
 };
 
@@ -61,7 +78,7 @@ Blockly.Python['manus_position_vector_var'] = function(block) {
   var value_y = Blockly.Python.valueToCode(block, 'Y', Blockly.Python.ORDER_ATOMIC) || "0";
   var value_z = Blockly.Python.valueToCode(block, 'Z', Blockly.Python.ORDER_ATOMIC) || "0";
   // TODO: Assemble Python into code variable.
-  var code = value_x+', '+value_y+', '+value_z;
+  var code = '(' + value_x+', '+value_y+', '+value_z + ')';
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_NONE];
 };
@@ -72,11 +89,16 @@ Blockly.Python['manus_move_arm'] = function(block) {
   return 'workspace.manipulator.trajectory([ manus.MoveTo(('+value_coordinates+'), (0.0, 0.0, 0.0), workspace.manipulator.gripper())])\n';
 };
 
+Blockly.Python['manus_safe_position'] = function(block) {
+  return 'workspace.manipulator.safe()\n';
+};
+
 Blockly.Python['manus_wait'] = function(block) {
   var value_wait_val = Blockly.Python.valueToCode(block, 'wait_val', Blockly.Python.ORDER_ATOMIC) || "0";
   // TODO: Assemble Python into code variable.
   return 'workspace.wait('+value_wait_val+')\n';
 };
+
 Blockly.Python['manus_detected_blocks_array'] = function(block) {
   // TODO: Assemble Python into code variable.
   var code = 'workspace.detect_blocks()';
@@ -91,19 +113,26 @@ Blockly.Python['manus_detect_and_store_blocks'] = function(block) {
 };
 
 Blockly.Python['manus_retrieve_coordinate'] = function(block) {
+
+  var functionName = Blockly.Python.provideFunction_(
+      'get_coordinate',
+      ['def ' + Blockly.Python.FUNCTION_NAME_PLACEHOLDER_ + '(obj, coordinate):',
+       '  if isinstance(obj, (tuple, list)):',
+       '    mapping = {"x" : 0, "y" : 1, "z" : 2, "w": 3}',
+       '    return obj[mapping[coordinate]]',
+       '  if hasattr(obj, "__coordinate__"):',
+       '    return obj.__coordinate__(coordinate)']);
   var dropdown_component_dropdown = block.getFieldValue('coordinate_dropdown');
-  var variable_selected_block_for_component_access = Blockly.Python.variableDB_.getName(block.getFieldValue('SELECTED_BLOCK_FOR_COMPONENT_ACCESS'), Blockly.Variables.NAME_TYPE);
-  // TODO: Assemble Python into code variable.
-  var mapping = {"x" : 0, "y" : 1, "z" : 2}
-  var code = variable_selected_block_for_component_access + '.position[' +mapping[dropdown_component_dropdown] + ']';
+  var varname = Blockly.Python.variableDB_.getName(block.getFieldValue('varname'), Blockly.Variables.NAME_TYPE);
+  var code = functionName + "(" + varname + ', "' + dropdown_component_dropdown + '")';
   // TODO: Change ORDER_NONE to the correct strength.
-  return [code, Blockly.Python.ORDER_NONE];
+  return [code, Blockly.Python.ORDER_FUNCTION_CALL];
 };
 
 Blockly.Python['manus_retrieve_color'] = function(block) {
-  var variable_selected_block_for_component_access = Blockly.Python.variableDB_.getName(block.getFieldValue('SELECTED_BLOCK_FOR_COMPONENT_ACCESS'), Blockly.Variables.NAME_TYPE);
+  var varname = Blockly.Python.variableDB_.getName(block.getFieldValue('varname'), Blockly.Variables.NAME_TYPE);
   // TODO: Assemble Python into code variable.
-  var code = 'block_color_name(' + variable_selected_block_for_component_access + ')';
+  var code = 'block_color_name(' + varname + ')';
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_NONE];
 };

@@ -107,6 +107,13 @@ class Manipulator(object):
         self.handle.move_safe(self.identifier)
         return self.wait_for(self.identifier)
 
+    def transform(self, joint):
+        return self.handle.transform(joint)
+
+    def position(self, joint):
+        t = self.handle.transform(joint)
+        return (t[0, 3], t[1, 3], t[2, 3])
+
     def move(self, location, rotation):
         gripper = self.current_state.joints[-1].goal
         trajectory = [manus.MoveTo(location, rotation, gripper)]

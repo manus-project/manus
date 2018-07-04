@@ -76,6 +76,9 @@ class Block(object):
     def __str__(self):
         return "Block at position %f,%f,%f" % (self.position[0], self.position[1], self.position[2])
 
+    def __coordinate__(self, coordinate):
+        mapping = {"x" : 0, "y" : 1, "z" : 2}
+        return self.position[mapping[coordinate]]
 
 class SavedCamera(object):
 

@@ -13,7 +13,8 @@
     <block type="math_random_int"></block>  
     <block type="math_random_float"></block>
     <block type="manus_position_vector"></block>  
-    <block type="manus_position_vector_var"></block>   
+    <block type="manus_position_vector_var"></block>  
+    <block type="manus_retrieve_coordinate"></block>   
   </category>  
   <category name="Logic" colour="210">  
     <block type="controls_if"></block>  
@@ -45,6 +46,7 @@
     <block type="text_getSubstring"></block>  
     <block type="text_changeCase"></block>  
     <block type="text_trim"></block>  
+    <block type="text_prompt"></block>  
     <block type="text_prompt_ext"></block>  
     <block type="text_count"></block>  
     <block type="text_replace"></block>  
@@ -66,14 +68,17 @@
   </category>  
   <category name="Manipulator" colour="20">  
       <block type="manus_move_joint"></block>  
+      <block type="manus_move_joint_variable"></block> 
       <block type="manus_retrieve_joint"></block>  
+      <block type="manus_retrieve_joint_position"></block>  
+      <block type="manus_retrieve_gripper_position"></block>  
       <block type="manus_open_close_gripper"></block>  
       <block type="manus_move_arm"></block>  
+      <block type="manus_safe_position"></block>  
   </category>
   <category name="Camera" colour="60">   
       <block type="manus_detected_blocks_array"></block>  
       <block type="manus_detect_and_store_blocks"></block>  
-      <block type="manus_retrieve_coordinate"></block>  
       <block type="manus_retrieve_color"></block>  
   </category>
   <category name="Time" colour="100">  
