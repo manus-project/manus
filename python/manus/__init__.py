@@ -21,14 +21,15 @@ class MoveTo(object):
 
     def generate(self, manipulator):
         seg = messages.TrajectorySegment()
-        seg.location = messages.Point3D()
-        seg.rotation = messages.Rotation3D()
-        seg.location.x = self.location[0]
-        seg.location.y = self.location[1]
-        seg.location.z = self.location[2]
-        seg.rotation.x = self.rotation[0]
-        seg.rotation.y = self.rotation[1]
-        seg.rotation.z = self.rotation[2]
+        seg.frame = messages.Frame3D()
+        seg.frame.origin = messages.Point3D()
+        seg.frame.rotation = messages.Rotation3D()
+        seg.frame.origin.x = self.location[0]
+        seg.frame.origin.y = self.location[1]
+        seg.frame.origin.z = self.location[2]
+        seg.frame.rotation.x = self.rotation[0]
+        seg.frame.rotation.y = self.rotation[1]
+        seg.frame.rotation.z = self.rotation[2]
         seg.gripper = self.gripper
         seg.required = True
         seg.speed = 1.0

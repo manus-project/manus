@@ -91,7 +91,9 @@ class ManipulatorDescriptionHandler(JsonHandler):
         for j in description.joints:
             joints.append({"type" : JointType.str(j.type), "theta" : j.dh_theta,
                     "alpha" : j.dh_alpha, "d" : j.dh_d, "a" : j.dh_a, "min" : j.dh_min, "max" : j.dh_max} )
-        return {"name": description.name, "version": description.version, "joints" : joints}
+        origin = {"x" : description.frame.origin.x, "y" : description.frame.origin.y, "z" : description.frame.origin.z}
+        rotation = {"x" : description.frame.rotation.x, "y" : description.frame.rotation.y, "z" : description.frame.rotation.z}
+        return {"name": description.name, "version": description.version, "joints" : joints, "offset" : {"origin": origin, "rotation": rotation}}
 
     def check_etag_header(self):
         return False

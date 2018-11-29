@@ -49,26 +49,72 @@ OpenServoManipulator::~OpenServoManipulator() {
 
 }
 
-bool parse_calibration(const string& filename, vector<MotorData>& servos) {
+bool parse_calibration(const string& filename, ManipulatorDescription& manipulator, vector<MotorData>& servos) {
 
-  YAML::Node doc = YAML::LoadFile(filename);
-  servos.clear();
+    YAML::Node doc = YAML::LoadFile(filename);
 
-  for (int i = 0; i < doc.size(); i++) {
-    MotorData d;
+    const YAML::Node& offset = doc["offset"];
 
-    d.servo_id = doc[i]["id"].as<int>();
-    d.joint_id = -1;
-    d.AD_min = doc[i]["min"].as<int>();
-    d.AD_max = doc[i]["max"].as<int>();
-    d.AD_center = doc[i]["center"].as<int>();
-    d.factor = doc[i]["factor"].as<float>();
+    manipulator.frame.origin.x = offset["origin"]["x"].as<float>();
+    manipulator.frame.origin.y = offset["origin"]["y"].as<float>();
+    manipulator.frame.origin.z = offset["origin"]["z"].as<float>();
 
-    servos.push_back(d);
-  }
+    manipulator.frame.rotation.x = offset["rotation"]["x"].as<float>();
+    manipulator.frame.rotation.y = offset["rotation"]["y"].as<float>();
+    manipulator.frame.rotation.z = offset["rotation"]["z"].as<float>();
 
-  return true;
+    const YAML::Node& joints = doc["joints"];
+
+    servos.clear();
+
+    for (int i = 0; i < joints.size(); i++) {
+
+        if (manipulator.joints.size() <= i) return false;
+
+        const YAML::Node& servo = joints[i]["servo"];
+
+        if (!servo.IsDefined()) {
+          MotorData d;
+
+          d.servo_id = servo["id"].as<int>();
+          d.joint_id = -1;
+          d.AD_min = servo["min"].as<int>();
+          d.AD_max = servo["max"].as<int>();
+          d.AD_center = servo["center"].as<int>();
+          d.factor = servo["factor"].as<float>();
+
+          servos.push_back(d);
+        }
+
+        const YAML::Node& dh = joints[i]["dh"];
+
+        switch(manipulator.joints[i].type) {
+            case JOINTTYPE_ROTATION: {
+                manipulator.joints[i].dh_alpha += DEGREE_TO_RADIAN(dh["alpha"].as<float>());
+                manipulator.joints[i].dh_d += dh["d"].as<float>();
+                manipulator.joints[i].dh_a += dh["a"].as<float>();
+                break;
+            }
+            case JOINTTYPE_TRANSLATION: {
+                manipulator.joints[i].dh_alpha += DEGREE_TO_RADIAN(dh["alpha"].as<float>());
+                manipulator.joints[i].dh_theta += DEGREE_TO_RADIAN(dh["theta"].as<float>());
+                manipulator.joints[i].dh_a += dh["a"].as<float>();
+                break;
+            }
+            case JOINTTYPE_FIXED: {
+                manipulator.joints[i].dh_alpha += DEGREE_TO_RADIAN(dh["alpha"].as<float>());
+                manipulator.joints[i].dh_theta += DEGREE_TO_RADIAN(dh["theta"].as<float>());
+                manipulator.joints[i].dh_d += dh["d"].as<float>();
+                manipulator.joints[i].dh_a += dh["a"].as<float>();
+                break;
+            }
+        } 
+
+    }
+
+    return true;
 }
+
 
 int OpenServoManipulator::load_description(const string& modelfile, const string& calibfile) {
 
@@ -76,7 +122,7 @@ int OpenServoManipulator::load_description(const string& modelfile, const string
     throw ManipulatorException("Unable to parse manipulator model description");
   }
 
-  if (!parse_calibration(calibfile, servos)) {
+  if (!parse_calibration(calibfile, _description, servos)) {
     throw ManipulatorException("Unable to parse manipulator calibration description");
   }
 

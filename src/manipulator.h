@@ -5,6 +5,9 @@
 #include <string>
 #include <vector>
 
+#define RADIAN_TO_DEGREE(X) ((X * 180) / M_PI )
+#define DEGREE_TO_RADIAN(X) ((X / 180) * M_PI )
+
 using namespace std;
 
 #include <manus/messages.h>

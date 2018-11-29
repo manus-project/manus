@@ -9,9 +9,6 @@
 
 using namespace std;
 
-#define RADIAN_TO_DEGREE(X) ((X * 180) / M_PI )
-#define DEGREE_TO_RADIAN(X) ((X / 180) * M_PI )
-
 ManipulatorException::ManipulatorException(char const* const message) throw()
     : std::runtime_error(message) {
 
@@ -97,7 +94,6 @@ bool parse_joint (const YAML::Node& node, JointDescription& joint) {
     return false;
 }
 
-
 bool parse_description(const string& filename, ManipulatorDescription& manipulator) {
 
     YAML::Node doc = YAML::LoadFile(filename);
@@ -136,47 +132,6 @@ JointState joint_state(const JointDescription& joint, float position, JointState
     state.goal = joint.type == JOINTTYPE_ROTATION ? DEGREE_TO_RADIAN(position) : position;
     return state;
 }
-/*
-double normalizeAngleRadian(double val, double min, double max) {
-    if (val > max) {
-        //Find actual angle offset
-        double diffangle = std::fmod(val-max,2*M_PI);
-        // Add that to upper bound and go back a full rotation
-        val = max + diffangle - 2*M_PI;
-    }
-
-    if (val < min) {
-        //Find actual angle offset
-        double diffangle = std::fmod(min-val,2*M_PI);
-        // Add that to upper bound and go back a full rotation
-        val = min - diffangle + 2*M_PI;
-    }
-
-    return val;
-}
-
-double convertOutgoing(double value, const JointInfo& info) {
-
-    if (info.type == ::ROTATION) {
-        return (value / 180) * M_PI;
-    }
-    if (info.type == ::GRIPPER) {
-        return (value - info.dh_min) / (info.dh_max - info.dh_min);
-    }
-    return value;
-}
-
-double convertIncoming(double value, const JointInfo& info) {
-
-    if (info.type == ::ROTATION) {
-        value = normalizeAngleRadian(value, info.dh_min, info.dh_max);
-        return (value * 180) / M_PI;
-    }
-    if (info.type == ::GRIPPER) {
-        return (value) * (info.dh_max - info.dh_min) + info.dh_min;
-    }
-    return value;
-}*/
 
 bool close_enough(float a, float b) {
     return std::fabs(a - b) < 0.05;

@@ -35,8 +35,7 @@ structure PlanSegment {
 }
 
 structure TrajectorySegment {
-	Point3D location;
-	Rotation3D rotation;
+	Frame3D frame;
 	bool required;
 	float gripper;
 	float speed;
@@ -45,6 +44,7 @@ structure TrajectorySegment {
 message ManipulatorDescription {
 	string name;
 	float version;
+	Frame3D frame;
 	JointDescription[] joints;
 }
 

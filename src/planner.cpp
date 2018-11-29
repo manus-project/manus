@@ -36,7 +36,6 @@ public:
 
 	void idle() {
 		if (cache) {
-			//cout << "Precomputing ..." << endl;
 			cache->precompute(5000);
 		}
 	}
@@ -50,6 +49,11 @@ protected:
 		vector<float> lmin;
 		vector<float> lmax;
 		vector<float> spos;
+
+		KDL::Rotation rotation = KDL::Rotation::Identity().RotX(desc->frame.rotation.x).RotY(desc->frame.rotation.y).RotZ(desc->frame.rotation.z);
+		origin = KDL::Frame(rotation, KDL::Vector(desc->frame.origin.x, desc->frame.origin.y, desc->frame.origin.z));
+
+		origin = origin.Inverse();
 
 		for (size_t j = 0; j < desc->joints.size(); j++) {
 
@@ -124,11 +128,11 @@ protected:
 			TrajectorySegment goal = trajectory->segments[i];
 			PlanSegment segment;
 
-			KDL::Rotation rotation = KDL::Rotation::Identity().RotX(goal.rotation.x).RotY(goal.rotation.y).RotZ(goal.rotation.z);
-			//KDL::Rotation rotation(goal.rotation.x, goal.rotation.y, goal.rotation.z);
-			KDL::Frame frame(rotation, KDL::Vector(goal.location.x, goal.location.y, goal.location.z));
+			KDL::Rotation rotation = KDL::Rotation::Identity().RotX(goal.frame.rotation.x).RotY(goal.frame.rotation.y).RotZ(goal.frame.rotation.z);
+			KDL::Frame frame(rotation, KDL::Vector(goal.frame.origin.x, goal.frame.origin.y, goal.frame.origin.z));
 
-//cout << goal.location.x << ", " <<  goal.location.y << ", " << goal.location.z << endl;
+			frame = frame * origin;
+
 
 			JntArray out(kinematic_chain.getNrOfJoints());
 			int result = cache->CartToJnt(initial, frame, out);
@@ -205,6 +209,8 @@ private:
 	shared_ptr<ManipulatorState> state;
 
 	JntArray limits_max, limits_min, safe;
+
+	KDL::Frame origin;
 
 	int gripper;
 };
