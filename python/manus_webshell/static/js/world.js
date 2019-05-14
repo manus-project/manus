@@ -63,25 +63,25 @@ $.manus.world = {
 
             mouse.onMouseMove = function onMouseMove(evt) {
                 mouse.dragging = true;
-             	mouse.dragX = evt.clientX - mouse.clickX;
-             	mouse.dragY = evt.clientY - mouse.clickY;
+                mouse.dragX = evt.clientX - mouse.clickX;
+                mouse.dragY = evt.clientY - mouse.clickY;
             };
 
              mouse.onMouseUp = function onMouseUp(evt) {
                 mouse.endDragging();
-             	evt.target.removeEventListener('mousemove', mouse.onMouseMove, false);
+                evt.target.removeEventListener('mousemove', mouse.onMouseMove, false);
              };
 
              mouse.onMouseOut = function onMouseOut(evt) {
                 mouse.endDragging();
-             	evt.target.removeEventListener('mousemove', mouse.onMouseMove, false);
+                evt.target.removeEventListener('mousemove', mouse.onMouseMove, false);
              };
 
              mouse.onMouseDown = function onMouseDown(evt) {
-             	evt.preventDefault();
-             	evt.target.addEventListener('mousemove', mouse.onMouseMove, false);
-             	mouse.clickX = evt.clientX;
-             	mouse.clickY = evt.clientY;
+                evt.preventDefault();
+                evt.target.addEventListener('mousemove', mouse.onMouseMove, false);
+                mouse.clickX = evt.clientX;
+                mouse.clickY = evt.clientY;
              };
 
             mouse.endDragging = function() {
@@ -161,7 +161,7 @@ $.manus.world = {
 
             function callback(msg, data) {
                 mat4.identity(transform);
-            
+
                 transform[0] = data.rotation[0][0];
                 transform[1] = data.rotation[1][0];
                 transform[2] = data.rotation[2][0];
@@ -205,10 +205,10 @@ $.manus.world = {
 
                 },
                 prerender: function(world) {
-					var ctx = world.canvas.getContext('2d');
+                    var ctx = world.canvas.getContext('2d');
 
                     //if (!image) return;
-					ctx.clearRect(0, 0, world.canvas.width, world.canvas.height);
+                    ctx.clearRect(0, 0, world.canvas.width, world.canvas.height);
                     parameters = lookAtParameters(transform);
 
                     world.scene.camera.position.x = parameters.eye[0];
@@ -235,11 +235,11 @@ $.manus.world = {
 
     viewer: function (options) {
 
-		options = $.extend({width : 800, height: 600}, options);
+        options = $.extend({width : 800, height: 600}, options);
 
         var canvas = $('<canvas/>').attr({width: options.width, height: options.height});
         var projection = $('<img/>').attr({width: options.width, height: options.height, src: $.manus.world._transparent});
-		var wrapper = $('<div/>').addClass("viewer").append(projection).append(canvas);
+        var wrapper = $('<div/>').addClass("viewer").append(projection).append(canvas);
 
         viewCamera = -1;
         canvas = canvas[0];
@@ -261,7 +261,7 @@ $.manus.world = {
             scene: scene,
             canvas: canvas,
             projection: projection,
-			wrapper: wrapper,
+            wrapper: wrapper,
             render: function() { dirty = true; },
             view: function(v) { if (v == null) v = defaultView; currentView.uninstall(this); currentView = v; v.install(this); },
             resize: function(width, height) {
@@ -370,14 +370,14 @@ $.manus.world = {
         var parentJoint;
         var manipulatorRoot;
 
-        joints = description["joints"];
+        joints_description = description["joints"];
 
-        for (var v in joints) {
+        for (var v in joints_description) {
 
-            var a = joints[v].a;
-            var d = joints[v].d;
-            var alpha = joints[v].alpha;
-            var theta = joints[v].theta;
+            var a = joints_description[v].a;
+            var d = joints_description[v].d;
+            var alpha = joints_description[v].alpha;
+            var theta = joints_description[v].theta;
 
             var overlay = undefined;
             var hover = undefined;
@@ -397,27 +397,27 @@ $.manus.world = {
 
             var jointContainer = Phoria.Entity.create({});
 
-            switch (joints[v].type.toLowerCase()) {
+            switch (joints_description[v].type.toLowerCase()) {
                 case "fixed":
                 case "translation":
                 case "rotation": {
 
-					var segmentMesh = null;
+                    var segmentMesh = null;
 
-					if (a != 0) {
+                    if (a != 0) {
 
-		                segmentMesh = Phoria.Util.generateCuboid({"scalex" : Math.max(1, a / 2),
-		                         "scaley" : 10, "scalez" : 10, "offsetx" : - Math.max(1, a / 2),
-		                         "offsety" : 0, "offsetz": 0});
+                        segmentMesh = Phoria.Util.generateCuboid({"scalex" : Math.max(1, a / 2),
+                                 "scaley" : 10, "scalez" : 10, "offsetx" : - Math.max(1, a / 2),
+                                 "offsety" : 0, "offsetz": 0});
 
-					} else {
-						segmentMesh = {
-					         points: [],
-					         edges: [],
-					         polygons: []
-						};
+                    } else {
+                        segmentMesh = {
+                             points: [],
+                             edges: [],
+                             polygons: []
+                        };
 
-					}
+                    }
 
                     var segment = Phoria.Entity.create({
                         points: segmentMesh.points,
@@ -434,11 +434,11 @@ $.manus.world = {
                     var overlay_points = [{"x": 0, "y": 0, "z": 0}];
                     var overlay_edges = [];
 
-                    var segment_count = Math.max(3, Math.round((joints[v].max - joints[v].min) / 0.2));
-                    var segment_space = (joints[v].max - joints[v].min) / segment_count;
+                    var segment_count = Math.max(3, Math.round((joints_description[v].max - joints_description[v].min) / 0.2));
+                    var segment_space = (joints_description[v].max - joints_description[v].min) / segment_count;
 
                     for (var i = 0; i <= segment_count; i++) {
-                        var angle = segment_space * i + joints[v].min;
+                        var angle = segment_space * i + joints_description[v].min;
                         overlay_points.push({"x": Math.cos(angle) * 100, "y": Math.sin(angle) * 100, "z": 0});
                         overlay_edges.push({"a": i, "b": i+1});
                     }
@@ -496,7 +496,7 @@ $.manus.world = {
                 }
             }
 
-            joints[v] = {"segment" : segment, "joint" : joint, "data" : joints[v], "overlay": overlay, "hover": hover};
+            joints[v] = {"segment" : segment, "joint" : joint, "data" : joints_description[v], "overlay": overlay, "hover": hover};
             joints[v].data.type = joints[v].data.type.toLowerCase();
             joint.identity().rotateZ(theta).translateZ(d);
             segment.identity().rotateX(alpha).translateX(a);
@@ -557,6 +557,8 @@ $.manus.world = {
                 joints[v].joint.identity().rotateZ(theta).translateZ(d);
             }
 
+            manipulatorRoot.matrix = mat4.create();
+
             manipulatorRoot.matrix = mat4.multiply(manipulatorRoot.matrix, rootTransform, manipulatorRoot.matrix);
 
             world.render();
@@ -567,11 +569,11 @@ $.manus.world = {
 
         origin = vec3.fromValues(description.offset.origin.x, description.offset.origin.y, description.offset.origin.z);
 
-        rootTransform = mat4.rotateX(rootTransform, rootTransform, description.offset.rotation.x);
-        rootTransform = mat4.rotateY(rootTransform, rootTransform, description.offset.rotation.y);
-        rootTransform = mat4.rotateZ(rootTransform, rootTransform, description.offset.rotation.z);
+        rootTransform = mat4.rotateX(rootTransform, rootTransform, description.offset.rotation.x / 180.0 * Math.PI);
+        rootTransform = mat4.rotateY(rootTransform, rootTransform, description.offset.rotation.y / 180.0 * Math.PI);
+        rootTransform = mat4.rotateZ(rootTransform, rootTransform, description.offset.rotation.z / 180.0 * Math.PI);
 
-        rootTransform = mat4.translate(rootTransform, rootTransform, vec3.fromValues(0, 0, 0));
+        rootTransform = mat4.translate(rootTransform, rootTransform, origin);
 
     },
     markers: function(world) {
@@ -591,11 +593,11 @@ $.manus.world = {
 
         world.scene.graph.push(markers);
 
-		return {
-			clear : function() {
-				markers.children = [];
-			},
-			add : function(position, orientation, scale, color) {
+        return {
+            clear : function() {
+                markers.children = [];
+            },
+            add : function(position, orientation, scale, color) {
                 mesh = Phoria.Util.generateCuboid({"scalex" : scale[0] / 2,
                          "scaley" : scale[1] / 2, "scalez" : scale[2] / 2}); // "offsetx" : 10, "offsetz" : 10, "offsety" : 10
                 var marker = Phoria.Entity.create({
@@ -610,10 +612,10 @@ $.manus.world = {
                     }
                 });
 
-				marker.identity().translate(position).rotateZ(orientation[2] / Math.PI * 180.0); //.translate([-scale[0]/4, -scale[1]/4, -scale[2]/4]);
-				markers.children.push(marker);
-			}
-		};
+                marker.identity().translate(position).rotateZ(orientation[2] / Math.PI * 180.0); //.translate([-scale[0]/4, -scale[1]/4, -scale[2]/4]);
+                markers.children.push(marker);
+            }
+        };
 
     },
     grid: function(world, position) {

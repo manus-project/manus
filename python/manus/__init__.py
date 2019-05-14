@@ -12,27 +12,33 @@ try:
 except IOError:
     pass
 
-
 class MoveTo(object):
-    def __init__(self, location, rotation, gripper=0):
+    def __init__(self, location, rotation = None, grip=0, speed=1.0):
         self.location = location
         self.rotation = rotation
-        self.gripper = gripper
+        self.grip = grip
+        self.speed = speed
 
     def generate(self, manipulator):
-        seg = messages.TrajectorySegment()
-        seg.frame = messages.Frame3D()
-        seg.frame.origin = messages.Point3D()
-        seg.frame.rotation = messages.Rotation3D()
-        seg.frame.origin.x = self.location[0]
-        seg.frame.origin.y = self.location[1]
-        seg.frame.origin.z = self.location[2]
-        seg.frame.rotation.x = self.rotation[0]
-        seg.frame.rotation.y = self.rotation[1]
-        seg.frame.rotation.z = self.rotation[2]
-        seg.gripper = self.gripper
-        seg.required = True
-        seg.speed = 1.0
+        seg = messages.TrajectorySegment(gripper=self.grip, required=True, speed= self.speed)
+        seg.frame.origin = messages.Point3D(self.location[0], self.location[1], self.location[2])
+        if self.rotation is None:
+            seg.rotation = False
+        else:
+            seg.frame.rotation = messages.Rotation3D(self.rotation[0], self.rotation[1], self.rotation[2])
+        return seg
+
+class MoveJoints(object):
+    def __init__(self, goal, speed=1.0):
+        self.goal = goal
+        if not speed is list:
+            self.speed = [speed] * len(goal)
+        else:
+            self.speed = speed
+
+    def generate(self, manipulator):
+        seg = messages.PlanSegment()
+        seg.joints = [messages.JointCommand(j, s) for j, s in zip(self.goal, self.speed)]
         return seg
 
 class Manipulator(object):
@@ -67,26 +73,18 @@ class Manipulator(object):
         segment = messages.PlanSegment()
         plan.segments.append(segment)
         self._move.send(plan)
-        #self.move({0 : -0.43, 1: 2.22, 2: -1.84, 3: -0.63, 4: 0.0, 5: -1.5, 6: 0.01}, identifier=identifier)
-
-    def move(self, joints, speed = 1.0, identifier='move'):
+        
+    def move(self, identifier, states):
         plan = messages.Plan()
         plan.identifier = identifier
-        segment = messages.PlanSegment()
-        for j in range(len(self.state.joints)):
-            c = messages.JointCommand()
-            c.speed = speed
-            c.goal = joints[j]
-            segment.joints.append(c)
-        plan.segments.append(segment)
+        plan.segments = [s.generate(self) for s in states]
         self._move.send(plan)
 
     def move_joint(self, joint, goal, speed = 1.0, identifier='move joint'):
         segment = self._state_to_segment()
         segment.joints[joint].speed = speed
         segment.joints[joint].goal = goal
-        plan = messages.Plan()
-        plan.identifier = identifier
+        plan = messages.Plan(identifier = identifier)
         plan.segments.append(segment)
         self._move.send(plan)
         self.state.joints[joint].goal = goal
@@ -108,10 +106,7 @@ class Manipulator(object):
     def _state_to_segment(self):
         segment = messages.PlanSegment()
         for j in self.state.joints:
-            c = messages.JointCommand()
-            c.speed = j.speed
-            c.goal = j.goal
-            segment.joints.append(c)
+            segment.joints.append(messages.JointCommand(j.goal, j.speed))
         return segment
 
     def _planstate_callback(self, state):

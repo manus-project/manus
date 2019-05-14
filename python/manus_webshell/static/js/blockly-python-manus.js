@@ -68,7 +68,7 @@ Blockly.Python['manus_position_vector'] = function(block) {
   var number_y = block.getFieldValue('Y');
   var number_z = block.getFieldValue('Z');
   // TODO: Assemble Python into code variable.
-  var code = number_x+', '+number_y+', '+number_z;
+  var code = '(' + number_x+', '+number_y+', '+number_z + ')';
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_NONE];
 };

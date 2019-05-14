@@ -35,7 +35,8 @@ import manus_webshell.static
 
 from manus_webshell.manipulator import ManipulatorBlockingHandler, ManipulatorDescriptionHandler, \
                                        ManipulatorStateHandler, ManipulatorMoveJointHandler, \
-                                       ManipulatorMoveHandler, ManipulatorMoveSafeHandler 
+                                       ManipulatorMoveHandler, ManipulatorMoveSafeHandler, \
+                                       ManipulatorTrajectoryHandler
 
 from manus.messages import MarkersSubscriber
 import manus
@@ -113,7 +114,7 @@ class AppsHandler(JsonHandler):
         self._apps = apps
 
     def get(self):
-        run = self.request.arguments.get("run", None)
+        run = self.request.json.get("run", None)
         if not run is None:
             self._apps.run(run[0])
             self.response = {"result" : "ok"}
@@ -132,7 +133,7 @@ class PrivilegedHandler(JsonHandler):
         super(PrivilegedHandler, self).__init__(application, request)
 
     def get(self):
-        run = self.request.arguments.get("run", None)
+        run = self.request.json.get("run", None)
         if not run is None:
             self._apps.run(run[0])
             self.response = {"result" : "ok"}
@@ -321,7 +322,7 @@ class ProgramHandler(JsonHandler):
         }
         try:
             generator = AppGenerator("/tmp")
-            generator.generate(self.request.arguments[u"code"], tempfile.gettempdir())
+            generator.generate(self.request.json[u"code"], tempfile.gettempdir())
             self._apps.run("/tmp/generated_app.app")
             self.response["identifier"] = app_identifier("/tmp/generated_app.app")
         except Exception as e:
@@ -391,13 +392,14 @@ def main():
             manipulator = manus.Manipulator(client, "manipulator0")
             handlers.append((r'/api/manipulator/describe', ManipulatorDescriptionHandler, {"manipulator": manipulator}))
             handlers.append((r'/api/manipulator/state', ManipulatorStateHandler, {"manipulator": manipulator}))
-            handlers.append((r'/api/manipulator/move_joint', ManipulatorMoveJointHandler, {"manipulator": manipulator}))
+            handlers.append((r'/api/manipulator/joint', ManipulatorMoveJointHandler, {"manipulator": manipulator}))
             handlers.append((r'/api/manipulator/move', ManipulatorMoveHandler, {"manipulator": manipulator}))
             handlers.append((r'/api/manipulator/safe', ManipulatorMoveSafeHandler, {"manipulator": manipulator}))
+            handlers.append((r'/api/manipulator/trajectory', ManipulatorTrajectoryHandler, {"manipulator": manipulator}))
             manipulators.append(manipulator)
         except Exception, e:
             print traceback.format_exc()
-
+    
         #handlers.append((r'/api/markers', MarkersStorageHandler))
         apps = AppsManager(client)
         privileged = PrivilegedClient(client)

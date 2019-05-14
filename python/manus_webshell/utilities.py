@@ -60,17 +60,15 @@ try:
         """Request handler where requests and responses speak JSON."""
 
         def prepare(self):
-            # Incorporate request JSON into arguments dictionary.
+            self.request.json = {}
+            self.response = {}
             if self.request.body:
                 try:
-                    json_data = json.loads(self.request.body)
-                    self.request.arguments.update(json_data)
-                except ValueError:
-                    message = 'Unable to parse JSON.'
-                    self.send_error(400, message=message)  # Bad Request
-
-            # Set up response dictionary.
-            self.response = dict()
+                    self.request.json = json.loads(self.request.body)
+                except ValueError, e:
+                    print(e)
+                    self.write_error(400, message='Unable to parse JSON.')
+                    return
 
         def set_default_headers(self):
             self.set_header('Content-Type', 'application/json')
@@ -81,6 +79,8 @@ try:
             message = {}
             if 'exc_info' in kwargs:
                 message['message'] = str(kwargs['exc_info'])
+            if 'message' in kwargs:
+                message['message'] = kwargs['message']
             elif status_code == 405:
                 message['message'] = 'Invalid HTTP method.'
             else:

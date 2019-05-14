@@ -18,6 +18,17 @@ function formatDateTime(date) {
   return day + ' ' + monthNames[monthIndex] + ' ' + year + " " + date.getHours() + ":" + date.getMinutes();
 }
 
+function postJSON(url, data, callback) {
+    return jQuery.ajax({
+        'type': 'POST',
+        'url': url,
+        'contentType': 'application/json',
+        'data': JSON.stringify(data),
+        'dataType': 'json',
+        'success': callback
+    });
+};
+
 RemoteStorage = {
     get : function(key, callback) {
         $.ajax('/api/storage?key=' + key).done(function(data) {
@@ -95,7 +106,7 @@ Interface = {
         } else {
             function create_button(name, callback) {
                 return $("<button/>").addClass("btn btn-default").text(name)
-                    .click(function() { 
+                    .click(function() {
                         if (callback()) $('#block-dialog').modal('hide');
                     });
             }
@@ -111,7 +122,7 @@ Interface = {
 
         Interface.dialog(title, message, {
             "Cancel" : function() { return true; },
-            "Confirm": function() { callback(); return true; } 
+            "Confirm": function() { callback(); return true; }
         });
 
     },
@@ -132,7 +143,7 @@ Interface = {
         wrapper.append($("<div>").addClass("form-group").append($("<label>").text("Username")).append(username));
         wrapper.append($("<div>").addClass("form-group").append($("<label>").text("Password")).append(password));
 
-        function submit() { 
+        function submit() {
             callback(username.val(), password.val());
             $('#block-dialog').modal('hide');
         }
@@ -169,11 +180,11 @@ function posesList() {
         container.click(function () {
 
             var data = item.values().pose;
-            
-            var params = "";
+
+            var goals = [];
             for (var i = 0; i < data.joints.length; i++)
-                params += "j" + (i+1) + "=" + data.joints[i].position + "&";
-            $.ajax('/api/manipulator/move?' + params);
+                goals.push(data.joints[i].position);
+            postJSON('/api/manipulator/move', [{"goals": goals, "speed" : 1.0}]);
 
         });
 
@@ -200,7 +211,7 @@ function posesList() {
             range.collapse(true);
             sel.removeAllRanges();
             sel.addRange(range);
-            
+
             textbox.bind('keyup', function(event) {
                 if(event.keyCode == 13) {
                     container.removeClass('editable');
@@ -229,7 +240,7 @@ function posesList() {
 
     var currentPose = null;
     var updating = false;
-    
+
     var list = new List("poseslist", {
         valueNames : ["name"],
         item: "<a class='list-group-item'><div class='name'></div></a>"
@@ -243,18 +254,18 @@ function posesList() {
         list.clear();
         list.add(data);
         updating = false;
-        
+
     });
 
     PubSub.subscribe("manipulator.update", function(msg, data) {
 
-        currentPose = data;        
-
+        currentPose = data;
+        
     });
 
     PubSub.subscribe("storage.update", function(msg, key) {
 
-        if (key != "poses") 
+        if (key != "poses")
             return;
 
         RemoteStorage.get("poses", function(key, data) {
@@ -263,7 +274,7 @@ function posesList() {
             list.clear();
             list.add(data);
             updating = false;
-            
+
         });
 
     });
@@ -300,14 +311,14 @@ function posesList() {
                 name : "New pose " + index,
                 pose: currentPose
             }]);
-        } 
+        }
     }));
 
     $("#control .toolbar.left").append($.manus.widgets.fancybutton({
         icon: "tower", tooltip: "Safe position",
         callback: function() {
-            $.ajax('/api/manipulator/safe');
-        } 
+            postJSON('/api/manipulator/safe', []);
+        }
     }));
 
 }
@@ -445,7 +456,7 @@ function initializeTabs() {
         });
 
         viewbar_left.append($.manus.widgets.fancybutton({icon : "facetime-video", tooltip: "Camera view", callback: function(e) {
-                if (cameraView) viewer.view(cameraView);                
+                if (cameraView) viewer.view(cameraView);
             }}));
 
     }).fail(function () {});
@@ -466,11 +477,11 @@ function initializeTabs() {
         for (var v in data["joints"]) {
             if (data["joints"][v].type.toLowerCase() == "fixed")
                 continue;
-            joints[v] = $.manus.widgets.jointWidget(container, "manipulator", v, "Joint " + id, data["joints"][v]);
+            joints[v] = $.manus.widgets.jointWidget(container, "manipulator", parseInt(v), "Joint " + id, data["joints"][v]);
             id = id + 1;
         }
 
-        $.manus.world.manipulator(viewer, "manipulator", data["joints"]);
+        $.manus.world.manipulator(viewer, "manipulator", data);
 
         markers = $.manus.world.markers(viewer);
         markers.clear();
@@ -496,7 +507,7 @@ function initializeTabs() {
 
         $.ajax('/api/info').done(function(data) {
 
-            location.reload();    
+            location.reload();
 
         }).fail(function () {
 
@@ -538,7 +549,7 @@ function initializeTabs() {
         } else if (msg.channel == "manipulator") {
 
             PubSub.publish("manipulator.update", msg.data);
-            
+
         } else if (msg.channel == "storage") {
 
             if (msg.action == "update") {
@@ -557,7 +568,7 @@ function initializeTabs() {
                 PubSub.publish("apps.console", {identifier: msg.identifier, lines: msg.lines, source: "output"});
             } else if (msg.action == "input") {
                 PubSub.publish("apps.console", {identifier: msg.identifier, lines: msg.lines, source: "input"});
-            } 
+            }
 
         } else if (msg.channel == "markers") {
 
@@ -579,7 +590,9 @@ function initializeTabs() {
 
     PubSub.subscribe("manipulator.move_joint", function(msg, data) {
 
-        $.ajax('/api/manipulator/move_joint?id=' + data.id + '&speed=' + data.speed + '&position=' + data.position);
+        var data = {"id" : data.id, "goal" : data.position, "speed" : data.speed};
+
+        postJSON('/api/manipulator/joint', data);
 
     });
 
@@ -628,9 +641,9 @@ $(function() {
 
             Interface.overlay();
             Interface.login(function(username, password) {
-                
+
                 Interface.overlay("Loading ...", "Please wait.");
-                
+
                 $.ajax({
                     'type': 'POST',
                     'url': '/api/login',
@@ -638,7 +651,7 @@ $(function() {
                     'data': JSON.stringify({username: username, password: password}),
                     'dataType': 'json'
                 }).done(function() {
-                    
+
                 });
 
             });

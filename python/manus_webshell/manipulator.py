@@ -13,6 +13,46 @@ from manus.messages import JointType, PlanStateType
 from .utilities import synchronize, JsonHandler, NumpyEncoder
 import tornado.web
 
+from manus import MoveTo, MoveJoints
+
+from jsonschema import validate, ValidationError
+
+TRAJECTORY_SCHEMA = {
+     "type" : "array",
+     "minItems": 1,
+     "items" : {
+        "type" : "object",
+        "properties" : {
+            "location" : {"type" : "array", "items" : [{"type": "number"}, {"type": "number"}, {"type": "number"}]},
+            "rotation" : {"type" : "array", "items" : [{"type": "number"}, {"type": "number"}, {"type": "number"}]},
+            "grip" : {"type" : "number"},
+            "speed" : {"type" : "number"}
+        },
+        "required" : ["location"]
+     }
+}
+
+MOVE_SCHEMA = {
+     "type" : "array",
+     "minItems": 1,
+     "items" : {
+        "type" : "object",
+        "properties" : {
+            "goals" : {"type" : "array", "items" : {"type": "number"}},
+            "speed" : {"type" : ["number", "array"], "items": {"type": "number"}}
+        }
+     }
+}
+
+JOINT_SCHEMA = {
+    "type" : "object",
+    "properties" : {
+            "id" : {"type" : "integer"},
+            "goal" : {"type" : "number"},
+            "speed" : {"type" : "number"}
+        }
+}
+
 class ManipulatorBlockingHandler(JsonHandler):
 
     def __init__(self, application, request, manipulator):
@@ -20,14 +60,20 @@ class ManipulatorBlockingHandler(JsonHandler):
         self.manipulator = manipulator
         self.moveid = uuid.uuid4().hex
 
-    @tornado.web.asynchronous
     def get(self):
+        self.clear()
+        self.write_error(404, 'Bad request')
+        self.finish()
+        return
+
+    @tornado.web.asynchronous
+    def post(self):
         try:
             blocking = self.request.arguments.get("blocking", "0")[0]
             blocking = (blocking.lower() in ("yes", "true", "1"))
             if blocking:
                 self.manipulator.listen(self)
-            
+
             result = self.run(self.moveid)
 
             if not blocking:
@@ -38,9 +84,7 @@ class ManipulatorBlockingHandler(JsonHandler):
                 self.write_json()
                 self.finish()
         except ValueError:
-            self.set_status(401)
-            self.response = {'result' : 'illegal'}
-            self.write_json()
+            self.write_error(401, message="Illegal data")
             self.finish()
 
     def on_finish(self):
@@ -127,16 +171,17 @@ class ManipulatorMoveJointHandler(ManipulatorBlockingHandler):
         super(ManipulatorMoveJointHandler, self).__init__(application, request, manipulator)
 
     def run(self, id):
-        if not "id" in self.request.arguments:
-            self.clear()
-            self.set_status(400)
-            self.finish('Unavailable')
+        try:
+
+            validate(instance = self.request.json, schema = JOINT_SCHEMA)
+            joint = self.request.json.get("id")
+            goal = float(self.request.json.get("goal"))
+            speed = float(self.request.json.get("speed", 1.0))
+            self.manipulator.move_joint(joint, goal, speed, identifier=id)
+            return True
+
+        except ValidationError, e:
             return False
-        id = int(self.request.arguments.get("id")[0])
-        position = float(self.request.arguments.get("position", "0")[0])
-        speed = float(self.request.arguments.get("speed", "1.0")[0])
-        self.manipulator.move_joint(id, position, speed, identifier=id)
-        return True
 
 class ManipulatorMoveHandler(ManipulatorBlockingHandler):
 
@@ -144,10 +189,37 @@ class ManipulatorMoveHandler(ManipulatorBlockingHandler):
         super(ManipulatorMoveHandler, self).__init__(application, request, manipulator)
 
     def run(self, id):
-        positions = [float(self.request.arguments.get("j%d" % i, "0")[0]) for i in xrange(1, len(self.manipulator.state.joints)+1)]
-        speed = float(self.request.arguments.get("speed", "1.0")[0])
-        self.manipulator.move(positions, speed, identifier=id)
-        return True
+        try:
+
+            validate(instance = self.request.json, schema = MOVE_SCHEMA)
+            states = [MoveJoints(goal["goals"], goal.get("speed", 1.0)) for goal in self.request.json]
+            self.manipulator.move(id, states)
+
+            return True
+
+        except ValidationError:
+            return False
+
+    def check_etag_header(self):
+        return False
+
+class ManipulatorTrajectoryHandler(ManipulatorBlockingHandler):
+
+    def __init__(self, application, request, manipulator):
+        super(ManipulatorTrajectoryHandler, self).__init__(application, request, manipulator)
+
+    def run(self, id):
+        try:
+
+            validate(instance = self.request.json, schema = TRAJECTORY_SCHEMA)
+
+            goals = [MoveTo(goal["location"], goal.get("rotation", None), goal.get("grip", 0), goal.get("speed", 1.0)) for goal in self.request.json]
+            self.manipulator.trajectory(id, goals)
+
+            return True
+
+        except ValidationError:
+            return False
 
     def check_etag_header(self):
         return False
