@@ -134,16 +134,8 @@ VoxelGrid::VoxelGrid(const Chain& _chain, const JntArray& _q_min, const JntArray
 
     _impl = new VoxelGrid_internal(_chain, voxel_resolution, voxel_size);
 
-	Eigen::Matrix<double,6,1> L;
-	L(0)=1;
-	L(1)=1;
-	L(2)=1;
-	L(3)=0.001;
-	L(4)=0.001;
-	L(5)=0.001;
-
 	//iksolver = new ChainIkSolverPos_LMA(_chain, L, _eps, 500, 0.0000001);
-    iksolver = new ChainIkSolverPos_LMA(_chain, L, _eps, 500, 0.0001);
+    //iksolver = new ChainIkSolverPos_LMA(_chain, L, _eps, 500, 0.0001);
 	//iksolver = new ChainIkSolverPos_NR(_chain, fksolver, _impl->iks, 300, 1);
 
     for (uint i=0; i<chain.segments.size(); i++) {
@@ -186,13 +178,10 @@ void VoxelGrid::precompute(int count) {
 }
 
 
-int VoxelGrid::CartToJnt(const KDL::JntArray &q_init, const KDL::Frame &p_in, KDL::JntArray &q_out) {
+int VoxelGrid::CartToJnt(const KDL::JntArray &q_init, const KDL::Frame &p_in, KDL::JntArray &q_out, bool use_rotation) {
 
     q_out = q_init;
     VoxelIndex voxel((int) (p_in.p.x() / _impl->voxel_resolution), (int) (p_in.p.y() / _impl->voxel_resolution), (int) (p_in.p.z() / _impl->voxel_resolution));
-
-	//fksolver.reset();
-	//iksolver->reset();
 
     fksolver.JntToCart(q_out,f);
     delta_twist = diffRelative(p_in, f);
@@ -208,19 +197,22 @@ int VoxelGrid::CartToJnt(const KDL::JntArray &q_init, const KDL::Frame &p_in, KD
 
     if (v != _impl->cache.end()) {
 
-	    //std::cout << "Testing " << v->second.size() << " options." << std::endl;
-		//voxel.print();
-
 		std::vector<size_t> idx(v->second.size());
 		std::iota(idx.begin(), idx.end(), 0);
 		std::sort(idx.begin(), idx.end(), [&v, &q_init](size_t i1, size_t i2) {return jntarray_distance(v->second[i1], q_init) < jntarray_distance(v->second[i2], q_init); });
 
 	    for (std::vector<size_t>::iterator it = idx.begin(); it != idx.end(); it++) {
-	        int result = iksolver->CartToJnt(v->second[*it], p_in, q_test);
+            Eigen::Matrix<double,6,1> L;
+            L(0) = 1;
+            L(1) = 1;
+            L(2) = 1;
+            L(3) = use_rotation ? 0.1 : 0;
+            L(4) = use_rotation ? 0.1 : 0;
+            L(5) = use_rotation ? 0.1 : 0;
 
-			//std::cout << result << " : " << jntarray_distance(v->second[*it], q_init) << "  ";
-			//print_jntarray(v->second[*it]);
+            KDL::ChainIkSolverPos_LMA iksolver(chain, L, eps, 500, 0.0001);
 
+	        int result = iksolver.CartToJnt(v->second[*it], p_in, q_test);
 	        if (result < 0)
 	            continue;
 	        bool valid = true;
@@ -257,7 +249,6 @@ int VoxelGrid::CartToJnt(const KDL::JntArray &q_init, const KDL::Frame &p_in, KD
 VoxelGrid::~VoxelGrid()
 {
 
-	delete iksolver;
     delete _impl;
 }
 

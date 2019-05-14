@@ -21,7 +21,7 @@ public:
 
     ~VoxelGrid();
 
-    int CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, KDL::JntArray& q_out);
+    int CartToJnt(const KDL::JntArray& q_init, const KDL::Frame& p_in, KDL::JntArray& q_out, bool use_rotation = true);
 
     void precompute(int count);
 
@@ -32,7 +32,7 @@ private:
 
     KDL::Twist bounds;
 
-	KDL::ChainIkSolverPos * iksolver;
+	//KDL::ChainIkSolverPos * iksolver;
     KDL::ChainFkSolverPos_recursive fksolver;
 
     double maxtime;

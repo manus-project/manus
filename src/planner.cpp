@@ -135,7 +135,7 @@ protected:
 
 
 			JntArray out(kinematic_chain.getNrOfJoints());
-			int result = cache->CartToJnt(initial, frame, out);
+			int result = cache->CartToJnt(initial, frame, out, goal.rotation);
 
 			if (result >= 0) {
 				initial = out;

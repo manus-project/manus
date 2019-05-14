@@ -6,7 +6,7 @@ enumerate JointType { ROTATION, TRANSLATION, GRIPPER, FIXED }
 enumerate JointStateType { IDLE, MOVING, ERROR }
 
 enumerate PlanStateType { PLANNING, FAILED, PLANNED, RUNNING, STOPPED, COMPLETED }
-
+ 
 structure JointDescription {
 	JointType type;
 	float dh_theta;
@@ -26,8 +26,8 @@ structure JointState {
 }
 
 structure JointCommand {
-	float speed;
 	float goal;
+	float speed;
 }
 
 structure PlanSegment {
@@ -36,12 +36,14 @@ structure PlanSegment {
 
 structure TrajectorySegment {
 	Frame3D frame;
-	bool required;
-	float gripper;
-	float speed;
+	bool required = true;
+	float gripper = 0;
+	float speed = 1;
+	bool rotation = true;
 }
 
 message ManipulatorDescription {
+	Timestamp timestamp;
 	string name;
 	float version;
 	Frame3D frame;
@@ -49,11 +51,13 @@ message ManipulatorDescription {
 }
 
 message ManipulatorState {
+	Timestamp timestamp;
 	ManipulatorStateType state;
 	JointState[] joints;
 }
 
 message PlanState {
+	Timestamp timestamp;
 	string identifier;
 	PlanStateType type;
 	long timestamp;
