@@ -25,10 +25,11 @@ bool debug = false;
 Ptr<CameraModel> model;
 Ptr<Scene> scene;
 Mat image_current;
+Mat image_gray;
 Ptr<BackgroundSubtractorMOG2> scene_model;
 int force_update_counter;
 int force_update_threshold;
-SharedLocalization location;
+SharedLocalization localization;
 SharedCameraModel parameters(new CameraModel(Size(640, 480)));
 
 bool scene_change(Mat& image) {
@@ -82,6 +83,97 @@ void handle_frame(Mat& image) {
 SharedTypedPublisher<CameraExtrinsics> location_publisher;
 SharedTypedSubscriber<CameraIntrinsics> parameters_listener;
 
+vector<Point3f> blobs;
+
+void read_blobs(const char* file) {
+
+	blobs.clear();
+
+	FileStorage fs(file, FileStorage::READ);
+
+	if (!fs.isOpened()) {
+		return;
+	}
+
+    FileNode centers = fs["centers"];
+
+	for (FileNodeIterator it = centers.begin(); it != centers.end(); ++it) {
+
+		float x, y;
+
+		read((*it)["x"], x, 0);
+		read((*it)["y"], y, 0);
+
+		blobs.push_back(Point3f(x, y, 0));
+
+	}
+
+}
+
+SharedLocalization improveLocalizationWithKeypointBlobs(SharedLocalization localization, SharedCameraModel camera) {
+	vector<Point2f> estimates;
+
+	projectPoints(blobs, localization->getCameraPosition().rotation, localization->getCameraPosition().translation, 
+		camera->getIntrinsics(), camera->getDistortion(), estimates);
+
+	Ptr<FeatureDetector> blobDetector = FeatureDetector::create("SimpleBlob");
+
+	std::vector<KeyPoint> keypoints;
+    blobDetector->detect(image_gray, keypoints);
+    std::vector<Point2f> points;
+    for (size_t i = 0; i < keypoints.size(); i++)
+    {
+      	points.push_back (keypoints[i].pt);
+	}
+
+	vector<Point2f> imagePoints;
+	vector<Point3f> objectPoints;
+
+	for (int i = 0; i < estimates.size(); i++) {
+
+		float min_distance = 100000;
+		int best_match = -1;
+
+		// Let's skip all points that are projected out of frame
+		if (estimates[i].x < 0 || estimates[i].y < 0 ||
+			estimates[i].x >= image_gray.cols || estimates[i].y >= image_gray.rows)
+			continue;
+
+		for (int j = 0; j < points.size(); j++) {
+			
+			float dx = estimates[i].x - points[j].x;
+			float dy = estimates[i].y - points[j].y;
+			float dist = sqrt (dx * dx + dy * dy);
+
+			if (dist < 20) {
+
+				imagePoints.push_back(points[j]);
+				objectPoints.push_back(blobs[i]);
+			}
+
+		}
+
+	}
+
+	if (imagePoints.size() > 5) {
+
+		CameraPosition position;
+
+		Mat rotation, translation;
+
+		solvePnPRansac(objectPoints, imagePoints, camera->getIntrinsics(), camera->getDistortion(), rotation, translation);
+
+		rotation.convertTo(position.rotation, CV_32F);
+		translation.convertTo(position.translation, CV_32F);
+
+		localization = Ptr<Localization>(new Localization(0, position));
+
+	}
+
+	return localization;
+
+}
+
 int main(int argc, char** argv) {
 
 	if (argc < 2) {
@@ -89,7 +181,17 @@ int main(int argc, char** argv) {
 		exit(-1);
 	}
 
+	string blobs_file;
+
+	if (argc > 2) {
+		blobs_file = string(argv[2]);
+	}
+
 	string scene_file(argv[1]);
+
+	if (!blobs_file.empty()) {
+		read_blobs(blobs_file.c_str());
+	}
 
 #ifdef MANUS_DEBUG
 	Mat debug_image;
@@ -140,13 +242,15 @@ int main(int argc, char** argv) {
 
 			if (scene_change(image_current)) {
 
+				cvtColor(image_current, image_gray, CV_BGR2GRAY);
+
 				vector<SharedLocalization> anchors;
 
 				if (scene)
-					anchors = scene->localize(image_current);
+					anchors = scene->localize(image_gray);
 
 				if (anchors.size() > 0) {
-					location = anchors[0];
+					localization = anchors[0];
 					localized = true;
 				} else {
 					localized = false;
@@ -155,9 +259,24 @@ int main(int argc, char** argv) {
 				#ifdef MANUS_DEBUG
 				if (debug) {
 					image_current.copyTo(debug_image);
+				}
+				#endif
 
-					location->draw(debug_image, parameters);
+				if (blobs.size() > 0 && localized) {
 
+					localization = improveLocalizationWithKeypointBlobs(localization, parameters);
+
+				}
+
+				#ifdef MANUS_DEBUG
+				if (debug && localized) {
+
+					localization->draw(debug_image, parameters);
+				}
+				#endif
+
+				#ifdef MANUS_DEBUG
+				if (debug) {
 					imshow("AR Track", debug_image);
 				}
 				#endif
@@ -165,8 +284,8 @@ int main(int argc, char** argv) {
 			}
 			if (localized) {
 				CameraExtrinsics loc;
-				Rodrigues(location->getCameraPosition().rotation, loc.rotation);
-				loc.translation = location->getCameraPosition().translation;
+				Rodrigues(localization->getCameraPosition().rotation, loc.rotation);
+				loc.translation = localization->getCameraPosition().translation;
 				location_publisher->send(loc);
 			}
 
