@@ -25,7 +25,8 @@ float scale_joint_to_servo(const MotorData& si, float pos) {
 
 }
 
-OpenServoManipulator::OpenServoManipulator(const string& device, const string& model_file) {
+OpenServoManipulator::OpenServoManipulator(const string& device,
+    const string& model_file, const string& bind_file) {
 
   read_rate = 30;
   _state.state = MANIPULATORSTATETYPE_UNKNOWN;
@@ -37,7 +38,7 @@ OpenServoManipulator::OpenServoManipulator(const string& device, const string& m
 
   int num = bus.scan();
 
-  load_description(model_file);
+  load_description(model_file, bind_file);
 
   if (num < servos.size())
     throw ManipulatorException("Not enough servos detected.");
@@ -48,10 +49,10 @@ OpenServoManipulator::~OpenServoManipulator() {
 
 }
 
-bool parse_calibration(const string& filename, ManipulatorDescription& manipulator, vector<MotorData>& servos) {
+bool parse_bindings(const string& filename, ManipulatorDescription& manipulator, vector<MotorData>& servos) {
 
     YAML::Node doc = YAML::LoadFile(filename);
-
+/*
     const YAML::Node& offset = doc["offset"];
 
     manipulator.frame.origin.x = offset["origin"]["x"].as<float>();
@@ -61,8 +62,8 @@ bool parse_calibration(const string& filename, ManipulatorDescription& manipulat
     manipulator.frame.rotation.x = offset["rotation"]["x"].as<float>();
     manipulator.frame.rotation.y = offset["rotation"]["y"].as<float>();
     manipulator.frame.rotation.z = offset["rotation"]["z"].as<float>();
-
-    const YAML::Node& joints = doc["joints"];
+*/
+    const YAML::Node& joints = doc["motors"];
 
     servos.clear();
 
@@ -70,7 +71,7 @@ bool parse_calibration(const string& filename, ManipulatorDescription& manipulat
 
         if (manipulator.joints.size() <= i) return false;
 
-        const YAML::Node& servo = joints[i]["servo"];
+        const YAML::Node& servo = joints[i];
 
         if (servo.IsDefined()) {
           MotorData d;
@@ -85,45 +86,21 @@ bool parse_calibration(const string& filename, ManipulatorDescription& manipulat
           servos.push_back(d);
         }
 
-        const YAML::Node& dh = joints[i]["dh"];
-
-        switch(manipulator.joints[i].type) {
-            case JOINTTYPE_ROTATION: {
-                manipulator.joints[i].dh_alpha += DEGREE_TO_RADIAN(dh["alpha"].as<float>());
-                manipulator.joints[i].dh_d += dh["d"].as<float>();
-                manipulator.joints[i].dh_a += dh["a"].as<float>();
-                break;
-            }
-            case JOINTTYPE_TRANSLATION: {
-                manipulator.joints[i].dh_alpha += DEGREE_TO_RADIAN(dh["alpha"].as<float>());
-                manipulator.joints[i].dh_theta += DEGREE_TO_RADIAN(dh["theta"].as<float>());
-                manipulator.joints[i].dh_a += dh["a"].as<float>();
-                break;
-            }
-            case JOINTTYPE_FIXED: {
-                manipulator.joints[i].dh_alpha += DEGREE_TO_RADIAN(dh["alpha"].as<float>());
-                manipulator.joints[i].dh_theta += DEGREE_TO_RADIAN(dh["theta"].as<float>());
-                manipulator.joints[i].dh_d += dh["d"].as<float>();
-                manipulator.joints[i].dh_a += dh["a"].as<float>();
-                break;
-            }
-        }
-
     }
 
     return true;
 }
 
 
-int OpenServoManipulator::load_description(const string& modelfile) {
+int OpenServoManipulator::load_description(const string& modelfile, const string& bindfile) {
 
   if (!parse_description(modelfile, _description)) {
     throw ManipulatorException("Unable to parse manipulator model description");
   }
 
-  //if (!parse_calibration(calibfile, _description, servos)) {
-  //  throw ManipulatorException("Unable to parse manipulator calibration description");
-  //}
+  if (!parse_bindings(bindfile, _description, servos)) {
+    throw ManipulatorException("Unable to parse manipulator bindings description");
+  }
 
   _state.joints.resize(_description.joints.size());
   int j = 0;
@@ -298,39 +275,48 @@ using namespace std::chrono;
 
 int main(int argc, char** argv) {
 
-  if (argc < 2) {
-    cerr << "Missing manipulator description file path." << endl;
+  if (argc < 3) {
+    cerr << "Missing manipulator description and binding file paths." << endl;
     return -1;
   }
 
   string device;
 
-  if (argc > 2) {
-    device = string(argv[2]);
+  if (argc > 3) {
+    device = string(argv[3]);
   }
 
   cout << "Starting OpenServo manipulator" << endl;
 
-  shared_ptr<OpenServoManipulator> manipulator =
-    shared_ptr<OpenServoManipulator>(new OpenServoManipulator(
-                                       device, string(argv[1])));
+  try {
 
-  SharedClient client = echolib::connect();
-  ManipulatorManager manager(client, manipulator);
+    shared_ptr<OpenServoManipulator> manipulator =
+      shared_ptr<OpenServoManipulator>(new OpenServoManipulator(
+                                         device, string(argv[1]), string(argv[2])));
 
-  int duration = 0;
+    SharedClient client = echolib::connect();
+    ManipulatorManager manager(client, manipulator);
 
-  while (true) {
-    if (!echolib::wait(std::max(1, 20 - duration))) break;
+    int duration = 0;
 
-    steady_clock::time_point start = steady_clock::now();
+    while (true) {
+      if (!echolib::wait(std::max(1, 20 - duration))) break;
 
-    manager.update();
-    if (!manipulator->process()) break;
+      steady_clock::time_point start = steady_clock::now();
 
-    duration = duration_cast<milliseconds>(steady_clock::now() - start).count();
+      manager.update();
+      if (!manipulator->process()) break;
 
+      duration = duration_cast<milliseconds>(steady_clock::now() - start).count();
+
+    }
+
+  } catch (ManipulatorException &e) {
+     cout << "Exception: " << e.what() << endl;
+
+     exit(1);
   }
+
 
   exit(0);
 }

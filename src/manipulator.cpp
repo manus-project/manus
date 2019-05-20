@@ -15,7 +15,7 @@ ManipulatorException::ManipulatorException(char const* const message) throw()
 }
 
 char const * ManipulatorException::what() const throw() {
-    return exception::what();
+    return std::runtime_error::what();
 }
 
 string manipulator_state_string(ManipulatorStateType status) {

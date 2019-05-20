@@ -98,7 +98,6 @@ class ManipulatorBlockingHandler(JsonHandler):
 
     def on_planner_state(self, manipulator, state):
         if state.identifier == self.moveid:
-            print state.type
             if state.type == PlanStateType.COMPLETED:
                 self.response = {'result' : 'ok'}
             elif state.type == PlanStateType.FAILED:
