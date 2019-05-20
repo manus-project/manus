@@ -21,8 +21,7 @@ typedef struct MotorData {
 class OpenServoManipulator : public Manipulator
 {
 public:
-	OpenServoManipulator(const string& device,
-    const string& model_file, const string& calibration_file);
+	OpenServoManipulator(const string& device, const string& model_file);
 	~OpenServoManipulator();
 
 	virtual int size();
@@ -35,7 +34,7 @@ public:
 
 private:
 
-	virtual int load_description(const string& model_file, const string& calibration_file);
+	virtual int load_description(const string& model_file);
 
 	struct ServoRuntimeData
 	{

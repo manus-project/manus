@@ -25,8 +25,7 @@ float scale_joint_to_servo(const MotorData& si, float pos) {
 
 }
 
-OpenServoManipulator::OpenServoManipulator(const string& device,
-    const string& model_file, const string& calibration_file) {
+OpenServoManipulator::OpenServoManipulator(const string& device, const string& model_file) {
 
   read_rate = 30;
   _state.state = MANIPULATORSTATETYPE_UNKNOWN;
@@ -38,7 +37,7 @@ OpenServoManipulator::OpenServoManipulator(const string& device,
 
   int num = bus.scan();
 
-  load_description(model_file, calibration_file);
+  load_description(model_file);
 
   if (num < servos.size())
     throw ManipulatorException("Not enough servos detected.");
@@ -73,7 +72,7 @@ bool parse_calibration(const string& filename, ManipulatorDescription& manipulat
 
         const YAML::Node& servo = joints[i]["servo"];
 
-        if (!servo.IsDefined()) {
+        if (servo.IsDefined()) {
           MotorData d;
 
           d.servo_id = servo["id"].as<int>();
@@ -108,7 +107,7 @@ bool parse_calibration(const string& filename, ManipulatorDescription& manipulat
                 manipulator.joints[i].dh_a += dh["a"].as<float>();
                 break;
             }
-        } 
+        }
 
     }
 
@@ -116,15 +115,15 @@ bool parse_calibration(const string& filename, ManipulatorDescription& manipulat
 }
 
 
-int OpenServoManipulator::load_description(const string& modelfile, const string& calibfile) {
+int OpenServoManipulator::load_description(const string& modelfile) {
 
   if (!parse_description(modelfile, _description)) {
     throw ManipulatorException("Unable to parse manipulator model description");
   }
 
-  if (!parse_calibration(calibfile, _description, servos)) {
-    throw ManipulatorException("Unable to parse manipulator calibration description");
-  }
+  //if (!parse_calibration(calibfile, _description, servos)) {
+  //  throw ManipulatorException("Unable to parse manipulator calibration description");
+  //}
 
   _state.joints.resize(_description.joints.size());
   int j = 0;
@@ -274,7 +273,7 @@ bool OpenServoManipulator::process() {
     vector<int> sorted_goal(runtime_data[motor].goal_median.begin(),
       runtime_data[motor].goal_median.end());
 
-    std::nth_element(sorted_position.begin(), 
+    std::nth_element(sorted_position.begin(),
       sorted_position.begin() + sorted_position.size() / 2, sorted_position.end());
 
     float position = sorted_position[sorted_position.size() / 2];
@@ -299,22 +298,22 @@ using namespace std::chrono;
 
 int main(int argc, char** argv) {
 
-  if (argc < 3) {
-    cerr << "Missing manipulator description and calibration file paths." << endl;
+  if (argc < 2) {
+    cerr << "Missing manipulator description file path." << endl;
     return -1;
   }
 
   string device;
 
-  if (argc > 3) {
-    device = string(argv[3]);
+  if (argc > 2) {
+    device = string(argv[2]);
   }
 
   cout << "Starting OpenServo manipulator" << endl;
 
   shared_ptr<OpenServoManipulator> manipulator =
     shared_ptr<OpenServoManipulator>(new OpenServoManipulator(
-                                       device, string(argv[1]), string(argv[2])));
+                                       device, string(argv[1])));
 
   SharedClient client = echolib::connect();
   ManipulatorManager manager(client, manipulator);
@@ -335,4 +334,3 @@ int main(int argc, char** argv) {
 
   exit(0);
 }
-
