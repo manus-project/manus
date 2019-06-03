@@ -95,6 +95,7 @@ class CameraLocationHandler(JsonHandler):
         }
 
     def push_camera_location(self, camera, location):
+        self.set_header('X-Timestamp', location.header.timestamp.isoformat())
         self.response = CameraLocationHandler.encode_location(location)
         self.write_json()
         self.finish()
@@ -351,7 +352,7 @@ def main():
 
     scriptdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
-    client = echolib.Client()
+    client = echolib.Client(name="webshell")
     storage = db.DB()
 
     try:

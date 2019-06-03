@@ -1,5 +1,4 @@
 import "geometry.msg";
-import "headers.msg";
 
 enumerate ManipulatorStateType { UNKNOWN, CONNECTED, PASSIVE, ACTIVE, CALIBRATION }
 enumerate JointType { ROTATION, TRANSLATION, GRIPPER, FIXED }
@@ -43,7 +42,6 @@ structure TrajectorySegment {
 }
 
 message ManipulatorDescription {
-	Timestamp timestamp;
 	string name;
 	float version;
 	Frame3D frame;
@@ -51,7 +49,7 @@ message ManipulatorDescription {
 }
 
 message ManipulatorState {
-	Timestamp timestamp;
+	Header header;
 	ManipulatorStateType state;
 	JointState[] joints;
 }

@@ -217,7 +217,7 @@ private:
 
 int main(int argc, char** argv) {
 
-	SharedClient client = echolib::connect();
+	SharedClient client = echolib::connect(string(), "planner");
 
 	Planner planner(client);
 

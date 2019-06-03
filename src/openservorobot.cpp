@@ -294,7 +294,7 @@ int main(int argc, char** argv) {
       shared_ptr<OpenServoManipulator>(new OpenServoManipulator(
                                          device, string(argv[1]), string(argv[2])));
 
-    SharedClient client = echolib::connect();
+    SharedClient client = echolib::connect(string(), "manipulator");
     ManipulatorManager manager(client, manipulator);
 
     int duration = 0;

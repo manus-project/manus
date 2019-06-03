@@ -1,5 +1,6 @@
 #include <echolib/opencv.h>
 
+#include <chrono>
 #include <memory>
 #include <experimental/filesystem>
 
@@ -24,6 +25,7 @@ bool debug = false;
 
 Ptr<CameraModel> model;
 Ptr<Scene> scene;
+chrono::system_clock::time_point time_current;
 Mat image_current;
 Mat image_gray;
 Ptr<BackgroundSubtractorMOG2> scene_model;
@@ -71,12 +73,13 @@ bool scene_change(Mat& image) {
 	}
 }
 
-void handle_frame(Mat& image) {
+void handle_frame(shared_ptr<Frame> frame) {
 
-	if (image.empty())
+	if (frame->image.empty())
 		return;
 
-	image_current = image;
+	time_current = frame->header.timestamp;
+	image_current = frame->image;
 
 }
 
@@ -203,9 +206,9 @@ int main(int argc, char** argv) {
 	force_update_threshold = 100;
 	force_update_counter = force_update_threshold;
 
-	SharedClient client = echolib::connect();
+	SharedClient client = echolib::connect(string(), "artracker");
 
-	shared_ptr<ImageSubscriber> sub;
+	SharedTypedSubscriber<Frame> sub;
 	location_publisher = make_shared<TypedPublisher<CameraExtrinsics> >(client, "location");
 
 	parameters_listener = make_shared<TypedSubscriber<CameraIntrinsics> >(client, "intrinsics",
@@ -222,7 +225,7 @@ int main(int argc, char** argv) {
 		processing = subscribers > 0;
 
 		if (processing && !sub) {
-			sub = make_shared<ImageSubscriber>(client, "camera", handle_frame);
+			sub = make_shared<TypedSubscriber<Frame> >(client, "camera", handle_frame);
 		}
 		if (!processing && sub && !debug) {
 			sub.reset();
@@ -230,7 +233,7 @@ int main(int argc, char** argv) {
 	});
 
 	if (debug) {
-		sub = make_shared<ImageSubscriber>(client, "camera", handle_frame);
+		sub = make_shared<TypedSubscriber<Frame> >(client, "camera", handle_frame);
 	}
 
 	while (true) {
@@ -282,8 +285,10 @@ int main(int argc, char** argv) {
 				#endif
 
 			}
+			
 			if (localized) {
-				CameraExtrinsics loc;
+				CameraExtrinsics loc;				
+				loc.header.timestamp = time_current;
 				Rodrigues(localization->getCameraPosition().rotation, loc.rotation);
 				loc.translation = localization->getCameraPosition().translation;
 				location_publisher->send(loc);

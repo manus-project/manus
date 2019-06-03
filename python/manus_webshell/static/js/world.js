@@ -160,6 +160,7 @@ $.manus.world = {
             var transform = mat4.create();
 
             function callback(msg, data) {
+
                 mat4.identity(transform);
 
                 transform[0] = data.rotation[0][0];
@@ -173,9 +174,8 @@ $.manus.world = {
                 transform[10] = data.rotation[2][2];
 
                 transform[12] = data.translation[0][0];
-                transform[13] = data.translation[1][0];
-                transform[14] = data.translation[2][0];
-
+                transform[13] = data.translation[0][1];
+                transform[14] = data.translation[0][2];
 
                 transform = mat4.scale(mat4.create(), transform, vec3.fromValues(1, 1, -1)); // Flip Z axis
                 transform = cameraToWorld(transform); // Invert matrix
@@ -209,6 +209,7 @@ $.manus.world = {
 
                     //if (!image) return;
                     ctx.clearRect(0, 0, world.canvas.width, world.canvas.height);
+
                     parameters = lookAtParameters(transform);
 
                     world.scene.camera.position.x = parameters.eye[0];
@@ -316,6 +317,7 @@ $.manus.world = {
         var cameraProxy;
 
         function callback(msg, data) {
+            console.log(data);
             transform[0] = data.rotation[0][0];
             transform[1] = data.rotation[0][1];
             transform[2] = data.rotation[0][2];
@@ -327,8 +329,8 @@ $.manus.world = {
             transform[10] = data.rotation[2][2];
 
             transform[12] = data.translation[0][0];
-            transform[13] = data.translation[1][0];
-            transform[14] = data.translation[2][0];
+            transform[13] = data.translation[0][1];
+            transform[14] = data.translation[0][2];
 
             transform = mat4.scale(mat4.create(), transform, vec3.fromValues(1, 1, -1));  // Flip Z axis
             transform = cameraToWorld(transform); // Invert matrix
@@ -365,7 +367,6 @@ $.manus.world = {
     manipulator: function(world, manipulator, description) {
 
         var joints = [];
-        var jointMesh = Phoria.Util.generateUnitCube(10);
         var rootTransform = mat4.create();
         var parentJoint;
         var manipulatorRoot;
@@ -382,19 +383,6 @@ $.manus.world = {
             var overlay = undefined;
             var hover = undefined;
 
-            var joint = Phoria.Entity.create({
-                id : "Joint" + (v+1),
-                points: jointMesh.points,
-                edges: jointMesh.edges,
-                polygons: jointMesh.polygons,
-                style: {
-                    color: [53,126,189],
-                    drawmode: "wireframe",
-                    shademode: "plain",
-                    linewidth: 4,
-                }
-            });
-
             var jointContainer = Phoria.Entity.create({});
 
             switch (joints_description[v].type.toLowerCase()) {
@@ -403,8 +391,9 @@ $.manus.world = {
                 case "rotation": {
 
                     var segmentMesh = null;
+                    var jointMesh = null;
 
-                    if (a != 0) {
+                    if (a > 1) {
 
                         segmentMesh = Phoria.Util.generateCuboid({"scalex" : Math.max(1, a / 2),
                                  "scaley" : 10, "scalez" : 10, "offsetx" : - Math.max(1, a / 2),
@@ -416,6 +405,16 @@ $.manus.world = {
                              edges: [],
                              polygons: []
                         };
+                    }
+
+                    if (d > 1) {
+                         jointMesh = Phoria.Util.generateCuboid({"scalez" : Math.max(1, d / 2),
+                                 "scaley" : 10, "scalex" : 10, "offsetz" : - Math.max(1, d / 2),
+                                 "offsety" : 0, "offsetx": 0});
+
+                    } else {
+
+                         jointMesh = Phoria.Util.generateUnitCube(10);
 
                     }
 
@@ -430,6 +429,20 @@ $.manus.world = {
                             linewidth: 3,
                         }
                     });
+
+                    var joint = Phoria.Entity.create({
+                        id : "Joint" + (v+1),
+                        points: jointMesh.points,
+                        edges: jointMesh.edges,
+                        polygons: jointMesh.polygons,
+                        style: {
+                            color: [53,126,189],
+                            drawmode: "wireframe",
+                            shademode: "plain",
+                            linewidth: 4,
+                        }
+                    });
+
 
                     var overlay_points = [{"x": 0, "y": 0, "z": 0}];
                     var overlay_edges = [];
@@ -476,9 +489,26 @@ $.manus.world = {
                 }
                 case "gripper": {
 
-                    var segmentMesh = Phoria.Util.generateCuboid({"scalex" : 10,
-                             "scaley" : 30, "scalez" : d, "offsetx" : 0,
-                             "offsety" : 0, "offsetz": 10});
+                    jointMesh = Phoria.Util.generateUnitCube(10);
+
+                    var joint = Phoria.Entity.create({
+                        id : "Joint" + (v+1),
+                        points: jointMesh.points,
+                        edges: jointMesh.edges,
+                        polygons: jointMesh.polygons,
+                        style: {
+                            color: [53,126,189],
+                            drawmode: "wireframe",
+                            shademode: "plain",
+                            linewidth: 4,
+                        }
+                    });
+
+                    segmentMesh = {
+                             points: [],
+                             edges: [],
+                             polygons: []
+                        };
 
                     var segment = Phoria.Entity.create({
                         points: segmentMesh.points,

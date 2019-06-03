@@ -28,7 +28,7 @@ class Context(object):
         self.applications = {}
         self.loop = echolib.IOLoop()
 
-        self.client = echolib.Client()
+        self.client = echolib.Client(name="apps")
         self.loop.add_handler(self.client)
 
         self.control = AppCommandSubscriber(self.client, "apps.control", lambda x: self.control_callback(x))
@@ -272,7 +272,7 @@ def start_app(app):
 
     from manus.apps import AppCommandType, AppCommandPublisher, AppCommand
     loop = echolib.IOLoop()
-    client = echolib.Client()
+    client = echolib.Client(name="appstart")
     loop.add_handler(client)
 
     control = AppCommandPublisher(client, "apps.control")

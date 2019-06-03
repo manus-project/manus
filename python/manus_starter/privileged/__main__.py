@@ -47,7 +47,7 @@ if __name__ == '__main__':
     #signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
 
-    client = echolib.Client()
+    client = echolib.Client(name="privileged")
     loop.add_handler(client)
 
     control = PrivilegedCommandSubscriber(client, "privileged", control_callback)

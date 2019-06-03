@@ -154,6 +154,7 @@ class ManipulatorStateHandler(JsonHandler):
             self.set_status(400)
             self.finish('Unavailable')
             return
+        self.set_header('X-Timestamp', state.header.timestamp.isoformat())
         self.response = ManipulatorStateHandler.encode_state(state)
         self.write_json()
 

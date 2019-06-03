@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
 
     shared_ptr<SimulatedManipulator> manipulator = shared_ptr<SimulatedManipulator>(new SimulatedManipulator(string(argv[1]), 1));
 
-    SharedClient client = echolib::connect();
+    SharedClient client = echolib::connect(string(), "simulator");
 
     ManipulatorManager manager(client, manipulator);
 
