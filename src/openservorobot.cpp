@@ -265,6 +265,8 @@ bool OpenServoManipulator::process() {
 
   }
 
+  _state.header.timestamp = std::chrono::system_clock::now();
+
   return true;
 
 }

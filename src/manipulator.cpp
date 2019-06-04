@@ -250,6 +250,7 @@ void ManipulatorManager::update() {
     }
 
     if (manipulator->state().state != MANIPULATORSTATETYPE_PASSIVE && manipulator->state().state != MANIPULATORSTATETYPE_UNKNOWN) {
+        
         state_publisher->send(manipulator->state());
     }
 

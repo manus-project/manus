@@ -3,6 +3,7 @@
 #include <fstream>
 #include <memory>
 #include <cmath>
+#include <chrono>
 
 #include <echolib/client.h>
 //#include <echolib/opencv.h>
@@ -61,6 +62,8 @@ bool SimulatedManipulator::step(float time) {
     }
 
     _state.state = idle ? MANIPULATORSTATETYPE_PASSIVE : MANIPULATORSTATETYPE_ACTIVE;
+
+    _state.header.timestamp = std::chrono::system_clock::now();
 
     return idle;
 }
