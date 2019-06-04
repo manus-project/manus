@@ -43,7 +43,7 @@ string joint_type_string(JointType type) {
     return "unknown";
 }
 
-bool parse_joint (const YAML::Node& node, JointDescription& joint) {
+bool parse_joint(const YAML::Node& node, JointDescription& joint) {
     string type = node["type"].as<string>();
     if (type == "rotation") {
         joint.type = JOINTTYPE_ROTATION;
@@ -84,7 +84,7 @@ bool parse_joint (const YAML::Node& node, JointDescription& joint) {
         joint.type = JOINTTYPE_GRIPPER;
         joint.dh_theta = 0;
         joint.dh_alpha = 0;
-        joint.dh_d = node["grip"].as<float>();
+        joint.dh_d = 0;
         joint.dh_a = 0;
         joint.dh_min = node["min"].as<float>();
         joint.dh_max = node["max"].as<float>();
@@ -250,7 +250,7 @@ void ManipulatorManager::update() {
     }
 
     if (manipulator->state().state != MANIPULATORSTATETYPE_PASSIVE && manipulator->state().state != MANIPULATORSTATETYPE_UNKNOWN) {
-        
+
         state_publisher->send(manipulator->state());
     }
 

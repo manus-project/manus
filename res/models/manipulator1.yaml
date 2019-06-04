@@ -51,4 +51,3 @@ joints:
   - type: "gripper"
     min: 0
     max: 1
-    grip: 70
