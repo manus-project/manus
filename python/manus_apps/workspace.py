@@ -18,17 +18,16 @@ class Camera(object):
         self.image = None
         self.location = None
         self.parameters = None
-        self.workspace = workspace
-        self.image_sub = echocv.ImageSubscriber(
-            workspace.client, "%s.image" % name, lambda x: self._image_callback(x))
+        self.workspace = workspace        
+        self.frame_sub = echocv.FrameSubscriber(workspace.client, "%s.image" % self.name, lambda x: self._frame_callback(x))
         self.parameters_sub = echocv.CameraIntrinsicsSubscriber(
             workspace.client, "%s.parameters" % name, lambda x: self._parameters_callback(x))
         self.location_sub = echocv.CameraExtrinsicsSubscriber(
             workspace.client, "%s.location" % name, lambda x: self._location_callback(x))
         self.name = name
 
-    def _image_callback(self, image):
-        self.image = image
+    def _frame_callback(self, frame):
+        self.image = frame.image
 
     def _location_callback(self, location):
         self.location = location
