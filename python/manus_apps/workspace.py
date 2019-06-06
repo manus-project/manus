@@ -19,7 +19,7 @@ class Camera(object):
         self.location = None
         self.parameters = None
         self.workspace = workspace        
-        self.frame_sub = echocv.FrameSubscriber(workspace.client, "%s.image" % self.name, lambda x: self._frame_callback(x))
+        self.frame_sub = echocv.FrameSubscriber(workspace.client, "%s.image" % name, lambda x: self._frame_callback(x))
         self.parameters_sub = echocv.CameraIntrinsicsSubscriber(
             workspace.client, "%s.parameters" % name, lambda x: self._parameters_callback(x))
         self.location_sub = echocv.CameraExtrinsicsSubscriber(
@@ -45,7 +45,7 @@ class Camera(object):
         if not self.location:
             return np.identity(3)
 
-        transform = np.concatenate((self.location.rotation, self.location.translation), axis=1)
+        transform = np.concatenate((self.location.rotation, np.transpose(self.location.translation)), axis=1)
         projective = np.matmul(self.parameters.intrinsics, transform)
         self.homography = projective[:, [0, 1, 3]]
         self.homography = self.homography / self.homography[2, 2]
