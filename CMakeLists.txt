@@ -44,7 +44,7 @@ FIND_PACKAGE(OpenServo REQUIRED)
 FIND_PACKAGE(yaml-cpp REQUIRED)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src/ ${CMAKE_CURRENT_BINARY_DIR}/messages/ ${echolib_INCLUDE_DIRS} include/)
 
-ADD_EXECUTABLE(manus_simulator_manipulator src/manipulator.cpp src/simulation.cpp)
+ADD_EXECUTABLE(manus_simulator_manipulator src/manipulator.cpp src/simulation.cpp src/files.cpp)
 TARGET_LINK_LIBRARIES(manus_simulator_manipulator ${echolib_LIBRARIES} ${YAML_CPP_LIBRARIES})
 add_dependencies(manus_simulator_manipulator manus_messages)
 
@@ -53,7 +53,7 @@ IF (BUILD_MPSSE)
     INCLUDE_DIRECTORIES(${LIBFTDI_INCLUDE_DIRS})
 ENDIF(BUILD_MPSSE)
 
-ADD_EXECUTABLE(manus_openservo_manipulator src/manipulator.cpp src/openservorobot.cpp src/debug.cpp)
+ADD_EXECUTABLE(manus_openservo_manipulator src/manipulator.cpp src/openservorobot.cpp src/debug.cpp src/files.cpp)
 TARGET_LINK_LIBRARIES(manus_openservo_manipulator ${echolib_LIBRARIES} ${OpenServo_LIBRARIES} ${YAML_CPP_LIBRARIES} ${LIBFTDI_LIBRARIES})
 add_dependencies(manus_openservo_manipulator manus_messages)
 
