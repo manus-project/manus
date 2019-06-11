@@ -629,7 +629,8 @@ $.manus.world = {
             },
             add : function(position, orientation, scale, color) {
                 mesh = Phoria.Util.generateCuboid({"scalex" : scale[0] / 2,
-                         "scaley" : scale[1] / 2, "scalez" : scale[2] / 2}); // "offsetx" : 10, "offsetz" : 10, "offsety" : 10
+                         "scaley" : scale[1] / 2, "scalez" : scale[2] / 2});
+
                 var marker = Phoria.Entity.create({
                     points: mesh.points,
                     edges: mesh.edges,
@@ -642,7 +643,7 @@ $.manus.world = {
                     }
                 });
 
-                marker.identity().translate(position).rotateZ(orientation[2] / Math.PI * 180.0); //.translate([-scale[0]/4, -scale[1]/4, -scale[2]/4]);
+                marker.identity().translate(position).rotateZ(orientation[2]); //.translate([-scale[0]/4, -scale[1]/4, -scale[2]/4]);
                 markers.children.push(marker);
             }
         };
