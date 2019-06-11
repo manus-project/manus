@@ -21,8 +21,7 @@ typedef struct MotorData {
 class OpenServoManipulator : public Manipulator
 {
 public:
-	OpenServoManipulator(const string& device,
-    const string& model_file, const string& bind_file);
+	OpenServoManipulator(const string& device, const string& model, const string& servos);
 	~OpenServoManipulator();
 
 	virtual int size();
@@ -35,7 +34,7 @@ public:
 
 private:
 
-	virtual int load_description(const string& model_file, const string& bind_file);
+	virtual int load_description(const string& model, const string& servos);
 
 	struct ServoRuntimeData
 	{
@@ -48,7 +47,7 @@ private:
 
   ManipulatorDescription _description;
   ManipulatorState _state;
-  std::vector<MotorData> servos;
+  std::vector<MotorData> _servos;
   int read_rate;
 
   openservo::ServoBus bus;

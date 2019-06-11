@@ -25,7 +25,7 @@ CodeParser = {
 from manus_apps.workspace import Workspace
 from manus_apps.blocks import Block, block_color_name
 
-workspace = Workspace()
+workspace = Workspace(bounds=[(100, -200), (100, 200), (370, 200), (370, -200)])
 `
     },
 

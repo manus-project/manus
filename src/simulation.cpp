@@ -12,10 +12,15 @@ using namespace std;
 using namespace echolib;
 
 #include "simulation.h"
+#include "files.h"
 
-SimulatedManipulator::SimulatedManipulator(const string& filename, float speed) : speed(speed) {
+SimulatedManipulator::SimulatedManipulator(const string& model, float speed) : speed(speed) {
 
-    if (!parse_description(filename, _description)) {
+    string model_path = find_file(model);
+
+    cout << model_path << endl;
+
+    if (!parse_description(model_path, _description)) {
         throw ManipulatorException("Unable to parse manipulator model description");
     }
 
@@ -105,12 +110,13 @@ ManipulatorState SimulatedManipulator::state() {
 
 int main(int argc, char** argv) {
 
-    if (argc < 2) {
-        cerr << "Missing manipulator description file path." << endl;
-        return -1;
-    }
+    string description(get_env("MANUS_MANIPULATOR_MODEL", "manipulator.yaml"));
 
-    shared_ptr<SimulatedManipulator> manipulator = shared_ptr<SimulatedManipulator>(new SimulatedManipulator(string(argv[1]), 1));
+    if (argc > 1) {
+        description = string(argv[1]);
+    }  
+
+    shared_ptr<SimulatedManipulator> manipulator = shared_ptr<SimulatedManipulator>(new SimulatedManipulator(description, 1));
 
     SharedClient client = echolib::connect(string(), "simulator");
 

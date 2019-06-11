@@ -5,6 +5,8 @@
 
 #include "openservorobot.h"
 
+#include "files.h"
+
 #include <yaml-cpp/yaml.h>
 
 #define MEDIAN_WINDOW 20
@@ -40,7 +42,7 @@ OpenServoManipulator::OpenServoManipulator(const string& device,
 
   load_description(model_file, bind_file);
 
-  if (num < servos.size())
+  if (num < _servos.size())
     throw ManipulatorException("Not enough servos detected.");
 
 }
@@ -92,13 +94,17 @@ bool parse_bindings(const string& filename, ManipulatorDescription& manipulator,
 }
 
 
-int OpenServoManipulator::load_description(const string& modelfile, const string& bindfile) {
+int OpenServoManipulator::load_description(const string& model, const string& servos) {
 
-  if (!parse_description(modelfile, _description)) {
+  string model_path = find_file(model);
+  string servos_path = find_file(servos);
+
+
+  if (!parse_description(model_path, _description)) {
     throw ManipulatorException("Unable to parse manipulator model description");
   }
 
-  if (!parse_bindings(bindfile, _description, servos)) {
+  if (!parse_bindings(servos_path, _description, _servos)) {
     throw ManipulatorException("Unable to parse manipulator bindings description");
   }
 
@@ -110,24 +116,24 @@ int OpenServoManipulator::load_description(const string& modelfile, const string
     if (_description.joints[i].type == JOINTTYPE_FIXED)
       continue;
 
-    if (j >= servos.size())
+    if (j >= _servos.size())
       throw ManipulatorException("Not enough motors in calibration data.");
 
     runtime_data.resize(runtime_data.size() + 1);
-    runtime_data[runtime_data.size() - 1].address = servos[j].servo_id;
-    servos[j].joint_id = i;
-    _description.joints[i].dh_min = scale_servo_to_joint(servos[j], servos[j].AD_min);
-    _description.joints[i].dh_max = scale_servo_to_joint(servos[j], servos[j].AD_max);
+    runtime_data[runtime_data.size() - 1].address = _servos[j].servo_id;
+    _servos[j].joint_id = i;
+    _description.joints[i].dh_min = scale_servo_to_joint(_servos[j], _servos[j].AD_min);
+    _description.joints[i].dh_max = scale_servo_to_joint(_servos[j], _servos[j].AD_max);
 
     cout << "Verifying min-max data." << endl;
-    ServoHandler sv = bus.find(servos[j].servo_id);
+    ServoHandler sv = bus.find(_servos[j].servo_id);
 
-    if (sv->getMinSeek() != servos[j].AD_min || sv->getMaxSeek() != servos[j].AD_max) {
+    if (sv->getMinSeek() != _servos[j].AD_min || sv->getMaxSeek() != _servos[j].AD_max) {
 
       cout << "Detected incorrect parameters, writing min-max data to motor " << i << endl;
       sv->unlock();
-      sv->set("seek.max", servos[j].AD_max);
-      sv->set("seek.min", servos[j].AD_min);
+      sv->set("seek.max", _servos[j].AD_max);
+      sv->set("seek.min", _servos[j].AD_min);
       bus.update();
       sv->registersCommit();
     }
@@ -137,7 +143,7 @@ int OpenServoManipulator::load_description(const string& modelfile, const string
 
   cout << "Joints: " << _description.joints.size() << " Motors: " << runtime_data.size() << endl;
 
-  if (j != servos.size())
+  if (j != _servos.size())
     throw ManipulatorException("Unassigned motors remaining.");
 
   return 1;
@@ -161,7 +167,7 @@ bool OpenServoManipulator::move(int joint, float position, float speed) {
   if (!sv)
     return false;
 
-  float pos = ::round(scale_joint_to_servo(servos[motor], position));
+  float pos = ::round(scale_joint_to_servo(_servos[motor], position));
 
   sv->setSeekPosition((int)pos);
 
@@ -259,8 +265,8 @@ bool OpenServoManipulator::process() {
       sorted_goal.begin() + sorted_goal.size() / 2, sorted_goal.end());
     float goal = sorted_goal[sorted_goal.size() / 2];
 
-    _state.joints[q].position = scale_servo_to_joint(servos[motor], position);
-    _state.joints[q].goal = scale_servo_to_joint(servos[motor], goal);
+    _state.joints[q].position = scale_servo_to_joint(_servos[motor], position);
+    _state.joints[q].goal = scale_servo_to_joint(_servos[motor], goal);
     _state.joints[q].speed = 1;
 
   }
@@ -277,12 +283,17 @@ using namespace std::chrono;
 
 int main(int argc, char** argv) {
 
-  if (argc < 3) {
-    cerr << "Missing manipulator description and binding file paths." << endl;
-    return -1;
-  }
-
+  string model(get_env("MANUS_MANIPULATOR_MODEL", "manipulator.yaml"));
+  string servos(get_env("MANUS_MANIPULATOR_SERVOS", "servos.yaml"));
   string device;
+
+  if (argc > 1) {
+    model = string(argv[1]);
+  }  
+
+  if (argc > 2) {
+    servos = string(argv[2]);
+  } 
 
   if (argc > 3) {
     device = string(argv[3]);
@@ -294,7 +305,7 @@ int main(int argc, char** argv) {
 
     shared_ptr<OpenServoManipulator> manipulator =
       shared_ptr<OpenServoManipulator>(new OpenServoManipulator(
-                                         device, string(argv[1]), string(argv[2])));
+                                         device, model, servos));
 
     SharedClient client = echolib::connect(string(), "manipulator");
     ManipulatorManager manager(client, manipulator);
