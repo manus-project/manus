@@ -203,7 +203,7 @@ Program = {
 
     var stop_button = $.manus.widgets.fancybutton({
       callback : function() {  
-          $.ajax('/api/apps?run=').done(function(data) {});
+          postJSON('/api/apps', {}, function(data) {});
       }, icon: "stop", tooltip: "Stop"
     }).addClass("button-runtime").hide();
 
@@ -385,22 +385,16 @@ Program = {
         code = Program.python.ace.getValue();
     else
         code = CodeParser.prepare_std_code(Blockly.Python.workspaceToCode(Program.blockly.workspace));
-    $.ajax({
-        'type': 'POST',
-        'url': '/api/run',
-        'contentType': 'application/json',
-        'data': JSON.stringify({code: code, environment: "python"}),
-        'dataType': 'json'
-    }).done(function(data) {
-        if (data.status != "ok"){
-            console.log("Code execution failed. " + data.status + ": " + data.description);
-        } else {
-          Program.running_app = data.identifier;
-        }
-    }).fail(function(err) {
-        Interface.notification("Error", err);
+        postJSON('/api/apps', {code: code, environment: "python"}, function(data) {
+          if (data.status != "ok") {
+              console.log("Code execution failed. " + data.status + ": " + data.description);
+          } else {
+              Program.running_app = data.identifier;
+          }
+        }).fail(function(err) {
+            Interface.notification("Error", err);
 
-    });
+        });
   },
 
   _filemanager: function(container, type, callback) {

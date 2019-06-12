@@ -95,6 +95,7 @@ class CameraLocationHandler(JsonHandler):
         }
 
     def push_camera_location(self, camera, location):
+        print(location.header.timestamp)
         self.set_header('X-Timestamp', location.header.timestamp.isoformat())
         self.response = CameraLocationHandler.encode_location(location)
         self.write_json()
@@ -115,16 +116,40 @@ class AppsHandler(JsonHandler):
         self._apps = apps
 
     def get(self):
-        run = self.request.json.get("run", None)
-        if not run is None:
-            self._apps.run(run[0])
-            self.response = {"result" : "ok"}
-            self.write_json()
         active = self._apps.active()
         self.response = {"list" : self._apps.list()}
         if not active is None:
             self.response["active"] = active.id
         self.write_json()
+
+    def post(self):
+        if "run" in self.request.json:            
+            self.response = {"result" : "ok"}
+            self.write_json()
+            self._apps.run(self.request.json["run"])
+            return
+        if "code" in self.request.json:
+            try:
+                generator = AppGenerator("/tmp")
+                generator.generate(self.request.json[u"code"], tempfile.gettempdir())
+                self.response = {
+                    "status" : "ok",
+                    "identifier": app_identifier("/tmp/generated_app.app")
+                }
+                self.write_json()
+                self._apps.run("/tmp/generated_app.app")
+            except Exception as e:
+                self.response = {
+                    "status" : "error",
+                    "description" : e.message
+                }        
+                self.write_json()
+            return
+
+        self._apps.run("")
+        self.response = {"result" : "ok"}
+        self.write_json()
+
 
     def check_etag_header(self):
         return False
@@ -304,35 +329,6 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
     def on_app_input(self, identifier, lines):
         self.send_message({"channel": "apps", "action" : "input", "identifier": identifier, "lines" : lines})
 
-class ProgramHandler(JsonHandler):
-
-    def __init__(self, application, request, apps):
-        super(ProgramHandler, self).__init__(application, request)
-        self._apps = apps
-
-    def get(self):
-        self.response = {
-            "status" : "error",
-            "note" : "You should use POST request"
-        }
-        self.write_json()
-
-    def post(self):
-        self.response = {
-            "status" : "ok",
-        }
-        try:
-            generator = AppGenerator("/tmp")
-            generator.generate(self.request.json[u"code"], tempfile.gettempdir())
-            self._apps.run("/tmp/generated_app.app")
-            self.response["identifier"] = app_identifier("/tmp/generated_app.app")
-        except Exception as e:
-            self.response = {
-                "status" : "error",
-                "description" : e.message
-            }
-       
-        self.write_json()
 
 def on_shutdown():
     tornado.ioloop.IOLoop.instance().stop()
@@ -405,7 +401,6 @@ def main():
         apps = AppsManager(client)
         privileged = PrivilegedClient(client)
         #handlers.append((r'/api/login', LoginHandler, {"users" : None}))
-        handlers.append((r'/api/run', ProgramHandler, {"apps" : apps}))
         handlers.append((r'/api/apps', AppsHandler, {"apps" : apps}))
         handlers.append((r'/api/privileged', PrivilegedHandler, {"privileged": privileged}))
         handlers.append((r'/api/storage', StorageHandler, {"storage" : storage}))
@@ -422,8 +417,8 @@ def main():
             ApiWebSocket.distribute_message({"channel": "markers", "action" : "overwrite", "markers" : data, "overlay" : markers.owner})
 
         markers_subsriber = MarkersSubscriber(client, "markers", markers_callback)
-
-        application = tornado.web.Application(handlers, cookie_secret=os.getenv('MANUS_COOKIE_SECRET', "manus"))
+ 
+        application = tornado.web.Application(handlers, cookie_secret=os.getenv('MANUS_COOKIE_SECRET', "manus"), debug=bool(os.getenv('MANUS_DEBUG', "false")))
 
         server = tornado.httpserver.HTTPServer(application)
         server.listen(int(os.getenv('MANUS_PORT', "8080")))

@@ -9,7 +9,9 @@
 },
 "environment" : {
 	"MANUS_ROOT" : "/usr",
-	"ECHOLIB_SOCKET" : "/tmp/echo.sock"
+	"ECHOLIB_SOCKET" : "/tmp/echo.sock",
+    "MANUS_MANIPULATOR_MODEL" : "manipulator1.yaml",
+    "MANUS_PATH" : "/etc/manus/:${MANUS_ROOT}/share/manus/models"
 },
 "plugins" : ["ignition.plugin.Wait", "ignition.plugin.Debug", "echolib.ignition.Mapping"],
 "programs" : {
@@ -52,7 +54,7 @@
         }
     },
     "manipulator": {
-		"command": "manus_openservo_manipulator manipulator1.yaml /etc/calibration.yaml /dev/i2c-1",
+		"command": "manus_openservo_manipulator",
 		"depends": ["echo"],
 		"directory" : "${MANUS_ROOT}/share/manus/models",
 		"restart": false,
@@ -70,7 +72,10 @@
         "required" : false,
         "restart" : true,
 		"depends": ["manipulator", "planner"],
-		"environment" : {"MANUS_STORAGE" : "/var/local/manus/storage.db", "MANUS_STORAGE_DEFAULTS" : "${MANUS_ROOT}/share/manus/defaults"}
+		"environment" : {
+            "MANUS_STORAGE" : "/var/local/manus/storage.db", 
+            "MANUS_STORAGE_DEFAULTS" : "${MANUS_ROOT}/share/manus/defaults"
+        }
     },
     "portmap" : {
         "command" : "python -u -m manus_starter.ports 8080:80",
@@ -96,7 +101,9 @@
     "applications": {
         "command": "python -u -m manus_apps",
 		"restart": true,
-		"environment" : {"APPS_PATH" : "${MANUS_ROOT}/share/manus/apps"},
+		"environment" : {
+            "APPS_PATH" : "${MANUS_ROOT}/share/manus/apps"
+        },
 		"depends" : ["echo"]
     }
 }

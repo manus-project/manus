@@ -147,7 +147,7 @@ class Workspace(object):
 
     def __init__(self, bounds=None):
         self.loop = echolib.IOLoop()
-        self.client = echolib.Client()
+        self.client = echolib.Client(name=os.environ.get("APPLICATION_NAME", ""))
         self.loop.add_handler(self.client)
         self.bounds = bounds
         self.camera = Camera(self, "camera0")

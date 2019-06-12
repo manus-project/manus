@@ -29,6 +29,18 @@ function postJSON(url, data, callback) {
     });
 };
 
+function getJSON(url, data, callback) {
+    return jQuery.ajax({
+        'type': 'GET',
+        'url': url,
+        'contentType': 'application/json',
+        'data': JSON.stringify(data),
+        'dataType': 'json',
+        'success': callback
+    });
+};
+
+
 RemoteStorage = {
     get : function(key, callback) {
         $.ajax('/api/storage?key=' + key).done(function(data) {
@@ -348,12 +360,12 @@ function appsList() {
         tools.append($('<i />').addClass('tool glyphicon glyphicon-play').click(function() {
             if ($(this).hasClass('glyphicon-play')) {
 
-                $.ajax('/api/apps?run=' + item.values().identifier).done(function(data) {});
+                postJSON('/api/apps', {"run" : item.values().identifier},function(data) {});
 
             } else {
 
-                $.ajax('/api/apps?run=').done(function(data) {});
-
+                postJSON('/api/apps', {"run" : ""},function(data) {});
+                
             }
             return false;
         }).tooltip({title: "Run/Stop", delay: 1}));
