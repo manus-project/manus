@@ -288,15 +288,15 @@ int main(int argc, char** argv) {
   string device;
 
   if (argc > 1) {
-    model = string(argv[1]);
+    device = string(argv[1]);
   }  
 
   if (argc > 2) {
-    servos = string(argv[2]);
+    model = string(argv[2]);
   } 
 
   if (argc > 3) {
-    device = string(argv[3]);
+    servos = string(argv[3]);
   }
 
   cout << "Starting OpenServo manipulator" << endl;

@@ -43,7 +43,7 @@ joints:
     dh:
       theta: 0
       alpha: 0
-      d: 0
+      d: 80
       a: 0
     min: -90
     max: 90

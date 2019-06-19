@@ -186,14 +186,18 @@ int main(int argc, char** argv) {
 
 	string blobs_file;
 
+	string scene_file(argv[1]);
+
+	cout << "AR scene file: " << scene_file << endl;
+
 	if (argc > 2) {
 		blobs_file = string(argv[2]);
 	}
 
-	string scene_file(argv[1]);
 
 	if (!blobs_file.empty()) {
 		read_blobs(blobs_file.c_str());
+		cout << "Blobs file: " << blobs_file << endl;
 	}
 
 #ifdef MANUS_DEBUG

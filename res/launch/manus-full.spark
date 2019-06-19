@@ -10,8 +10,8 @@
 "environment" : {
 	"MANUS_ROOT" : "/usr",
 	"ECHOLIB_SOCKET" : "/tmp/echo.sock",
-    "MANUS_MANIPULATOR_MODEL" : "manipulator1.yaml",
-    "MANUS_PATH" : "/etc/manus/:${MANUS_ROOT}/share/manus/models"
+    "MANUS_PATH" : "/etc/manus/:${MANUS_ROOT}/share/manus/models",
+    "MANUS_MANIPULATOR_MODEL" : "manipulator1.yaml"
 },
 "plugins" : ["ignition.plugin.Wait", "ignition.plugin.Debug", "echolib.ignition.Mapping"],
 "programs" : {
@@ -42,7 +42,7 @@
         }
     },
     "artracker" : {
-        "command" : "manus_artrack board1.yml",
+        "command" : "manus_artrack board1.yml blobs1.yml",
         "directory" : "${MANUS_ROOT}/share/manus/arboards",
         "required" : false,
         "restart" : true,
@@ -54,7 +54,7 @@
         }
     },
     "manipulator": {
-		"command": "manus_openservo_manipulator",
+		"command": "manus_openservo_manipulator /dev/i2c-1",
 		"depends": ["echo"],
 		"directory" : "${MANUS_ROOT}/share/manus/models",
 		"restart": false,
