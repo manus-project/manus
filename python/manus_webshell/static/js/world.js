@@ -649,19 +649,52 @@ $.manus.world = {
         };
 
     },
-    grid: function(world, position) {
-        var plane = Phoria.Util.generateTesselatedPlane(16,16,0,500);
+    grid: function(world, vsegs, hsegs, size, position) {
+
+        var points = [], edges = [], polys = [],
+            hinc = size, vinc = size, c = 0;
+        for (var i=0, x, y = vsegs * vinc /2 ; i<=vsegs; i++) {
+         x = -hsegs * hinc /2;
+         for (var j=0; j<=hsegs; j++)
+         {
+            // generate a row of points
+            points.push( {x: x, y: y, z: 0} );
+            
+            // edges
+            if (j !== 0)
+            {
+               edges.push( {a:c, b:c-1} );
+            }
+            if (i !== 0)
+            {
+               edges.push( {a:c, b:c-hsegs-1} );
+            }
+
+            if (i !== 0 && j !== 0)
+            {
+               // generate quad
+               var p = {vertices:[c-hsegs-1, c, c-1, c-hsegs-2]};
+               polys.push(p);
+            }
+            
+            x += hinc;
+            c++;
+         }
+         y -= vinc;
+        }
+
+
         var wireframe = Phoria.Entity.create({
-            points: plane.points,
-            edges: plane.edges,
-            polygons: plane.polygons,
+            points: points,
+            edges: edges,
+            polygons: polys,
             style: {
                 drawmode: "wireframe",
                 shademode: "plain",
                 linewidth: 2,
                 objectsortmode: "back"
             }
-        }).translateX(250).rotateX(90 * Phoria.RADIANS).translate(position);
+        }).translate(position);
 
         world.scene.graph.push(wireframe);
 

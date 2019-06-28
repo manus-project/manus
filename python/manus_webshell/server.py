@@ -95,7 +95,6 @@ class CameraLocationHandler(JsonHandler):
         }
 
     def push_camera_location(self, camera, location):
-        print(location.header.timestamp)
         self.set_header('X-Timestamp', location.header.timestamp.isoformat())
         self.response = CameraLocationHandler.encode_location(location)
         self.write_json()
@@ -244,7 +243,7 @@ class StorageHandler(tornado.web.RequestHandler):
             ctype = self.request.headers.get('Content-Type')
         if len(self.request.body) == 0:
             try:
-                print "Deleting %s" % key
+                print("Deleting %s" % key)
                 self._storage.delete(key)
                 StorageHandler.keys.remove(key)
                 ApiWebSocket.distribute_message({"channel": "storage", "action" : "delete", "key" : key})
@@ -255,7 +254,7 @@ class StorageHandler(tornado.web.RequestHandler):
             data = "%s;%s" % (ctype, self.request.body)
             self._storage.put(key, data)
             StorageHandler.keys.add(key)
-            print "Updating %s, content length %d bytes" % (key, len(self.request.body))
+            print("Updating %s, content length %d bytes" % (key, len(self.request.body)))
             ApiWebSocket.distribute_message({"channel": "storage", "action" : "update", "key" : key, "content" : ctype})
         self.finish()
         
@@ -332,7 +331,7 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
 
 def on_shutdown():
     tornado.ioloop.IOLoop.instance().stop()
-    print "Stopping gracefully"
+    print("Stopping gracefully")
 
 def main():
 
@@ -382,8 +381,8 @@ def main():
             handlers.append((r'/api/camera/describe', CameraDescriptionHandler, {"camera": camera}))
             handlers.append((r'/api/camera/position', CameraLocationHandler, {"camera": camera}))
             cameras.append(camera)
-        except Exception, e:
-            print traceback.format_exc()
+        except Exception as e:
+            print(traceback.format_exc())
 
         try:
             manipulator = manus.Manipulator(client, "manipulator0")
@@ -394,8 +393,8 @@ def main():
             handlers.append((r'/api/manipulator/safe', ManipulatorMoveSafeHandler, {"manipulator": manipulator}))
             handlers.append((r'/api/manipulator/trajectory', ManipulatorTrajectoryHandler, {"manipulator": manipulator}))
             manipulators.append(manipulator)
-        except Exception, e:
-            print traceback.format_exc()
+        except Exception as e:
+            print(traceback.format_exc())
     
         #handlers.append((r'/api/markers', MarkersStorageHandler))
         apps = AppsManager(client)
@@ -446,15 +445,15 @@ def main():
             tornado_loop.start()
         except KeyboardInterrupt:
             pass
-        except Exception, err:
-            print traceback.format_exc()
+        except Exception as err:
+            print(traceback.format_exc())
 
         echocv.tornado.uninstall_client(tornado_loop, client)
 
         flush_database()
 
-    except Exception, e:
-        print traceback.format_exc()
+    except Exception as e:
+        print(traceback.format_exc())
 
     logger.info("Stopping %s webshell" % manus.NAME)
     storage.close()

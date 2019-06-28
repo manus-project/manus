@@ -256,13 +256,27 @@ Blockly.Blocks['manus_retrieve_color'] = {
 Blockly.Blocks['manus_retrieve_coordinate'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("get")
+        .appendField("get coordinate")
         .appendField(new Blockly.FieldDropdown([["x","x"], ["y","y"], ["z","z"]]), "coordinate_dropdown")
         .appendField("from")
         .appendField(new Blockly.FieldVariable(null), "varname");
     this.setOutput(true, null);
     this.setColour(230);
     this.setTooltip('Retrieves individual coordinate of a given object.');
+    this.setHelpUrl('');
+  }
+};
+
+Blockly.Blocks['manus_retrieve_rotation'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("get rotation")
+        .appendField(new Blockly.FieldDropdown([["x","x"], ["y","y"], ["z","z"]]), "coordinate_dropdown")
+        .appendField("from")
+        .appendField(new Blockly.FieldVariable(null), "varname");
+    this.setOutput(true, null);
+    this.setColour(230);
+    this.setTooltip('Retrieves individual rotation of a given object.');
     this.setHelpUrl('');
   }
 };

@@ -441,7 +441,7 @@ function initializeTabs() {
 
     var viewer = $.manus.world.viewer({});
     $('#viewer').append(viewer.wrapper);
-    $.manus.world.grid(viewer, vec3.fromValues(100, 0, 0));
+    $.manus.world.grid(viewer, 40, 27, 10, vec3.fromValues(230, 0, 0));
 
     var updateViewer = function() {
         viewer.resize($('#viewer').width(), $('#viewer').width() * 0.75);

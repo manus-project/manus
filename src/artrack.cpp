@@ -25,7 +25,7 @@ bool debug = false;
 
 Ptr<CameraModel> model;
 Ptr<Scene> scene;
-chrono::system_clock::time_point time_current;
+Header header_current;
 Mat image_current;
 Mat image_gray;
 Ptr<BackgroundSubtractorMOG2> scene_model;
@@ -78,7 +78,7 @@ void handle_frame(shared_ptr<Frame> frame) {
 	if (frame->image.empty())
 		return;
 
-	time_current = frame->header.timestamp;
+	header_current = frame->header;
 	image_current = frame->image;
 
 }
@@ -113,7 +113,13 @@ void read_blobs(const char* file) {
 
 }
 
-SharedLocalization improveLocalizationWithKeypointBlobs(SharedLocalization localization, SharedCameraModel camera) {
+#ifdef MANUS_DEBUG
+SharedLocalization improveLocalizationWithKeypointBlobs(SharedLocalization localization, SharedCameraModel camera, Mat debug = Mat())
+#else
+SharedLocalization improveLocalizationWithKeypointBlobs(SharedLocalization localization, SharedCameraModel camera) 
+#endif
+{
+
 	vector<Point2f> estimates;
 
 	projectPoints(blobs, localization->getCameraPosition().rotation, localization->getCameraPosition().translation, 
@@ -152,6 +158,15 @@ SharedLocalization improveLocalizationWithKeypointBlobs(SharedLocalization local
 
 				imagePoints.push_back(points[j]);
 				objectPoints.push_back(blobs[i]);
+
+				#ifdef MANUS_DEBUG
+				if (!debug.empty()) {
+					circle(debug, estimates[i], 3, Scalar(255, 255, 0));
+					circle(debug, points[j], 3, Scalar(255, 0, 0));
+					line(debug, estimates[i], points[j], Scalar(0, 255, 255), 1);
+				}
+				#endif
+
 			}
 
 		}
@@ -164,12 +179,18 @@ SharedLocalization improveLocalizationWithKeypointBlobs(SharedLocalization local
 
 		Mat rotation, translation;
 
-		solvePnPRansac(objectPoints, imagePoints, camera->getIntrinsics(), camera->getDistortion(), rotation, translation);
+		vector<int> inliers;
+
+		solvePnPRansac(objectPoints, imagePoints, camera->getIntrinsics(), camera->getDistortion(), rotation, translation, false, 200, 4, imagePoints.size(), inliers);
 
 		rotation.convertTo(position.rotation, CV_32F);
 		translation.convertTo(position.translation, CV_32F);
 
-		localization = Ptr<Localization>(new Localization(0, position));
+		float err = cv::norm(localization->getCameraPosition().translation, position.translation);
+
+		// Some heuristic criteria
+		if (err < 100 && inliers.size() > imagePoints.size() / 2)
+			localization = Ptr<Localization>(new Localization(0, position));
 
 	}
 
@@ -207,6 +228,8 @@ int main(int argc, char** argv) {
 
 	bool localized = false;
 
+	CameraExtrinsics last_location;
+
 	force_update_threshold = 100;
 	force_update_counter = force_update_threshold;
 
@@ -234,6 +257,7 @@ int main(int argc, char** argv) {
 		if (!processing && sub && !debug) {
 			sub.reset();
 		}
+
 	});
 
 	if (debug) {
@@ -271,13 +295,15 @@ int main(int argc, char** argv) {
 
 				if (blobs.size() > 0 && localized) {
 
+					#ifdef MANUS_DEBUG
+					localization = improveLocalizationWithKeypointBlobs(localization, parameters, debug_image);
+					#else
 					localization = improveLocalizationWithKeypointBlobs(localization, parameters);
-
+					#endif
 				}
 
 				#ifdef MANUS_DEBUG
 				if (debug && localized) {
-
 					localization->draw(debug_image, parameters);
 				}
 				#endif
@@ -290,12 +316,11 @@ int main(int argc, char** argv) {
 
 			}
 			
-			if (localized) {
-				CameraExtrinsics loc;				
-				loc.header.timestamp = time_current;
-				Rodrigues(localization->getCameraPosition().rotation, loc.rotation);
-				loc.translation = localization->getCameraPosition().translation;
-				location_publisher->send(loc);
+			if (localized) {		
+				last_location.header = header_current;
+				Rodrigues(localization->getCameraPosition().rotation, last_location.rotation);
+				last_location.translation = localization->getCameraPosition().translation;
+				location_publisher->send(last_location);
 			}
 
 			image_current.release();

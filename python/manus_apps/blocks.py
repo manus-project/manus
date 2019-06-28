@@ -80,6 +80,10 @@ class Block(object):
         mapping = {"x" : 0, "y" : 1, "z" : 2}
         return self.position[mapping[coordinate]]
 
+    def __rotation__(self, coordinate):
+        mapping = {"x" : 0, "y" : 1, "z" : 2}
+        return self.rotation[mapping[coordinate]]
+
 class SavedCamera(object):
 
     def __init__(self, prefix):

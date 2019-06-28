@@ -3,7 +3,7 @@
 # import the necessary packages
 import numpy as np
 import cv2
-import sys
+import sys, os
 from manus.messages import JointType, PlanStateType, Marker, Markers, MarkersPublisher, MarkerOperation
 import manus
 import echolib

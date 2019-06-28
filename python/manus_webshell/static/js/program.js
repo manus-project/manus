@@ -21,7 +21,7 @@ CodeParser = {
 
     std_code_prepend: function (){
         var tab = CodeParser.tab();
-        return `import manus
+        return `import math, manus
 from manus_apps.workspace import Workspace
 from manus_apps.blocks import Block, block_color_name
 

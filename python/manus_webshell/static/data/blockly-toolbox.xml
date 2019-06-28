@@ -15,6 +15,7 @@
     <block type="manus_position_vector"></block>  
     <block type="manus_position_vector_var"></block>  
     <block type="manus_retrieve_coordinate"></block>   
+    <block type="manus_retrieve_rotation"></block>   
   </category>  
   <category name="Logic" colour="210">  
     <block type="controls_if"></block>  

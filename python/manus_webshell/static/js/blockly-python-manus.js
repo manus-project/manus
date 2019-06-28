@@ -33,16 +33,13 @@ Blockly.Python['text_newline'] = function(block) {
 Blockly.Python['manus_move_joint'] = function(block) {
   var dropdown_joint_id = block.getFieldValue('joint_id');
   var angle_joint_angle = block.getFieldValue('joint_angle');
-  // TODO: Assemble Python into code variable.
-
-  angle_joint_angle = angle_joint_angle * Math.PI / 180.0;
-  return 'workspace.manipulator.joint('+ dropdown_joint_id +', '+ angle_joint_angle +')\n';
+  return 'workspace.manipulator.joint('+ dropdown_joint_id +', '+ angle_joint_angle +' * math.pi / 180)\n';
 };
 
 Blockly.Python['manus_move_joint_variable'] = function(block) {
   var dropdown_joint_id = block.getFieldValue('joint_id');
   var joint_angle = Blockly.Python.valueToCode(block, 'joint_angle', Blockly.Python.ORDER_ATOMIC) || "0";
-  return 'workspace.manipulator.joint('+ dropdown_joint_id +', '+ joint_angle +')\n';
+  return 'workspace.manipulator.joint('+ dropdown_joint_id +', '+ joint_angle +' * math.pi / 180)\n';
 };
 
 Blockly.Python['manus_retrieve_joint'] = function(block) {
@@ -128,6 +125,24 @@ Blockly.Python['manus_retrieve_coordinate'] = function(block) {
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.Python.ORDER_FUNCTION_CALL];
 };
+
+Blockly.Python['manus_retrieve_rotation'] = function(block) {
+
+  var functionName = Blockly.Python.provideFunction_(
+      'get_rotation',
+      ['def ' + Blockly.Python.FUNCTION_NAME_PLACEHOLDER_ + '(obj, coordinate):',
+       '  if isinstance(obj, (tuple, list)):',
+       '    mapping = {"x" : 0, "y" : 1, "z" : 2, "w": 3}',
+       '    return obj[mapping[coordinate]] * 180 / math.pi',
+       '  if hasattr(obj, "__rotation__"):',
+       '    return obj.__rotation__(coordinate) * 180 / math.pi']);
+  var dropdown_component_dropdown = block.getFieldValue('coordinate_dropdown');
+  var varname = Blockly.Python.variableDB_.getName(block.getFieldValue('varname'), Blockly.Variables.NAME_TYPE);
+  var code = functionName + "(" + varname + ', "' + dropdown_component_dropdown + '")';
+  // TODO: Change ORDER_NONE to the correct strength.
+  return [code, Blockly.Python.ORDER_FUNCTION_CALL];
+};
+
 
 Blockly.Python['manus_retrieve_color'] = function(block) {
   var varname = Blockly.Python.variableDB_.getName(block.getFieldValue('varname'), Blockly.Variables.NAME_TYPE);

@@ -56,7 +56,6 @@
     "manipulator": {
 		"command": "manus_openservo_manipulator /dev/i2c-1",
 		"depends": ["echo"],
-		"directory" : "${MANUS_ROOT}/share/manus/models",
 		"restart": false,
 		"wait": 1,
 		"remap" : {
