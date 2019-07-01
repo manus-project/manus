@@ -17,7 +17,10 @@ class VoxelGrid_internal;
 class VoxelGrid
 {
 public:
-    VoxelGrid(const Chain& chain,const JntArray& q_min, const JntArray& q_max, double eps=1e-3, float voxel_resolution = 20.0, int voxel_size = 20);
+    VoxelGrid(const Chain& chain,const JntArray& q_min, const JntArray& q_max, 
+        double eps=1e-3, float voxel_resolution = 20.0, 
+        int voxel_size = 20, double rotation_weight = 0.001,
+        int max_iterations = 500, double joint_eps = 0.0001);
 
     ~VoxelGrid();
 
@@ -37,6 +40,9 @@ private:
 
     double maxtime;
     double eps;
+    double joint_eps;
+    double rotation_weight;
+    int max_iterations;
 
     std::vector<BasicJointType> types;
 

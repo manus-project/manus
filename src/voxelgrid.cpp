@@ -99,9 +99,15 @@ public:
     std::default_random_engine generator;
 
 	int voxel_size;
+    double joint_eps;
+    double rotation_weight;
+    int max_iterations;
 	KDL::ChainIkSolverVel_pinv iks;
 
-    VoxelGrid_internal(const Chain& _chain, float voxel_resolution, int voxel_size): voxel_resolution(voxel_resolution), voxel_size(voxel_size), iks(_chain) {}
+    VoxelGrid_internal(const Chain& _chain, float voxel_resolution, int voxel_size, double rotation_weight,
+        int max_iterations, double joint_eps): 
+    voxel_resolution(voxel_resolution), voxel_size(voxel_size), iks(_chain), rotation_weight(rotation_weight),
+    max_iterations(max_iterations), joint_eps(joint_eps) {}
     ~VoxelGrid_internal() {}
 
     VoxelMap<std::vector<JntArray> > cache;
@@ -125,14 +131,16 @@ public:
 
 
 
-VoxelGrid::VoxelGrid(const Chain& _chain, const JntArray& _q_min, const JntArray& _q_max, double _eps, float voxel_resolution, int voxel_size):
-    chain(_chain), q_min(_q_min), q_max(_q_max), fksolver(_chain), eps(_eps)
+VoxelGrid::VoxelGrid(const Chain& _chain, const JntArray& _q_min, const JntArray& _q_max, double _eps, float voxel_resolution, int voxel_size, double rotation_weight,
+        int max_iterations, double joint_eps):
+    chain(_chain), q_min(_q_min), q_max(_q_max), fksolver(_chain), eps(_eps), rotation_weight(rotation_weight),
+    max_iterations(max_iterations), joint_eps(joint_eps)
 {
 
     assert(chain.getNrOfJoints()==_q_min.data.size());
     assert(chain.getNrOfJoints()==_q_max.data.size());
 
-    _impl = new VoxelGrid_internal(_chain, voxel_resolution, voxel_size);
+    _impl = new VoxelGrid_internal(_chain, voxel_resolution, voxel_size, rotation_weight, max_iterations, joint_eps);
 
 	//iksolver = new ChainIkSolverPos_LMA(_chain, L, _eps, 500, 0.0000001);
     //iksolver = new ChainIkSolverPos_LMA(_chain, L, _eps, 500, 0.0001);
@@ -206,11 +214,11 @@ int VoxelGrid::CartToJnt(const KDL::JntArray &q_init, const KDL::Frame &p_in, KD
             L(0) = 1;
             L(1) = 1;
             L(2) = 1;
-            L(3) = use_rotation ? 0.1 : 0;
-            L(4) = use_rotation ? 0.1 : 0;
-            L(5) = use_rotation ? 0.1 : 0;
+            L(3) = use_rotation ? rotation_weight : 0;
+            L(4) = use_rotation ? rotation_weight : 0;
+            L(5) = use_rotation ? rotation_weight : 0;
 
-            KDL::ChainIkSolverPos_LMA iksolver(chain, L, eps, 500, 0.0001);
+            KDL::ChainIkSolverPos_LMA iksolver(chain, L, eps, max_iterations, joint_eps);
 
 	        int result = iksolver.CartToJnt(v->second[*it], p_in, q_test);
 	        if (result < 0)

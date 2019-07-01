@@ -8,17 +8,23 @@
 
 #include <manus/messages.h>
 
+#include <yaml-cpp/yaml.h>
+
 using namespace echolib;
 using namespace manus::messages;
 using namespace std;
 
 #include "voxelgrid.h"
+#include "files.h"
+
+#define GET_DOUBLE(N, D) (N.as<double>(D))
+#define GET_INT(N, D) ( N.as<int>(D))
 
 using namespace manus::manipulator;
 
 class Planner {
 public:
-	Planner(SharedClient client) {
+	Planner(SharedClient client, YAML::Node &config) : config(config) {
 		description_subscriber = make_shared<TypedSubscriber<ManipulatorDescription> >(client,
 		                         "description", bind(&Planner::on_description, this, std::placeholders::_1));
 		state_subscriber = make_shared<TypedSubscriber<ManipulatorState> >(client, "state",
@@ -36,7 +42,7 @@ public:
 
 	void idle() {
 		if (cache) {
-			cache->precompute(5000);
+			cache->precompute(GET_INT(config["cache"]["increment"], 5000));
 		}
 	}
 
@@ -95,11 +101,17 @@ protected:
 		}
 
 
-		cache = make_shared<VoxelGrid>(kinematic_chain, limits_min, limits_max, 0.01, 50, 200);
+		cache = make_shared<VoxelGrid>(kinematic_chain, limits_min, limits_max,
+			GET_DOUBLE(config["solver"]["eps"], 0.01),
+			GET_DOUBLE(config["cache"]["resolution"], 50),
+			GET_INT(config["cache"]["size"], 200),
+			GET_DOUBLE(config["solver"]["rotation"], 0.001),
+			GET_INT(config["solver"]["iterations"], 500),
+			GET_DOUBLE(config["solver"]["joint_eps"], 0.0001));
 
 		description_subscriber.reset();
 		
-		cache->precompute(50000);
+		cache->precompute(GET_INT(config["cache"]["precompute"], 50000));
 	}
 
 
@@ -132,7 +144,6 @@ protected:
 			KDL::Frame frame(rotation, KDL::Vector(goal.frame.origin.x, goal.frame.origin.y, goal.frame.origin.z));
 
 			frame = frame * origin;
-
 
 			JntArray out(kinematic_chain.getNrOfJoints());
 			int result = cache->CartToJnt(initial, frame, out, goal.rotation);
@@ -211,6 +222,7 @@ private:
 	JntArray limits_max, limits_min, safe;
 
 	KDL::Frame origin;
+	YAML::Node config;
 
 	int gripper;
 };
@@ -219,7 +231,15 @@ int main(int argc, char** argv) {
 
 	SharedClient client = echolib::connect(string(), "planner");
 
-	Planner planner(client);
+	YAML::Node config;
+
+	string config_path = find_file("planner.yaml");
+
+	if (file_exists(config_path)) {
+	    config = YAML::LoadFile(config_path);
+	}  
+
+	Planner planner(client, config);
 
 	while (echolib::wait(1000)) {
 		planner.idle();

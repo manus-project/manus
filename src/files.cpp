@@ -23,7 +23,7 @@ void tokenize(std::string const &str, const char delim,
 
 vector<string> search_paths;
 
-inline bool file_exists(const string& name) {
+bool file_exists(const string& name) {
     ifstream f(name.c_str());
     return f.good();
 }

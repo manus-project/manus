@@ -16,5 +16,6 @@ void append_path(const string &path);
 
 void prepend_path(const string &path);
 
+bool file_exists(const string& name);
 
 #endif

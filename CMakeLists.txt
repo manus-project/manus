@@ -73,9 +73,9 @@ TARGET_LINK_LIBRARIES(manus_artrack ${echolib_LIBRARIES} ${echocv_LIBRARIES} ${O
 
 find_path(EIGEN3_INCLUDE_DIR NAMES signature_of_eigen3_matrix_library PATHS ${CMAKE_INSTALL_PREFIX}/include PATH_SUFFIXES eigen3 eigen)
 FIND_PACKAGE(orocos_kdl REQUIRED)
-ADD_EXECUTABLE(manus_planner src/planner.cpp src/voxelgrid.cpp)
+ADD_EXECUTABLE(manus_planner src/planner.cpp src/voxelgrid.cpp src/files.cpp)
 TARGET_INCLUDE_DIRECTORIES(manus_planner PUBLIC ${orocos_kdl_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(manus_planner ${echolib_LIBRARIES} ${orocos_kdl_LIBRARIES})
+TARGET_LINK_LIBRARIES(manus_planner ${echolib_LIBRARIES} ${orocos_kdl_LIBRARIES} ${YAML_CPP_LIBRARIES})
 add_dependencies(manus_planner manus_messages)
 
 ADD_SUBDIRECTORY(python)
