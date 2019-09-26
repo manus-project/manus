@@ -51,7 +51,7 @@ Blockly.Python['manus_retrieve_joint'] = function(block) {
 
 Blockly.Python['manus_retrieve_joint_position'] = function(block) {
   var dropdown_joint_id = block.getFieldValue('joint_id');
-  var code = 'workspace.manipulator.position('+ dropdown_joint_id + ')';
+  var code = 'workspace.manipulator.position('+ dropdown_joint_id + ') * 180 / math.pi';
   return [code, Blockly.Python.ORDER_NONE];
 };
 
@@ -154,6 +154,6 @@ Blockly.Python['manus_retrieve_color'] = function(block) {
 
 Blockly.Python['manus_open_close_gripper'] = function(block) {
   var dropdown_open_close_option = block.getFieldValue('open_close_option');
-  var mapping = {"open" : 0, "half" : 0.5, "close" : 1}
+  var mapping = {"open" : 0.1, "half" : 0.5, "close" : 0.8}
   return 'workspace.manipulator.gripper(' + mapping[dropdown_open_close_option] + ')\n';
 };
