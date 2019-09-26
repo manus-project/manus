@@ -153,25 +153,6 @@ class AppsHandler(JsonHandler):
     def check_etag_header(self):
         return False
 
-class PrivilegedHandler(JsonHandler):
-    def __init__(self, application, request):
-        super(PrivilegedHandler, self).__init__(application, request)
-
-    def get(self):
-        run = self.request.json.get("run", None)
-        if not run is None:
-            self._apps.run(run[0])
-            self.response = {"result" : "ok"}
-            self.write_json()
-        active = self._apps.active()
-        self.response = {"list" : self._apps.list()}
-        if not active is None:
-            self.response["active"] = active.id
-        self.write_json()
-
-    def check_etag_header(self):
-        return False
-
 class LoginHandler(JsonHandler):
 
     def __init__(self, application, request, users):
