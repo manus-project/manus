@@ -133,7 +133,10 @@ $.manus.world = {
                     world.canvas.addEventListener('mouseup', mouse.onMouseUp, false);
                     world.canvas.addEventListener('mouseout', mouse.onMouseOut, false);
                     cameraSphere.update(world);
+
+                    world.resize(800, 600);
                     world.render();
+
                 },
                 uninstall: function(world) {
                     world.canvas.removeEventListener('mousedown', mouse.onMouseDown, false);
@@ -190,14 +193,18 @@ $.manus.world = {
                     var fov1 = 360 * Math.atan2(data.image.width, 2*data.intrinsics[0][0]) / Math.PI;
                     var fov2 = 360 * Math.atan2(data.image.height, 2*data.intrinsics[1][1]) / Math.PI;
                     world.scene.perspective.aspect = data.image.width / data.image.height;
-                    world.scene.perspective.fov = fov2; // Compute average fov
+                    world.scene.perspective.fov = fov2; // Compute average fov?
 
-                    // TODO: hardcoded - calculate it from intrinsics
-                    world.scene.viewport.y = -15;
-                    world.scene.viewport.x = -5;
+                    var offx = data.intrinsics[0][2] - data.image.width/2;
+                    var offy = data.intrinsics[1][2] - data.image.height/2;
 
-                    //console.log(data.intrinsics);
+                    // calculate it from intrinsics
+                    world.scene.viewport.y = offy;
+                    world.scene.viewport.x = offx;
+
                     world.projection.attr({src: url});
+
+                    world.resize(data.image.width, data.image.height);
 
                 },
                 uninstall: function(world) {
@@ -236,10 +243,10 @@ $.manus.world = {
 
     viewer: function (options) {
 
-        options = $.extend({width : 800, height: 600}, options);
+        options = $.extend({width : 800, height: 600, scaling: 1}, options);
 
         var canvas = $('<canvas/>').attr({width: options.width, height: options.height});
-        var projection = $('<img/>').attr({width: options.width, height: options.height, src: $.manus.world._transparent});
+        var projection = $('<img/>').attr({width: options.width, height: options.height, src: ""});
         var wrapper = $('<div/>').addClass("viewer").append(projection).append(canvas);
 
         viewCamera = -1;
@@ -258,23 +265,35 @@ $.manus.world = {
         var currentView = defaultView;
         var dirty = true;
 
+        function revalidate() {
+            var width = options.width * options.scaling;
+            var height = options.height * options.scaling;
+            $(canvas).attr({width: width, height: height});
+            projection.attr({width: width, height: height});
+            scene.perspective.aspect = canvas.width / canvas.height;
+            scene.viewport.width = canvas.width;
+            scene.viewport.height = canvas.height;
+            var dirty = true;
+            world.render();
+        }
+
         var world = {
             scene: scene,
             canvas: canvas,
             projection: projection,
             wrapper: wrapper,
+            width: function() { return options.width; },
+            height: function() { return options.height; },
             render: function() { dirty = true; },
             view: function(v) { if (v == null) v = defaultView; currentView.uninstall(this); currentView = v; v.install(this); },
             resize: function(width, height) {
                 options.width = width;
                 options.height = height;
-                $(canvas).attr({width: options.width, height: options.height});
-                projection.attr({width: options.width, height: options.height});
-                scene.perspective.aspect = canvas.width / canvas.height;
-                scene.viewport.width = canvas.width;
-                scene.viewport.height = canvas.height;
-                var dirty = true;
-                world.render();
+                revalidate();
+            },
+            zoom: function(scaling) {
+                options.scaling = scaling;
+                revalidate();
             },
             snapshot: function() {
                 var buffer = document.createElement('canvas');

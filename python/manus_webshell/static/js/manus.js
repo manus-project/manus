@@ -437,14 +437,14 @@ function initializeTabs() {
 
     }
 
-/* Camera stuff */
+    /* Camera stuff */
 
     var viewer = $.manus.world.viewer({});
     $('#viewer').append(viewer.wrapper);
     $.manus.world.grid(viewer, 40, 27, 10, vec3.fromValues(230, 0, 0));
 
     var updateViewer = function() {
-        viewer.resize($('#viewer').width(), $('#viewer').width() * 0.75);
+        viewer.zoom($('#viewer').width() / viewer.width());
     }
 
     var markers = $.manus.world.markers(viewer);
@@ -457,6 +457,7 @@ function initializeTabs() {
 
     viewbar_left.append($.manus.widgets.fancybutton({icon : "globe", tooltip: "Free view", callback: function(e) {
                     viewer.view(null);
+                    updateViewer();
                 }}));
 
     $.ajax('/api/camera/describe').done(function(data) {
@@ -468,7 +469,10 @@ function initializeTabs() {
         });
 
         viewbar_left.append($.manus.widgets.fancybutton({icon : "facetime-video", tooltip: "Camera view", callback: function(e) {
-                if (cameraView) viewer.view(cameraView);
+                if (cameraView) { 
+                    viewer.view(cameraView);
+                    updateViewer();
+                }
             }}));
 
     }).fail(function () {});
