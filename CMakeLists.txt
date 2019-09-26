@@ -66,6 +66,9 @@ else()
 FIND_PACKAGE(OpenCV REQUIRED core imgproc video calib3d highgui)
 endif()
 
+ADD_EXECUTABLE(manus_camera src/cameraserver.cpp src/files.cpp)
+TARGET_LINK_LIBRARIES(manus_camera ${echolib_LIBRARIES} ${echocv_LIBRARIES} ${OpenCV_LIBS})
+
 FIND_PACKAGE(Ary REQUIRED)
 ADD_EXECUTABLE(manus_artrack src/artrack.cpp)
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS} ${ary_INCLUDE_DIRS})
@@ -86,6 +89,7 @@ install(TARGETS
         manus_openservo_calibration 
         manus_planner
         manus_artrack
+        manus_camera
         DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(DIRECTORY
