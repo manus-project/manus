@@ -45,7 +45,14 @@ bool scene_change(Mat& image) {
 	resize(image, candidate, Size(64, 64));
 
 	if (scene_model.empty()) {
+#if CV_MAJOR_VERSION == 3
+		scene_model = cv::createBackgroundSubtractorMOG2();
+		scene_model->setHistory(100);
+		scene_model->setNMixtures(4);
+		scene_model->setDetectShadows(false);
+#else
 		scene_model = Ptr<BackgroundSubtractorMOG2>(new BackgroundSubtractorMOG2(100, 4, false));
+#endif
 	}
 
 	if (force_update_counter > force_update_threshold) {
@@ -54,8 +61,11 @@ bool scene_change(Mat& image) {
 	}
 
 	force_update_counter++;
-
+#if CV_MAJOR_VERSION == 3
+	scene_model->apply(candidate, mask);
+#else
 	scene_model->operator()(candidate, mask);
+#endif
 
 	#ifdef MANUS_DEBUG
 	if (debug) {
@@ -125,7 +135,11 @@ SharedLocalization improveLocalizationWithKeypointBlobs(SharedLocalization local
 	projectPoints(blobs, localization->getCameraPosition().rotation, localization->getCameraPosition().translation, 
 		camera->getIntrinsics(), camera->getDistortion(), estimates);
 
+#if CV_MAJOR_VERSION == 3
+	Ptr<FeatureDetector> blobDetector = SimpleBlobDetector::create();
+#else
 	Ptr<FeatureDetector> blobDetector = FeatureDetector::create("SimpleBlob");
+#endif
 
 	std::vector<KeyPoint> keypoints;
     blobDetector->detect(image_gray, keypoints);
@@ -181,8 +195,11 @@ SharedLocalization improveLocalizationWithKeypointBlobs(SharedLocalization local
 
 		vector<int> inliers;
 
+#if CV_MAJOR_VERSION == 3
+		solvePnPRansac(objectPoints, imagePoints, camera->getIntrinsics(), camera->getDistortion(), rotation, translation, false, 200, 4, 0.999, inliers);
+#else
 		solvePnPRansac(objectPoints, imagePoints, camera->getIntrinsics(), camera->getDistortion(), rotation, translation, false, 200, 4, imagePoints.size(), inliers);
-
+#endif
 		rotation.convertTo(position.rotation, CV_32F);
 		translation.convertTo(position.translation, CV_32F);
 
