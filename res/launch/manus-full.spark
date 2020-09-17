@@ -21,12 +21,17 @@
         "restart" : false,
         "wait" : 1
     },
+    "config" : {
+        "command" : "python -m manus_starter.config /var/local/manus/config.txt",
+        "restart" : true,
+        "depends" : ["echo"]
+    },
     "privileged" : {
         "command" : "python -m manus_starter.privileged",
         "restart" : true,
         "user" : "root",
         "group" : ["root"],
-        "depends" : ["echo"]
+        "depends" : ["config"]
     },
     "cameraserver" : {
         "command" : "manus_camera 0",

@@ -45,15 +45,14 @@ class Manipulator(object):
 
     def __init__(self, client, name):
         self.name = name
-        self.description = None
         self.state = None
         self._client = client
         self._listeners = []
-        self._description = messages.ManipulatorDescriptionSubscriber(client, "%s.description" % name, lambda x: self._description_callback(x))
-        self._state = messages.ManipulatorStateSubscriber(client, "%s.state" % name, lambda x: self._state_callback(x))
+        self._description = messages.ManipulatorDescriptionSubscriber(client, "%s.description" % name, self._description_callback)
+        self._state = messages.ManipulatorStateSubscriber(client, "%s.state" % name, self._state_callback)
         self._move = messages.PlanPublisher(client, "%s.plan" % name)
         self._planner = messages.TrajectoryPublisher(client, "%s.trajectory" % name)
-        self._planstate = messages.PlanStateSubscriber(client, "%s.planstate" % name, lambda x: self._planstate_callback(x))
+        self._planstate = messages.PlanStateSubscriber(client, "%s.planstate" % name, self._planstate_callback)
 
     def listen(self, listener):
         self._listeners.append(listener)
@@ -64,8 +63,9 @@ class Manipulator(object):
         except ValueError:
             pass
 
+    @property
     def description(self):
-        return self._description.data
+        return self._description_data
 
     def move_safe(self, identifier='safe'):
         plan = messages.Plan()
@@ -101,7 +101,7 @@ class Manipulator(object):
             s.on_manipulator_state(self, state)
 
     def _description_callback(self, description):
-        self.description = description
+        self._description_data = description
 
     def _state_to_segment(self):
         segment = messages.PlanSegment()
@@ -113,20 +113,19 @@ class Manipulator(object):
         for s in self._listeners:
             s.on_planner_state(self, state)
 
-
     def transform(self, joint):
         origin = np.identity(4)
         if self.description is None or joint < 0 or joint >= len(self.state.joints):
             return origin
         for j in xrange(0, joint+1):
-            dh_a, dh_alpha, dh_d, dh_theta = self.description.joints[j].dh_a, \
-                self.description.joints[j].dh_alpha, \
-                self.description.joints[j].dh_d, \
-                self.description.joints[j].dh_theta
+            dh_a, dh_alpha, dh_d, dh_theta = self._description_data.joints[j].dh_a, \
+                self._description_data.joints[j].dh_alpha, \
+                self._description_data.joints[j].dh_d, \
+                self._description_data.joints[j].dh_theta
 
-            if self.description.joints[j].type == messages.JointType.ROTATION:
+            if self._description_data.joints[j].type == messages.JointType.ROTATION:
                 dh_theta = self.state.joints[j].position
-            elif self.description.joints[j].type == messages.JointType.TRANSLATION:
+            elif self._description_data.joints[j].type == messages.JointType.TRANSLATION:
                 dh_d = self.state.joints[j].position
 
             ct = np.cos(dh_theta)
