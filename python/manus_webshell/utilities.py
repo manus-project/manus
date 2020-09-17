@@ -1,9 +1,7 @@
 
-import os
-import thread
+
 import json
 import numpy
-
 
 def synchronize(f):
     def wrapper(*args, **kwargs):
@@ -15,7 +13,6 @@ def synchronize(f):
             obj.loop.add_callback(f, *args, **kwargs)
 
     return wrapper
-
 
 def enum(*sequential, **named):
     enums = dict(zip(sequential, range(len(sequential))), **named)
@@ -65,7 +62,7 @@ try:
             if self.request.body:
                 try:
                     self.request.json = json.loads(self.request.body)
-                except ValueError, e:
+                except ValueError as e:
                     print(e)
                     self.write_error(400, message='Unable to parse JSON.')
                     return

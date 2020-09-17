@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 import sys
 import inspect
-import cStringIO
+import io
 import json
 import time
 import datetime
@@ -41,7 +41,7 @@ from manus_webshell.manipulator import ManipulatorBlockingHandler, ManipulatorDe
 from manus.messages import MarkersSubscriber
 import manus
 from manus_apps import AppsManager, app_identifier
-from manus_starter.privileged import PrivilegedClient
+from manus_webshell import PrivilegedClient, ConfigManager
 
 __author__ = 'lukacu'
 
@@ -83,9 +83,13 @@ class CameraLocationHandler(JsonHandler):
         super(CameraLocationHandler, self).__init__(application, request)
         self.camera = camera
 
-    @tornado.web.asynchronous
-    def get(self):
-        self.camera.listen_location(self)
+    async def get(self):
+        location = await self.camera.location()
+
+        self.set_header('X-Timestamp', location.header.timestamp.isoformat())
+        self.response = CameraLocationHandler.encode_location(location)
+        self.write_json()
+        self.finish()
 
     @staticmethod
     def encode_location(location):
@@ -93,18 +97,6 @@ class CameraLocationHandler(JsonHandler):
             "rotation" : location.rotation,
             "translation" : location.translation,
         }
-
-    def push_camera_location(self, camera, location):
-        self.set_header('X-Timestamp', location.header.timestamp.isoformat())
-        self.response = CameraLocationHandler.encode_location(location)
-        self.write_json()
-        self.finish()
-
-    def on_finish(self):
-        self.camera.unlisten_location(self)
-
-    def on_connection_close(self):
-        self.camera.unlisten_location(self)
 
     def check_etag_header(self):
         return False
@@ -199,11 +191,11 @@ class StorageHandler(tornado.web.RequestHandler):
             self.finish(json.dumps(list(StorageHandler.keys)))
             return
         try:
-            raw = self._storage.get(key, "")
+            raw = self._storage.get(key, "").decode("utf-8")
         except db.DBNotFoundError:
             self.set_status(404)
             self.finish("Unknown key")
-            return;
+            return
         try:
             ctype, data = raw.split(";", 1)
         except ValueError:
@@ -242,41 +234,71 @@ class StorageHandler(tornado.web.RequestHandler):
     def check_etag_header(self):
         return False
 
+class ConfigHandler(tornado.web.RequestHandler):
+
+    def initialize(self, config):
+        self._config = config
+
+    def get(self):
+        key = self.request.arguments.get("key", [""])[0].strip()
+        if not key:
+            self.set_status(404)
+            self.finish("Unknown key")
+            return
+        value = self._config.get(key)
+        self.set_header('Content-Type', "text/plain")
+        self.finish(value)
+
+    def post(self):
+        key = self.request.arguments.get("key", [""])[0].strip()
+        if not key:
+            self.set_status(401)
+            self.finish('Illegal request')
+            return
+        self._config.set(key, self.request.body)
+        self.finish()
+        
+    def check_etag_header(self):
+        return False
+
+
 class ApiWebSocket(tornado.websocket.WebSocketHandler):
     connections = []
 
-    def __init__(self, application, request, cameras, manipulators, apps):
-        super(ApiWebSocket, self).__init__(application, request)
+    def initialize(self, cameras, manipulators, apps, config):
         self.cameras = cameras
         self.manipulators = manipulators
         self.apps = apps
+        self.config = config
 
-    def open(self):
+    def open(self, *args, **kwargs):
         ApiWebSocket.connections.append(self)
         for c in self.cameras:
-            c.listen_location(self)
+            c.listen_location(self.on_camera_location)
         for m in self.manipulators:
             m.listen(self)
         self.apps.listen(self)
+        self.config.listen(self.on_config_change)
 
-    def on_message(self, raw):
-        message = json.loads(raw)
-        channel = message.get("channel", "")
-        action = message.get("action", "")
+    def on_message(self, message):
+        decoded = json.loads(message)
+        channel = decoded.get("channel", "")
+        action = decoded.get("action", "")
         if channel == "apps":
             if action == "input" and not self.apps.active() is None:
-                if message.get("identifier", "") == self.apps.active().id:
-                    self.apps.input(message.get("lines", []))
+                if decoded.get("identifier", "") == self.apps.active().id:
+                    self.apps.input(decoded.get("lines", []))
 
         # can request info about the device?
 
     def on_close(self):
         ApiWebSocket.connections.remove(self)
         for c in self.cameras:
-            c.unlisten_location(self)
+            c.unlisten_location(self.on_camera_location)
         for m in self.manipulators:
             m.unlisten(self)
         self.apps.unlisten(self)
+        self.config.unlisten(self.on_config_change)
 
     def send_message(self, message):
         message = json.dumps(message, cls=NumpyEncoder)
@@ -288,7 +310,7 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
         for c in ApiWebSocket.connections:
             c.write_message(message)
 
-    def push_camera_location(self, camera, location):
+    def on_camera_location(self, camera, location):
         self.send_message({"channel": "camera", "action" : "update", "data" : CameraLocationHandler.encode_location(location)})
 
     def on_manipulator_state(self, manipulator, state):
@@ -309,6 +331,9 @@ class ApiWebSocket(tornado.websocket.WebSocketHandler):
     def on_app_input(self, identifier, lines):
         self.send_message({"channel": "apps", "action" : "input", "identifier": identifier, "lines" : lines})
 
+    def on_config_change(self, manager, keys):
+        for key in keys:
+            self.send_message({"channel": "config", "action" : "updated", "key": key, "value" : manager.get(key)})
 
 def on_shutdown():
     tornado.ioloop.IOLoop.instance().stop()
@@ -380,11 +405,14 @@ def main():
         #handlers.append((r'/api/markers', MarkersStorageHandler))
         apps = AppsManager(client)
         privileged = PrivilegedClient(client)
+        config = ConfigManager(client)
+
         #handlers.append((r'/api/login', LoginHandler, {"users" : None}))
         handlers.append((r'/api/apps', AppsHandler, {"apps" : apps}))
         handlers.append((r'/api/privileged', PrivilegedHandler, {"privileged": privileged}))
         handlers.append((r'/api/storage', StorageHandler, {"storage" : storage}))
-        handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators, "apps": apps}))
+        handlers.append((r'/api/websocket', ApiWebSocket, {"cameras" : cameras, "manipulators": manipulators, "apps": apps, "config": config}))
+        handlers.append((r'/api/config', ConfigHandler, {"config" : config}))
         handlers.append((r'/api/info', ApplicationHandler))
         handlers.append((r'/', RedirectHandler, {'url' : '/index.html'}))
         handlers.append((r'/(.*)', DevelopmentStaticFileHandler, {'path': os.path.dirname(manus_webshell.static.__file__)}))
@@ -396,8 +424,11 @@ def main():
                 "color": [m.color.red, m.color.green, m.color.blue]} for m in markers.markers}
             ApiWebSocket.distribute_message({"channel": "markers", "action" : "overwrite", "markers" : data, "overlay" : markers.owner})
 
-        markers_subsriber = MarkersSubscriber(client, "markers", markers_callback)
+        markers_subscriber = MarkersSubscriber(client, "markers", markers_callback)
  
+
+
+
         application = tornado.web.Application(handlers, cookie_secret=os.getenv('MANUS_COOKIE_SECRET', "manus"), debug=bool(os.getenv('MANUS_DEBUG', "false")))
 
         server = tornado.httpserver.HTTPServer(application)

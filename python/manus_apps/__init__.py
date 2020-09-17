@@ -10,7 +10,7 @@ from manus.messages import AppCommandType, AppEventType, AppListingSubscriber, A
 def app_identifier(appfile):
     absfile = os.path.abspath(appfile)
     digest = hashlib.md5()
-    digest.update(absfile)
+    digest.update(absfile.encode("utf-8"))
     return digest.hexdigest()
 
 class AppsManager(object):

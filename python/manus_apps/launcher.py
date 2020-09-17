@@ -42,8 +42,8 @@ class Context(object):
             if command.type == AppCommandType.EXECUTE:
                 appid = command.arguments[0] if len(command.arguments) > 0 and len(command.arguments[0]) > 0 else None
                 self.start_application(appid)
-        except Exception, e:
-            print traceback.format_exc()
+        except Exception as e:
+            print(traceback.format_exc())
 
     def input_callback(self, message):
         if not self.active_application is None and self.active_application.identifier == message.id:
@@ -60,11 +60,11 @@ class Context(object):
             if identifier.endswith(".app") and os.path.isfile(identifier):
                 try:
                     starting_application = Application(self, identifier, listed=False)
-                except Exception, e:
-                    print traceback.format_exc()
+                except Exception as e:
+                    print(traceback.format_exc())
                     return
             else:
-                print "Application does not exist"
+                print("Application does not exist")
                 return
         elif not identifier is None:
             starting_application = self.applications[identifier]
@@ -83,7 +83,7 @@ class Context(object):
 
         self.active_application = starting_application
         self.active_application.run()
-        print "Starting application %s (%s)" % (self.active_application.name, identifier)
+        print("Starting application %s (%s)" % (self.active_application.name, identifier))
         event = AppEvent()
         event.type = AppEventType.ACTIVE
         event.app = self.active_application.message_data()
@@ -98,10 +98,10 @@ class Context(object):
                     try:
                         app = Application(self, os.path.join(dirpath, filename))
                         self.applications[app.identifier] = app
-                    except Exception, e:
-                        print traceback.format_exc()
+                    except Exception as e:
+                        print(traceback.format_exc())
                         continue
-        print "Loaded %d applications" % len(self.applications)
+        print("Loaded %d applications" % len(self.applications))
 
     def find_by_name(self, name):
         for identifier, app in self.applications.items():
@@ -122,7 +122,7 @@ class Context(object):
                 broadcast = 10
             if not self.active_application is None:
                 if not self.active_application.alive():
-                    print "Application stopped"
+                    print("Application stopped")
                     event = AppEvent()
                     event.type = AppEventType.ACTIVE
                     event.app = AppData()
@@ -133,7 +133,7 @@ class Application(echolib.IOBase):
 
     def __init__(self, context, appfile, listed=True):
         super(Application, self).__init__()
-        self._fd = -1;
+        self._fd = -1
         try:
             with open(os.path.abspath(appfile)) as f:
                 content = f.readlines()
@@ -149,13 +149,13 @@ class Application(echolib.IOBase):
             self.dir = os.path.dirname(appfile)
             self.listed = listed
             self.context = context
-        except ValueError, e:
+        except ValueError as e:
             raise Exception("Unable to read app file %s" % appfile)
 
         self.process = None
 
     def __del__(self):
-        print "Deleting app"
+        print("Deleting app")
         #super(Application, self).__del__()
         self.context.loop.remove_handler(self)
 
@@ -182,7 +182,6 @@ class Application(echolib.IOBase):
         fl = fcntl.fcntl(self._fd, fcntl.F_GETFL)
         fcntl.fcntl(self._fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
         self.context.loop.add_handler(self)
-
 
     def alive(self):
         if not self.process:
@@ -218,7 +217,7 @@ class Application(echolib.IOBase):
                 line = self.process.stdout.readline()
                 sys.stdout.write(line)
                 lines.append(line)
-            except Exception, e: 
+            except Exception as e: 
                 break
         if len(lines) > 0:
             message = AppStreamData()

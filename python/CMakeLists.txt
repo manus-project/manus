@@ -1,4 +1,4 @@
-find_package(PythonInterp ${ECHO_PYTHON_VERSION})
+find_package(PythonInterp 3)
 
 if (PYTHON_EXECUTABLE)
     #install(CODE "execute_process(COMMAND ${PYTHON} ${SETUP_PY} install --prefix=${CMAKE_INSTALL_PREFIX} ${DISTUTILS_INSTALL_FLAGS})")

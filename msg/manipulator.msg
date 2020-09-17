@@ -69,5 +69,6 @@ message Plan {
 message Trajectory {
 	string identifier;
 	TrajectorySegment[] segments;
+	float speed = 1;
 }
 

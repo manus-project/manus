@@ -1,12 +1,8 @@
 #!/usr/bin/env python
 from __future__ import absolute_import
 
-import sys
-import json
+from asyncio import Future
 import uuid
-import os
-import signal
-import traceback
 
 from manus.messages import JointType, PlanStateType
 
@@ -59,6 +55,10 @@ class ManipulatorBlockingHandler(JsonHandler):
         super(ManipulatorBlockingHandler, self).__init__(application, request)
         self.manipulator = manipulator
         self.moveid = uuid.uuid4().hex
+        self.future = Future()
+
+    def run(self, identifier):
+        raise NotImplementedError()
 
     def get(self):
         self.clear()
@@ -66,8 +66,7 @@ class ManipulatorBlockingHandler(JsonHandler):
         self.finish()
         return
 
-    @tornado.web.asynchronous
-    def post(self):
+    async def post(self):
         try:
             blocking = self.request.arguments.get("blocking", "0")[0]
             blocking = (blocking.lower() in ("yes", "true", "1"))
@@ -78,11 +77,13 @@ class ManipulatorBlockingHandler(JsonHandler):
 
             if not blocking:
                 if result:
-                    self.response = {'result' : 'ok'}
+                    self.future.set_result({'result' : 'ok'})
                 else:
-                    self.response = {'result' : 'error'}
-                self.write_json()
-                self.finish()
+                    self.future.set_result({'result' : 'error'})
+
+            self.response = await self.future
+            self.write_json()
+            self.finish()
         except ValueError:
             self.write_error(401, message="Illegal data")
             self.finish()
@@ -99,15 +100,11 @@ class ManipulatorBlockingHandler(JsonHandler):
     def on_planner_state(self, manipulator, state):
         if state.identifier == self.moveid:
             if state.type == PlanStateType.COMPLETED:
-                self.response = {'result' : 'ok'}
+                self.future.set_result({'result' : 'ok'})
             elif state.type == PlanStateType.FAILED:
-                self.response = {'result' : 'failed'}
+                self.future.set_result({'result' : 'failed'})
             elif state.type == PlanStateType.STOPPED:
-            	self.response = {'result' : 'canceled'}
-            else:
-            	return
-            self.write_json()
-            self.finish()
+            	self.future.set_result({'result' : 'canceled'})
 
     def check_etag_header(self):
         return False
@@ -180,7 +177,7 @@ class ManipulatorMoveJointHandler(ManipulatorBlockingHandler):
             self.manipulator.move_joint(joint, goal, speed, identifier=id)
             return True
 
-        except ValidationError, e:
+        except ValidationError as e:
             return False
 
 class ManipulatorMoveHandler(ManipulatorBlockingHandler):
@@ -229,6 +226,6 @@ class ManipulatorMoveSafeHandler(ManipulatorBlockingHandler):
     def __init__(self, application, request, manipulator):
         super(ManipulatorMoveSafeHandler, self).__init__(application, request, manipulator)
 
-    def run(self, id):
-        self.manipulator.move_safe(identifier=id)
+    def run(self, identifier):
+        self.manipulator.move_safe(identifier=identifier)
         return True

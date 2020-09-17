@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 import sys
-import os
-import time
-import traceback
 import signal
 
 from subprocess import call

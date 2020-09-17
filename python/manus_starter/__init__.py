@@ -10,8 +10,6 @@ import shutil
 from subprocess import call
 from ignition import ProgramGroup
 
-from manus_starter.privileged import run_upgrade, run_shutdown
-
 try:
     from manus import VERSION
 except ImportError:
@@ -23,10 +21,13 @@ LOCAL_INTERFACE = os.getenv('MANUS_INTERFACE', 'eth0')
 
 kill_now = False
 
+#cpu=$(</sys/class/thermal/thermal_zone0/temp)
+#echo "$((cpu/1000)) c"
+
 def exit_gracefully(signum, frame):
     global kill_now
     kill_now = True
-    print "Stopping gracefully"
+    print ("Stopping gracefully")
 
 
 def get_ip_address(ifname):
@@ -144,17 +145,17 @@ def run_script(script, shutdown=None):
     try:
         if isinstance(script, ProgramGroup):
             group = script
-            print "Running %s" % group.description
+            print("Running %s" % group.description)
         else:
-            print "Running %s" % script
+            print("Running %s" % script)
             group = ProgramGroup(script)
 
         group.announce("Starting up ...")
         group.start()
         time.sleep(1)
 
-    except ValueError, e:
-        print "Error opening spark file %s" % e
+    except ValueError as e:
+        print("Error opening spark file %s" % e)
         return False
 
     stop_requested = False
@@ -204,9 +205,22 @@ def run_interactive(launchfiles):
         return False
 
     def run_upgrade_reload():
-        run_upgrade()
+        if os.geteuid() == 0:
+            call(["sudo", "apt-get", "update"])
+            call(["sudo", "apt-get", "upgrade", "-y"])
+            call(["sudo", "apt-get", "autoremove", "-y"])
+            return True
+        else:
+            return False
         os.execv(sys.executable, [sys.executable, sys.argv[0]])
         return True
+
+    def run_shutdown():
+        if os.geteuid() == 0:
+            call(["sudo", "/sbin/shutdown", "now"])
+            return True
+        else:
+            return False
 
     menu_items.append(('Upgrade system', run_upgrade_reload))
     menu_items.append(('Exit to terminal', run_terminal))
@@ -220,7 +234,7 @@ def run_service(launchfile):
 
     def resources_available():
         camera, manipulator = scan_resources()
-        print camera, manipulator
+        print(camera, manipulator)
         return camera and manipulator
 
     try:
